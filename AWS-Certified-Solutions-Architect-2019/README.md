@@ -1,4 +1,4 @@
-# AWS Certified Solutions Architech Official Study Guide  (2019)
+# AWS Certified Solutions Architect Official Study Guide  (2019)
 Assessment Test Page [27], Answers to Assessment Page [33]
 
 ## Chapter 1: Introduction to Cloud Computing and AWS  
@@ -21,3 +21,7 @@ Assessment Test Page [27], Answers to Assessment Page [33]
 
 ## Chapter 7: CloudTrail, CloudWatch, and AWS Config  
 [Amazon CloudWatch](https://github.com/Tochukz/Amazon-Web-Services/tree/master/AWS-Certified-Solutions-Architech-2019/chp7)
+
+
+### Resources
+[Flash cards](https://quizlet.com/sg/512306255/aws-study-guide-review-questions-saa-c01-flash-cards/)
