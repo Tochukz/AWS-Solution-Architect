@@ -73,14 +73,12 @@ __Elastic Block Store Volumes__
 The AWS SLA guarantees the reliability of the data you store on its EBS volumes with a promise of at least 99.999 percent availability.  
 There are currently four EBS volume types, two using solid-state-drive (SSD) technologies and two using the older spinning hard drives (HDDs).  Performance is measured in IOPS.   
 
-__EBS-Provisioned IOPS SSD__  
-Provisioned IOPS which in some contexts is referred to as EBS Optimized may provide a maximum IOPS/volume of 32,000 and maximum throughput/volume of 500MB/s. It can cost $0.125/GB/month in addition to $0.065/provisioned IOPS.  
-
-__EBS General-Purpose SSD__   
-A general purpose SSD can get to a maximum of 10,000 IOPS/volume costing $0.10GB/month. A SSD used as a typical 8 GB boot drive for Linux instance would, at current rates, cost you $9.60/year.   
-
-__Throughput-Optimized HDD__    
-For throughput-intensive workloads including log processing and big data operations. These volume can deliver only 500 IOPS/volume but with a 500 MB/s maximum throughput/volume at $0.045/GB/month
+EBS Volume Type | Volume Size | Max IOPS/volume | Max throughput/volume (MB/s) | Price
+----------------|-------------|-----------------|------------------------------|-------
+EBS-Provisioned IOPS SSD | 4 GB–16 TB | 32,000  | 500 | $0.125/GB + $0.065/prov IOPS
+EBS General-Purpose SSD | 1 GB–16 TB | 10,000 | 160 | $0.10/GB
+Throughput-Optimized HDD | 500 GB–16 TB | 500 | 500 | $0.045/GB
+Cold HDD | 500 GB–16 TB | 250 | 250 | $0.025/GB
 
 
 #### Accessing your EC2 Instance
