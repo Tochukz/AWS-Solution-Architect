@@ -17,7 +17,7 @@ Parameters:
   ImageId:
     Description: The Amazon Image Id
     Type: String
-    Default: "ami-0b2ed2e3df8cf9080" # Amazon Linux 2023 AMI 64-bit (x86)
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
   InstanceType:
     Description: EC2 instance type
     Type: String
@@ -28,19 +28,25 @@ Parameters:
       - t2.medium
 
 Resources:
-  SshSecurityGroup:
+  WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${EnvName}SshSecGp"
-      GroupDescription: Enable SSH access via port 22
+      GroupName: !Sub "${EnvName}SshAndHttpAccess"
+      GroupDescription: Enable SSH access via port 22 and HTTP access on 80
       SecurityGroupIngress:
-        - IpProtocol: tcp
+        - Description: Allow SSH access to all
+          IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp: "0.0.0.0/0"
+        - Description: Allow HTTP access to all
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
       Tags:
         - Key: Name
-          Value: Simple SSH Access
+          Value: Simple HTTP and SSH Access
   SimpleEc2:
     Type: AWS::EC2::Instance
     Properties:
@@ -48,20 +54,34 @@ Resources:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       SecurityGroups:
-        - !Ref SshSecurityGroup
+        - !Ref WebSecurityGroup
       Tags:
         - Key: Name
           Value: Simple EC2 Instance
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Update the instance
+
+          sudo yum update -y
+
+          ## Install Nginx
+          sudo amazon-linux-extras install nginx1 -y
+          sudo service nginx start
+
+          # Enable Nginx to start at Boot time
+          sudo chkconfig nginx o
 
 Outputs:
+  SecurityGroupId:
+    Description: Security group ID
+    Value: !GetAtt WebSecurityGroup.GroupId
   InstanceId:
     Description: Instance ID of the created EC2 instance
     Value: !Ref SimpleEc2
-
   PublicDNS:
     Description: Public DNS name of the created EC2 instance
     Value: !GetAtt SimpleEc2.PublicDnsName
-
   PublicIP:
     Description: Public IP address of the created EC2 instance
     Value: !GetAtt SimpleEc2.PublicIp
