@@ -62,6 +62,22 @@ Copy a file from you local machine to the bucket
 $ aws s3 cp folder/filename.txt s3://chucks.xyz
 ```  
 
+__AWS SDK__
+[AWS developer tools](https://aws.amazon.com/developer/tools/)  
+
+__AWS Support Plan__  
+
+Plan | Price | Benefits
+------|------|--------
+Basic Plan     | Free      | Gives you access to customer service, along with documentation, white papers, and the support forum.  
+Developer Plan | $29/Month | adds access for one account holder to a Cloud Support associate along with limited general guidance and “system impaired”
+response.
+Business Plan | $100/Month | adds access for one account holder to a Cloud Support associate along with limited general guidance and “system impaired”
+response.  
+Enterprise Support | $15,000/Month | plus direct access to AWS solutions architects for operational and design reviews, your own technical account manager, and something called a support concierge.
+
+[AWS Support Plans](https://aws.amazon.com/premiumsupport/)  
+
 __Other Support Resources__  
 * [AWS community forums](https://forums.aws.amazon.com/)
 * [AWS Documentation](https://docs.aws.amazon.com/)  

@@ -1,12 +1,28 @@
 ## Chapter 2: Amazon Elastic Compute Cloud and Amazon Elastic Block Store
 __EC2 Amazon Machine Images__   
+There are four kinds of AMIs.
+1. Amazon Quick Start AMIs
+2. AWS Marketplace AMIs
+3. Community AMIs
+4. Private AMIs  
+
 A particular AMI will be available in only a single region - although there will often be images with identical functionality in all regions. Keep this in mind as you plan your deployments: invoking the ID of an AMI in one region while working from within a different region will fail.    
 
 __Instance Types__  
-See table 2.1 page[58] for EC2 instance type family and their top level designation.  
+
+Instance Type Family  | Types
+----------------------|-----------
+General purpose       | T3, T2, M5, M4
+Compute optimized     | C5, C4
+Memory optimized      | X1e, X1, R5, R4, z1d
+Accelerated computing | P3, P2, G3, F1
+Storage optimized     | H1, I3, D2
+
 See [AWS Instance types](https://aws.amazon.com/ec2/instance-types/) for the most recent collection  
 
 __Note__: T2s are burstable, which means you can accumulate CPU credits when your instance is underutilized that can be applied during high-demand periods in the form of higher CPU performance.  
+
+Unlike T2, which requires EBS virtual volumes for storage, some M* instances come with their own instance storage drives that are actually physically attached to the host server.
 
 __Configuring an Environment for Your Instance__  
 Here there are three primary details to get right: geographic region, virtual private cloud (VPC), and tenancy model.   
