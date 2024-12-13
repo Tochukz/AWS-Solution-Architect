@@ -26,8 +26,52 @@ Parameters:
       - t2.micro
       - t2.small
       - t2.medium
+  BucketArns:
+    Description: S3 bucket ARNs
+    Type: CommaDelimitedList
 
 Resources:
+  SimpleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Ec2InstanceRole
+      Description: An IAM role for EC2 instance
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: Ec2InstanceRolePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:GetBucketPolicy"
+                Resource: !Ref BucketArns
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource:
+                  - !Join ["", [!Select [0, !Ref BucketArns], "/*"]]
+                  - !Join ["", [!Select [1, !Ref BucketArns], "/*"]]
+              - Effect: Allow
+                Action:
+                  - "sns:ListTopics"
+                Resource: "*"
+  SimpleProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: Ec2InstanceProfile
+      Path: /
+      Roles:
+        - !Ref SimpleRole
   WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -53,6 +97,7 @@ Resources:
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref SimpleProfile
       SecurityGroups:
         - !Ref WebSecurityGroup
       Tags:

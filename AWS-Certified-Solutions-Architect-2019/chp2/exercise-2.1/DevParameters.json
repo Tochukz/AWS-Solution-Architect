@@ -10,5 +10,9 @@
   {
     "ParameterKey": "InstanceType",
     "ParameterValue": "t2.micro"
+  },
+  {
+    "ParameterKey": "BucketArns",
+    "ParameterValue": "arn:aws:s3:::chucks-workspace-storage,arn:aws:s3:::firdmedicals-local-storage"
   }
 ]

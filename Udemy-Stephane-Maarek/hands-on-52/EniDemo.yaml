@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template demonstrates how to switch an Elastic Network Interface from one EC2 instance to another
+
+Parameters:
+  ImageId:
+    Description: The Amazon Image Id
+    Type: String
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+  SubnetId:
+    Description: A subnet ID
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-01e6764eb590a6eb3 # Default subnet
+
+Resources:
+  SimpleEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  FirstEni:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Description: A custom elastic network interface
+      SubnetId: !Ref SubnetId
+      Tags:
+        - Key: Name
+          Value: Demo ENI
+  SecondEni:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Description: An unused elastic network interface
+      SubnetId: !Ref SubnetId
+      Tags:
+        - Key: Name
+          Value: Redundant ENI
+  SecondEniEipAssoc:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      NetworkInterfaceId: !Ref SecondEni
+      AllocationId: !GetAtt SimpleEip.AllocationId
+  FirstEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref FirstEni
+          DeviceIndex: 0
+        # - NetworkInterfaceId: !Ref SecondEni
+        #   DeviceIndex: 1
+      Tags:
+        - Key: Name
+          Value: First Demo Instance
+  SecondEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      # NetworkInterfaces:
+      #   - NetworkInterfaceId: !Ref SecondEni
+      #     DeviceIndex: 0
+      Tags:
+        - Key: Name
+          Value: Second Demo Instance
+
+Outputs:
+  FirstEniId:
+    Description: Elastic Network Interface Id
+    Value: !Ref FirstEni
+  FirstEniPrimaryIp:
+    Description: Primary private IPV4 of the ENI
+    Value: !GetAtt FirstEni.PrimaryPrivateIpAddress
+  ElasticIp:
+    Description: Elastic IP
+    Value: !Ref SimpleEip

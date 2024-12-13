@@ -2,7 +2,7 @@
 
 ### Problem
 
-Launch an EC2 Linux Instance and Log in Using SSH
+Launch an EC2 Linux Instance and login Using SSH
 
 ### Operation
 
@@ -36,8 +36,11 @@ Deploy a stack using the CloudFormation template
 $ aws cloudformation deploy \
     --template-file SimpleEc2.yaml \
     --stack-name DevSimpleEc2 \
-    --parameter-overrides file://DevParameters.json \
+    --parameter-overrides file://DevParameters.json
+    --capabilities CAPABILITY_NAMED_IAM
 ```
+
+When your CloudFormation template includes resources that create or modify IAM resources (e.g., roles, policies, or instance profiles), AWS requires explicit confirmation for such changes to ensure you understand the potential security implications. To address this, the `--capabilities` flag must be applied with the `CAPABILITY_NAMED_IAM` value as shown above to avoid the `InsufficientCapabilitiesException` when calling the CreateChangeSet operation.
 
 Checkout outputs after successful deployment
 
