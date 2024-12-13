@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  KeyName:
+    Description: EC2 Keyname
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+    Default: DevSimpleKey
+  ImageId:
+    Description: EC2 AMI
+    Type: String
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    AllowedPattern: t[2-3](.micro)
+    Default: t2.micro
+Resources:
+  SimpleSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: HibernateSecGroup
+      GroupDescription: Security group for SSH access only
+      SecurityGroupIngress:
+        - Description: Allows SSH access to all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: Just SSH Access
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref SimpleSecGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 50
+            Encrypted: true
+            DeleteOnTermination: true
+          VirtualName: "ephemeral0"
+      HibernationOptions:
+        Configured: true
+      Tags:
+        - Key: Name
+          Value: Simple EC2 Instance
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance Id
+    Value: !Ref SimpleInstance
+  PublicId:
+    Description: EC2 Instance Public IP
+    Value: !GetAtt SimpleInstance.PublicIp
