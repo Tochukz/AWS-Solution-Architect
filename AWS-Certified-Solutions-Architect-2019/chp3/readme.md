@@ -14,8 +14,9 @@ For non public data, use Amazon's encryption API endpoint for transfers. You can
 
 __Server-Side Encryption__   
 You can use one of three encryption options:  
-* Server-Side Encryption with Amazon S3-Mnanged Keys (SSE-S3)
-* Server-Side Encryption with AWS KMS-Managed Keys (SSE-KMS)
+* Server-Side Encryption with Amazon S3-Mananged Keys (SSE-S3)
+* Server-Side Encryption with AWS KMS-Managed Keys (SSE-KMS). It uses an envelope key added along with a full audit trail
+for tracking key usage.
 * Server-Side Encryption with Customer=Provided Keys (SSE-C)
 
 __Client-Side Encryption__   
@@ -26,8 +27,23 @@ The high durability rates delivered by S3 are largely because they automatically
 Amazon S3 _One Zoned-Infrequent Access_ (S3 One Zone-IA) stores data in only a single availability zone.  
 Reduced Redundancy Storage (RRS) is rated at only 99.99 percent durability, and it replicates it data across fewer servers than other classes.  
 
+Storage Class  | Durability guarantee | Concurrent facility fault tolerance
+---------------|----------------------|--------------------------
+S3 Standard    | 99.999999999%        | 2
+S3 Standard-IA | 99.999999999%        | 2
+S3 One Zone-IA | 99.999999999%        | 1
+Reduced Redundancy | 99.99%           | 1
+
+
 __Availability__  
 Amazon S3 Standard class guarantees 99.99% availability per year. _S3 One Zone-IA_ has an availability of 99.5%.  
+
+Storage Class  | Availability guarantee
+---------------|-----------------------
+S3 Standard    | 99.99%  
+S3 Standard-IA | 99.9%
+S3 One Zone-IA | 99.5%
+Reduced Redundancy | 99.99%
 
 __Eventually Consistent Data__  
 Expect a delay of two seconds or less for newly updated or deleted file to propagate across the system.  
@@ -37,6 +53,7 @@ __Lifecycle Management__
 You should be aware that there are minimum times (30 days, for instance) an object must remain within one class before it can be moved.  
 
 __Access Control__  
+You can strategically open up access at the bucket and object levels using access control list (ACL) rules, finer-grained S3 bucket policies, or Identity and Access Management (IAM) policies.  
 As a rule, Amazon recommends applying S3 bucket policies or IAM policies instead of ACLs.  
 
 __Presigned URLs__  

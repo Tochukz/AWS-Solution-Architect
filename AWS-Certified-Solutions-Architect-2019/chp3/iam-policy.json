@@ -1,0 +1,12 @@
+{
+  "Version": "2012-10-17",
+  "Description": "Allows an attached IAM entity (a user, group, or role), to access the S3 buckets and its
+contents."
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": ["arn:aws:s3:::MyBucket", "arn:aws:s3:::MyBucket/*"]
+    }
+  ]
+}

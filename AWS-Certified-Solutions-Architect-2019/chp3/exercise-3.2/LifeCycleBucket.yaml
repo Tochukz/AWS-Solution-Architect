@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: A S3 bucket with versioning and life cycle management
+
+Properties:
+
+Resources:
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+
+Output:
+  BucketName:
+    Description: S3 Bucket name
+    Value: !Ref SimpleBucket

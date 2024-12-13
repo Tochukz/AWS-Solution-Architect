@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Description": "Allows root user and user Steve from the specified AWS account to access the S3 buckets and its
+contents."
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+          "arn:aws:iam::xxxxxxxxxxxx:root",
+          "arn:aws:iam::xxxxxxxxxxxx:user/Steve"
+        ]
+      },
+      "Action": "s3:*",
+      "Resource": ["arn:aws:s3:::MyBucket", "arn:aws:s3:::MyBucket/*"]
+    }
+  ]
+}
