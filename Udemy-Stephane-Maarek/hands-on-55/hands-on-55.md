@@ -1,4 +1,4 @@
-# Lesson 52: EC2 Hibernate - Hands on
+# Lesson 55: EC2 Hibernate - Hands on
 
 ### Description
 
