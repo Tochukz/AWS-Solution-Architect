@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an EC2 instance using a custom AMI
+
+Parameters:
+  ImageId:
+    Type: String
+    Description: AWS AMI ID
+    Default: ami-0f72a2351afe32d02 # My Custom AMI
+  InstanceType:
+    Type: String
+    Description: AWS instance type
+    AllowedPattern: t[2-3].(micro)
+    Default: t2.micro
+
+Resources:
+  HttpSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: HttpSecGroup
+      GroupDescription: Allows HTTP access
+      SecurityGroupIngress:
+        - Description: Allow HTTP access from any where
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+
+  SimpleEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref HttpSecGroup
+      Tags:
+        - Key: Name
+          Value: CustomAmiUse
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Update the instance
+          sudo yum update -y
+
+          ## Install Nginx
+          sudo amazon-linux-extras install nginx1 -y
+          sudo service nginx start
+
+          # Enable Nginx to start at Boot time
+          sudo chkconfig nginx o
+
+Outputs:
+  PublicIp:
+    Description: EC2 instance public ip
+    Value: !GetAtt SimpleEc2.PublicIp
+  PublicDnsName:
+    Description: EC2 public DNS name
+    Value: !GetAtt SimpleEc2.PublicDnsName
+  InstanceId:
+    Description: EC2 instance ID
+    Value: !Ref SimpleEc2
