@@ -2,7 +2,10 @@
 
 ### Description
 
-The template demostrates how to configure and use Elastic Block Storage
+Here we demostrates how to configure and use Elastic Block Store (EBS).  
+1. An EBS volume is configured and attached to an EC2 using the `EbsDemo.yaml` template.   
+2. A snapshot is created from the EBS volume configured in 1 using the `create-snapshot.sh` script.  
+3. The snapshot created from 2 is used to create another EBS volumn in another availability zone using the `SnapshotDemo.yaml` template.  
 
 ### Operation
 
@@ -31,7 +34,7 @@ $ aws cloudformation describe-stacks --stack-name EbsDemo  --query "Stacks[0].Ou
 Create snapshot using the VolumeId output from the deployment
 
 ```
-$ ./snapshot.sh
+$ ./create-snapshot.sh
 ```
 
 Using the snapshot ID for the SnapshotId parameter in `SnapshotDemo.yaml`.

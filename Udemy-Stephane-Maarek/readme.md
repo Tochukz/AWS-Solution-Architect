@@ -9,4 +9,7 @@ __By Stephane Maarek__
 [EC2 Instance-Types Comparison](https://instances.vantage.sh/)
 
 ## Readings
-[53 - Elastic Network Interface](https://aws.amazon.com/blogs/aws/new-elastic-network-interfaces-in-the-virtual-private-cloud/) 
+[53 - Elastic Network Interface](https://aws.amazon.com/blogs/aws/new-elastic-network-interfaces-in-the-virtual-private-cloud/)
+
+## References
+[EBS Volume Types](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html)
