@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an Application Load Balancer that distributes traffic to a target group with two EC2 instances
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Vpc Id
+    Default: vpc-097728e00a72ac827 # Default VPC
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet Id in the Vpc provided
+    Default: subnet-01e6764eb590a6eb3 # Default Subnet 1
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet Id in the Vpc provided
+    Default: subnet-08e8eaec953c85086 # Default Subnet 2
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Default: t2.micro
+  ImageId:
+    Type: String
+    Description: Amazon Machine Image
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Keypair name
+    Default: DevSimpleKey
+  TemplateBucket:
+    Type: String
+    Description: S3 bucket where child templates are stored
+    Default: chucks-workspace-storage
+
+Resources:
+  AlbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: AlbSecGroup
+      GroupDescription: Application Load Balancer security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allows HTTP access
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 90
+          CidrIp: 0.0.0.0/0
+
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group SSH and HTTP
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access to all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access to all
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt AlbSecGroup.GroupId
+
+  Ec2Instance1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbEc2Child.yaml
+      Parameters:
+        InstanceType: !Ref InstanceType
+        ImageId: !Ref ImageId
+        KeyName: !Ref KeyName
+        SubnetId: !Ref SubnetId1
+        WebSecGroup: !Ref WebSecGroup
+        TagName: DemoInstance1
+
+  Ec2Instance2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbEc2Child.yaml
+      Parameters:
+        InstanceType: !Ref InstanceType
+        ImageId: !Ref ImageId
+        KeyName: !Ref KeyName
+        SubnetId: !Ref SubnetId2
+        WebSecGroup: !Ref WebSecGroup
+        TagName: DemoInstance2
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleTarget
+      Protocol: HTTP
+      Port: 80
+      VpcId: !Ref VpcId
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckPath: /
+      Targets:
+        - Id: !GetAtt Ec2Instance1.Outputs.InstanceId
+        - Id: !GetAtt Ec2Instance2.Outputs.InstanceId
+
+  AlbBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleBalancer
+      Scheme: internet-facing
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      SecurityGroups:
+        - !Ref AlbSecGroup
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AlbBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup
+
+Outputs:
+  # SecurityGroupId:
+  #   Description: Remove this
+  #   Value: !GetAtt WebSecGroup.GroupId
+  LoadBalancerDns:
+    Description: DNS name of the ALB
+    Value: !GetAtt AlbBalancer.DNSName
+  PublicIp1: # Remove this
+    Description: First EC2 public IP
+    Value: !GetAtt Ec2Instance1.Outputs.PublicIp
+  InstanceId1:
+    Description: First EC2 instance ID
+    Value: !GetAtt Ec2Instance1.Outputs.InstanceId
+  PublicIp2: # Remove this
+    Description: Second EC2 public IP
+    Value: !GetAtt Ec2Instance2.Outputs.PublicIp
+  InstanceId2:
+    Description: Second EC2 instance ID
+    Value: !GetAtt Ec2Instance2.Outputs.InstanceId
