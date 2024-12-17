@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This child template configures an EC2 instance and mounts an EFS file system unto it.
+
+Parameters:
+  SimpleFs:
+    Type: String
+    Description: EFS file system reference
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+  ImageId:
+    Type: String
+    Description: Amazon Machine Image (AMI) Id
+  KeyName:
+    Type: String
+    Description: EC2 key
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group referenece
+  TagName:
+    Type: String
+    Description: Instance Tag name
+  AvailabilityZone:
+    Type: String
+    Description: Availability Zone
+
+Resources:
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      AvailabilityZone: !Ref AvailabilityZone
+      SecurityGroupIds:
+        - !Ref WebSecGroup
+      Tags:
+        - Key: Name
+          Value: !Ref TagName
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Install NFS client and mount EFS
+          # yum install -y nfs-utils # Amazon Linux 2 already have nfs client installed
+
+          # Elevate your right to sudo
+          sudo su
+          mkdir -p /mnt/efs/fs1
+
+          # Mount the EFS file system on the directory created above /mnt/efs/fs1
+          mount -t nfs -o nfsvers=4.1 ${SimpleFs}.efs.${AWS::Region}.amazonaws.com:/ /mnt/efs/fs1
+
+          # Ensure the mount persists across reboots
+          echo "${SimpleFs}.efs.${AWS::Region}.amazonaws.com:/ /mnt/efs/fs1 nfs4 defaults,_netdev 0 0" >> /etc/fstab
+
+Outputs:
+  InstanceId:
+    Description: EC2 instance Id
+    Value: !Ref SimpleInstance
+  PublicIp:
+    Description: EC2 public Ip
+    Value: !GetAtt SimpleInstance.PublicIp

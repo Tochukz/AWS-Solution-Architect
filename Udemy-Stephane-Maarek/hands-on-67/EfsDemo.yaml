@@ -1,0 +1,181 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an Elastic File System and mounts it to multiple EC2 instances.
+
+Parameters:
+  Env:
+    Type: String
+    Description: Environment
+    Default: Dev
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Default Vpc Id
+    Default: vpc-097728e00a72ac827 # Default VPC
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet Id in the Vpc provided
+    Default: subnet-01e6764eb590a6eb3 # Default Subnet 1
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet Id in the Vpc provided
+    Default: subnet-08e8eaec953c85086 # Default Subnet 2
+  SubnetId3:
+    Type: AWS::EC2::Subnet::Id
+    Description: Third subnet Id the Vpc provided
+    Default: subnet-09e44438fe80ab618 # Default Subnet 3
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedPattern: t[2-3].micro
+    Default: t2.micro
+  ImageId:
+    Type: String
+    Description: Amazon Machine Image (AMI) Id
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 key
+    Default: DevSimpleKey
+  TemplateBucket:
+    Type: String
+    Description: S3 bucket where child templates are stored
+    Default: chucks-workspace-storage
+
+Resources:
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Security group for web server on EC2
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access for all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  FsSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: FileSystemSg
+      GroupDescription: Security group for NFS access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow NFS access from WebSecGroup only
+          IpProtocol: TCP
+          FromPort: 2049
+          ToPort: 2049
+          SourceSecurityGroupId: !Ref WebSecGroup
+
+  SimpleFs:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: true
+      PerformanceMode: generalPurpose # The performance mode can't be changed after the file system has been created
+      ThroughputMode: bursting
+      # FileSystemPolicy: JSON
+      #   Version: "2012-10-17"
+      #   Statement:
+      #     - Effect: Allow
+      #       Principal:
+      #         AWS: arn:aws:iam::123456789012:role/Ec2Role
+      #       Action:
+      #         - elasticfilesystem:ClientMount
+      #         - elasticfilesystem:ClientWrite
+      #       Resource: "*"
+      BackupPolicy:
+        Status: DISABLED
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+        - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
+      FileSystemTags:
+        - Key: Name
+          Value: DemoFileSystem
+
+  MountTargetForSub1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref SimpleFs
+      SecurityGroups:
+        - !Ref FsSecGroup
+      SubnetId: !Ref SubnetId1
+
+  MountTargetForSub2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref SimpleFs
+      SecurityGroups:
+        - !Ref FsSecGroup
+      SubnetId: !Ref SubnetId2
+
+  MountTargetForSub3:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref SimpleFs
+      SecurityGroups:
+        - !Ref FsSecGroup
+      SubnetId: !Ref SubnetId3
+
+  SimpleAccess:
+    Type: AWS::EFS::AccessPoint
+    Properties:
+      FileSystemId: !Ref SimpleFs
+      PosixUser:
+        Uid: "13234"
+        Gid: "1322"
+      RootDirectory:
+        CreationInfo:
+          OwnerUid: "708798"
+          OwnerGid: "7987987"
+          Permissions: "0755"
+        Path: "/demo/efs"
+      AccessPointTags:
+        - Key: Name
+          Value: EfsDemoAccess
+
+  Ec2Instance1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/Ec2DemoChild.yaml
+      Parameters:
+        SimpleFs: !Ref SimpleFs
+        InstanceType: !Ref InstanceType
+        ImageId: !Ref ImageId
+        KeyName: !Ref KeyName
+        WebSecGroup: !Ref WebSecGroup
+        AvailabilityZone: !Sub ${AWS::Region}a
+        TagName: EfsDemoInstance1
+
+  Ec2Instance2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/Ec2DemoChild.yaml
+      Parameters:
+        SimpleFs: !Ref SimpleFs
+        InstanceType: !Ref InstanceType
+        ImageId: !Ref ImageId
+        KeyName: !Ref KeyName
+        WebSecGroup: !Ref WebSecGroup
+        AvailabilityZone: !Sub ${AWS::Region}b
+        TagName: EfsDemoInstance2
+
+Outputs:
+  FileSystemId:
+    Description: The Id of the file system
+    Value: !Ref SimpleFs
+  AccessPointId:
+    Description: Access point Id
+    Value: !Ref SimpleAccess
+  Instance1Id:
+    Description: First EC2 instance Id
+    Value: !GetAtt Ec2Instance1.Outputs.InstanceId
+  Instance2Id:
+    Description: First EC2 instance Id
+    Value: !GetAtt Ec2Instance2.Outputs.InstanceId
+  PublicIp1:
+    Description: EC2 public Ip
+    Value: !GetAtt Ec2Instance1.Outputs.PublicIp
+  PublicIp2:
+    Description: EC2 public Ip
+    Value: !GetAtt Ec2Instance2.Outputs.PublicIp
