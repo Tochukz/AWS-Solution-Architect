@@ -2,8 +2,8 @@
 
 ### Description
 
-This configuration provisions an EFS file system with mount targets in 3 subnets of a Vpc and one access point.  
-It then mounts the EFS file system on two EC2 instances.
+This configuration provisions an EFS file system with mount targets in 3 subnets of a Vpc and one access point resource.  
+It then mounts the EFS file system on two EC2 instances in difference availability zones.
 
 ### Operation
 
@@ -69,7 +69,7 @@ $ aws cloudformation describe-stack-events --stack-name EfsDemo
 ```
 
 **Cleanup**  
-To delete the stacks and custom AMI
+To delete the stacks
 
 ```
 $ aws cloudformation delete-stack --stack-name EfsDemo

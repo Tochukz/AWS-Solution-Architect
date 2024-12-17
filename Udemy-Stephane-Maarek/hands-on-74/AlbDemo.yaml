@@ -61,7 +61,7 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
-        - Description: Allow HTTP access to all
+        - Description: Allow HTTP traffic originating from AlbSecGroup only
           IpProtocol: TCP
           FromPort: 80
           ToPort: 80
@@ -127,21 +127,12 @@ Resources:
           TargetGroupArn: !Ref AlbTargetGroup
 
 Outputs:
-  # SecurityGroupId:
-  #   Description: Remove this
-  #   Value: !GetAtt WebSecGroup.GroupId
   LoadBalancerDns:
     Description: DNS name of the ALB
     Value: !GetAtt AlbBalancer.DNSName
-  PublicIp1: # Remove this
-    Description: First EC2 public IP
-    Value: !GetAtt Ec2Instance1.Outputs.PublicIp
   InstanceId1:
     Description: First EC2 instance ID
     Value: !GetAtt Ec2Instance1.Outputs.InstanceId
-  PublicIp2: # Remove this
-    Description: Second EC2 public IP
-    Value: !GetAtt Ec2Instance2.Outputs.PublicIp
   InstanceId2:
     Description: Second EC2 instance ID
     Value: !GetAtt Ec2Instance2.Outputs.InstanceId
