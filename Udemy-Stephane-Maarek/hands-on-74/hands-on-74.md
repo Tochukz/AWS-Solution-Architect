@@ -1,4 +1,4 @@
-# Lesson 74: Application Load Balancer - Hands on
+# Lesson 74: Application Load Balancer - Hands on (Part 1)
 
 ### Description
 

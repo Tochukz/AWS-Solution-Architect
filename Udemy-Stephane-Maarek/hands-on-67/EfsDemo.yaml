@@ -9,7 +9,7 @@ Parameters:
     Default: Dev
   VpcId:
     Type: AWS::EC2::VPC::Id
-    Description: Default Vpc Id
+    Description: Vpc Id
     Default: vpc-097728e00a72ac827 # Default VPC
   SubnetId1:
     Type: AWS::EC2::Subnet::Id

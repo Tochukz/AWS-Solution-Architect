@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This child template configures a Lambda Function
+
+Parameters:
+  FunctionName:
+    Type: String
+    Description: Name of Lambda function
+  LambdaRoleArn:
+    Type: String
+    Description: Lambda role ARN
+  LayerVersionArn:
+    Type: String
+    Description: Layer Version
+  ArtifactBucket:
+    Type: String
+    Description: S3 bucket for the code artifact
+  CodeVersion:
+    Type: String
+    Description: Code version for the S3 prefix
+  PackageName:
+    Type: String
+    Description: Code package name
+
+Resources:
+  SimpleFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Handler: "lambda.handler"
+      MemorySize: 512
+      Role: !Ref LambdaRoleArn
+      Runtime: nodejs20.x
+      Timeout: 5
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub v${CodeVersion}/${PackageName}
+      Layers:
+        - !Ref LayerVersionArn
+
+Outputs:
+  FunctionName:
+    Description: Lambda function name
+    Value: !Ref SimpleFunc
+  LambdaArn:
+    Description: The ARN of the lambda function
+    Value: !GetAtt SimpleFunc.Arn
