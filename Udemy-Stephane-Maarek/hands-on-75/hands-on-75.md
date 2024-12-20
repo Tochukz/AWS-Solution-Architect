@@ -5,7 +5,30 @@
 This template extends and modify the Application Load balancer configured in hands-on-74.  
 Here we add rules to the Listener to route traffic to different Target groups based on the URL path.
 
+This presents us with a useful configuration that can be used in a Microservices architecture where requests are routed to different microservices based on their path.
+
 ### Operation
+
+**Pre deployment**  
+This configuration required NodeJS code packages to be deployed to S3 bucket for use in the Shared Lambda Layer and Lambda functions representing the Micro services.
+
+Deploy the code and shared layer.
+
+```bash
+# Deploy the catalog microservice
+$ ./deploy-express.sh catalog-management 0.0.1
+# Deploy the user microservice
+$ ./deploy-express.sh user-management 0.0.1
+```
+
+If you make changes to the code after the Lambda infrastructure has been deployed, do a reload, run the deploy above again, and then do a reload as shown below
+
+```bash
+$ ./reload-lambda.sh catalog-management
+$ ./reload-lambda.sh user-management
+```
+
+This reloads the update code into the lambda functions.
 
 **Deployment**  
 Upload the child templates to S3
@@ -15,10 +38,10 @@ $ aws s3 cp AlbEc2Child.yaml s3://chucks-workspace-storage/templates/AlbEc2Child
 $ aws s3 cp AlbLambdaChild.yaml s3://chucks-workspace-storage/templates/AlbLambdaChild.yaml
 ```
 
-Validate the template
+Lint the template
 
 ```
-$ aws cloudformation validate-template --template-body file://AlbDemo.yaml --capabilities CAPABILITY_NAMED_IAM
+$ cfn-lint AlbDemo.yaml
 ```
 
 Deploy a stack using the _AlbDemo_ template
@@ -49,16 +72,17 @@ $ aws cloudformation delete-change-set --stack-name AlbDemo --change-set-name Al
 ```
 
 **Testing**
-Use the Load balancer DNS name to access the web server on a web browser.  
-Each time you refresh the page, the content of the web page should change indicating that the content is coming from a difference EC2 instance each time.
+Use the Load balancer DNS name to access the web server on a web browser.
 
-Stop one of the EC2 instance
+The root path `/` routes to the EC2 instance which is the default action for the Application Load Balancer.  
+The table below show the endpoint available for the microservices via the Application Load Balancer.
 
-```
-$ aws ec2 stop-instances --instance-id i-xxxxxxxx
-```
-
-refresh the page again and the content should not change again since only one instance is healthy in the target group.
+| Path                       | Method | Microservice     |
+| -------------------------- | ------ | ---------------- |
+| /user/users                | GET    | User Service     |
+| /user/users/create         | POST   | User Service     |
+| /product/categories        | GET    | Category Service |
+| /product/categories/create | POST   | Category Service |
 
 **Debug Errors**
 In the case of error during deployment, checkout the stack events

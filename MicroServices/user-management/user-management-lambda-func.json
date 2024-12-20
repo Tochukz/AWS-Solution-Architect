@@ -1,0 +1,35 @@
+{
+    "FunctionName": "CatalogManagement",
+    "FunctionArn": "arn:aws:lambda:eu-west-2:314146339647:function:CatalogManagement",
+    "Runtime": "nodejs20.x",
+    "Role": "arn:aws:iam::314146339647:role/LambdaExeuctionRole",
+    "Handler": "lambda.handler",
+    "CodeSize": 19424,
+    "Description": "",
+    "Timeout": 15,
+    "MemorySize": 512,
+    "LastModified": "2024-10-15T23:04:53.000+0000",
+    "CodeSha256": "GMutpi4JO9XVXAUgKPHtmKL68ZGPt3xVjpQusmY1KyA=",
+    "Version": "$LATEST",
+    "TracingConfig": {
+        "Mode": "PassThrough"
+    },
+    "RevisionId": "dd558778-6270-4840-9c31-58ffe8db9120",
+    "Layers": [
+        {
+            "Arn": "arn:aws:lambda:eu-west-2:314146339647:layer:SharedLayer:1",
+            "CodeSize": 2080358
+        }
+    ],
+    "State": "Active",
+    "LastUpdateStatus": "InProgress",
+    "LastUpdateStatusReason": "The function is being created.",
+    "LastUpdateStatusReasonCode": "Creating",
+    "PackageType": "Zip",
+    "Architectures": [
+        "x86_64"
+    ],
+    "EphemeralStorage": {
+        "Size": 512
+    }
+}
