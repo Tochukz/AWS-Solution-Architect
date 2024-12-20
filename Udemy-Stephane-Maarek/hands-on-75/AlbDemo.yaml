@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This template configures an Application Load Balancer that distributes traffic to a target group with two EC2 instances
+Description: This template configures an Application Load Balancer that distributes traffic to multiple target groups based on the URL path.
 
 Parameters:
   VpcId:
@@ -42,10 +42,18 @@ Parameters:
     Type: String
     Description: The version of the layer artifact e.g 1.0.0
     Default: "0.0.1"
-  LayerVersion:
-    Type: Number
-    Description: Layer version
-    Default: 1
+  CatalogTarget:
+    Type: String
+    Description: Constant to be used for target group name
+    AllowedValues:
+      - CatalogTarget
+    Default: CatalogTarget
+  UserTarget:
+    Type: String
+    Description: Constant to be used for target group name
+    AllowedValues:
+      - UserTarget
+    Default: UserTarget
 
 Resources:
   AlbSecGroup:
@@ -130,17 +138,33 @@ Resources:
         CodeVersion: "0.0.1"
         PackageName: catalog-management.zip
 
-  # UserLambda:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbLambdaChild.yaml
-  #     Parameters:
-  #       FunctionName: UserFunc
-  #       LambdaRoleArn: !GetAtt LambdaRole.Arn
-  #       LayerVersionArn: !GetAtt ExpressLayer.LayerVersionArn
-  #       ArtifactBucket: !Ref ArtifactBucket
-  #       CodeVersion: "0.0.1"
-  #       PackageName: user-management.zip
+  UserLambda:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbLambdaChild.yaml
+      Parameters:
+        FunctionName: UserFunc
+        LambdaRoleArn: !GetAtt LambdaRole.Arn
+        LayerVersionArn: !GetAtt ExpressLayer.LayerVersionArn
+        ArtifactBucket: !Ref ArtifactBucket
+        CodeVersion: "0.0.1"
+        PackageName: user-management.zip
+
+  CatalogFuncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CatalogLambda.Outputs.FunctionName
+      Action: lambda:InvokeFunction
+      Principal: elasticloadbalancing.amazonaws.com
+      SourceArn: !Sub arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${CatalogTarget}/*
+
+  UserFuncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt UserLambda.Outputs.FunctionName
+      Action: lambda:InvokeFunction
+      Principal: elasticloadbalancing.amazonaws.com
+      SourceArn: !Sub arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${UserTarget}/*
 
   MainTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -155,25 +179,26 @@ Resources:
       TargetType: instance
       Targets:
         - Id: !GetAtt Ec2Instance1.Outputs.InstanceId
-        # - Id: !GetAtt Ec2Instance2.Outputs.InstanceId # More instances can be added
 
   CatalogTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: CatalogTarget
+      Name: !Ref CatalogTarget
       HealthCheckEnabled: false
       TargetType: lambda
       Targets:
         - Id: !GetAtt CatalogLambda.Outputs.LambdaArn
+    DependsOn: CatalogFuncPermission
 
-  # UserTargetGroup:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     Name: CatalogTarget
-  #     HealthCheckEnabled: false
-  #     TargetType: lambda
-  #     Targets:
-  #       - Id: !GetAtt UserLambda.Outputs.LambdaArn
+  UserTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Ref UserTarget
+      HealthCheckEnabled: false
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt UserLambda.Outputs.LambdaArn
+    DependsOn: UserFuncPermission
 
   AlbBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -185,22 +210,6 @@ Resources:
         - !Ref SubnetId2
       SecurityGroups:
         - !Ref AlbSecGroup
-
-  CatalogFuncPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt CatalogLambda.Outputs.FunctionName
-      Action: lambda:InvokeFunction
-      Principal: elasticloadbalancing.amazonaws.com
-      SourceArn: !Ref AlbListener
-
-  # UserFuncPermission:
-  #   Type: AWS::Lambda::Permission
-  #   Properties:
-  #     FunctionName: !GetAtt UserLambda.Outputs.FunctionName
-  #     Action: lambda:InvokeFunction
-  #     Principal: elasticloadbalancing.amazonaws.com
-  #     SourceArn: !Ref AlbListener
 
   AlbListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -225,6 +234,19 @@ Resources:
           Values:
             - "/product/*"
 
+  UderListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref AlbListener
+      Priority: 2
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref UserTargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/user/*"
+
 Outputs:
   LoadBalancerDns:
     Description: DNS name of the ALB
@@ -236,9 +258,9 @@ Outputs:
     Value: !GetAtt Ec2Instance1.Outputs.InstanceId
     Export:
       Name: InstanceId1
-  LambdaRoleArn:
-    Description: Remove this
-    Value: !GetAtt LambdaRole.Arn
-  LayerArn:
-    Description: Remove this
-    Value: !GetAtt ExpressLayer.LayerVersionArn
+  FunctionName1:
+    Description: Cataglog lambda name
+    Value: !GetAtt CatalogLambda.Outputs.FunctionName
+  FunctionName2:
+    Description: User lambda name
+    Value: !GetAtt UserLambda.Outputs.FunctionName

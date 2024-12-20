@@ -2,3 +2,4 @@
 *.pem
 .vscode
 *.zip
+node_modules
