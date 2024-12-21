@@ -2,8 +2,8 @@
 
 ### Description
 
-This template configures and application load balancer that distributes traffic to tow EC2 instances.  
-The EC2 instance are running indentical Nginx server but with different content.
+This template configures an Application Load Balancer that distributes traffic to two EC2 instances.   
+The EC2 instance are running identical Nginx server but with different content.  
 
 ### Operation
 

@@ -23,7 +23,7 @@ Parameters:
       - t3.micro
     Default: t2.micro
   ImageId:
-    Type: String
+    Type: AWS::EC2::Image::Id
     Description: Amazon Machine Image
     Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
   KeyName:
@@ -46,7 +46,7 @@ Resources:
         - Description: Allows HTTP access
           IpProtocol: TCP
           FromPort: 80
-          ToPort: 90
+          ToPort: 80
           CidrIp: 0.0.0.0/0
 
   WebSecGroup:
