@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template provisions a cross regional read replica of an RDS instance
+
+Parameters:
+  DbInstanceClass:
+    Type: String
+    Description: Instance class for the RDS instance
+    AllowedValues:
+      - db.t2.micro
+      - db.t3.micro
+      - db.t4g.micro
+    Default: db.t3.micro
+  PrimaryDbArn:
+    Type: String
+    Description: The ARN of the  primary DB instance
+    Default: arn:aws:rds:eu-west-2:314146339647:db:simplemysql
+  PrimaryDbRegion:
+    Type: String
+    Description: The region of the primary DB instance
+    Default: eu-west-2
+
+Resources:
+  DbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DbSecGroup
+      GroupDescription: Security group for RDS instance
+      SecurityGroupIngress:
+        - Description: Allow MySQL connection from any where
+          IpProtocol: TCP
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+  # Take note that cross regional replica incurs additional data transfer cost
+  CrossRegionReplica:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      SourceRegion: !Ref PrimaryDbRegion
+      #SourceDBInstanceIdentifier: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${SimpleRds}
+      SourceDBInstanceIdentifier: !Ref PrimaryDbArn
+      DBInstanceIdentifier: CrossRegionReplica
+      DBInstanceClass: !Ref DbInstanceClass
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !GetAtt DbSecGroup.GroupId
+      MultiAZ: false
+      AvailabilityZone: !Sub ${AWS::Region}a
+
+Outputs:
+  CrossRegionReplica:
+    Description: The cross regional read replica hostname
+    Value: !GetAtt CrossRegionReplica.Endpoint.Address

@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template provisions and RDS instance with MySql database engine
+
+Parameters:
+  DbInstanceClass:
+    Type: String
+    Description: Instance class for the RDS instance
+    AllowedValues:
+      - db.t2.micro
+      - db.t3.micro
+      - db.t4g.micro
+    Default: db.t3.micro
+  MasterUsername:
+    Type: String
+    Description: Master username for the RDS instance
+    NoEcho: true
+  MasterPassword:
+    Type: String
+    Description: Master password for the RDS instance
+    NoEcho: true
+
+Resources:
+  DbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DbSecGroup
+      GroupDescription: Security group for RDS instance
+      SecurityGroupIngress:
+        - Description: Allow MySQL connection from any where
+          IpProtocol: TCP
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+  PrimaryDb:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: SimpleMySql
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 30
+      StorageEncrypted: true
+      DBInstanceClass: !Ref DbInstanceClass
+      Engine: mysql
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterPassword
+      VPCSecurityGroups:
+        - !GetAtt DbSecGroup.GroupId
+      BackupRetentionPeriod: 1 # in days
+      StorageType: gp2
+      PubliclyAccessible: true
+      DBName: rds_demo
+      MultiAZ: false
+      AvailabilityZone: !Sub ${AWS::Region}a
+      DeletionProtection: true
+
+  ReadReplica1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      SourceDBInstanceIdentifier: !Ref PrimaryDb
+      DBInstanceIdentifier: SimpleReplica1
+      DBInstanceClass: !Ref DbInstanceClass
+      PubliclyAccessible: true
+      MultiAZ: false
+      AvailabilityZone: !Sub ${AWS::Region}b
+
+  ReadReplica2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      SourceDBInstanceIdentifier: !Ref PrimaryDb
+      DBInstanceIdentifier: SimpleReplica2
+      DBInstanceClass: !Ref DbInstanceClass
+      PubliclyAccessible: true
+      MultiAZ: false
+      AvailabilityZone: !Sub ${AWS::Region}c
+
+Outputs:
+  PrimaryDbEndpoint:
+    Description: The primary DB instance hostname
+    Value: !GetAtt PrimaryDb.Endpoint.Address
+  PrimaryDbArn:
+    Description: The ARN of the primary DB instance
+    Value: !GetAtt PrimaryDb.DBInstanceArn
+  PrimaryDbRegion:
+    Description: The region of the primary DB instance
+    Value: !Ref AWS::Region
+  ReadReplica1Endpoint:
+    Description: The first read replica hostname
+    Value: !GetAtt ReadReplica1.Endpoint.Address
+  ReadReplica2Endpoint:
+    Description: The second read replica hostname
+    Value: !GetAtt ReadReplica2.Endpoint.Address
