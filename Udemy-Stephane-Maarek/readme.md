@@ -2,6 +2,18 @@
 __By Stephane Maarek__  
 [AWS Certified Solution Architect](https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03)
 
+__Content__
+Section 1: Introduction   
+Section 2: Code & Slide Download   
+Section 3: Getting Started with AWS   
+Section 4: IAM & AWS CLI   
+Section 5: EC2 Fundamentals   
+Section 6: EC2 - Solution Architect Associate Level   
+Section 7: EC2 Instance Storage   
+Section 8: High Availability and Scalability: ELB & ASG   
+Section 9: AWS Fundamentals: RDS + Aurora + ElastiCache
+
+
 __Connection Draining__  
 * Connection Draining - for CLB
 * Deregistration Delay - for ALB & NLB
