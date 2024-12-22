@@ -1,4 +1,4 @@
-# Lesson 85: Auto Scaling Groups - Scaling Policies Hands on
+# Lesson 87: Auto Scaling Groups - Scaling Policies Hands on
 
 ### Description
 
