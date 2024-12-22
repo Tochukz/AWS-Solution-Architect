@@ -2,18 +2,13 @@
 
 ### Description
 
-This template configures an Auto Scaling Group the manages the number of EC2 instances in
-the target group of an Application Load Balancer
+This template configures an Auto Scaling Group that manages the number of EC2 instances in
+the target group of an Application Load Balancer.  
+This configuration may be considered incomplete as it does not setup a scaling policy.  See hands-on-87 that includes a Scaling Policy.  
 
 ### Operation
 
 **Deployment**  
-Upload the child templates to S3
-
-```
-$ aws s3 cp AsgEc2Child.yaml s3://chucks-workspace-storage/templates/AsgEc2Child.yaml
-```
-
 Lint the template
 
 ```
@@ -35,15 +30,9 @@ $ aws cloudformation describe-stacks --stack-name AsgDemo  --query "Stacks[0].Ou
 
 **Testing**
 Use the Load balancer DNS name to access the web server on a web browser.  
-Each time you refresh the page, the content of the web page should change indicating that the content is coming from a difference EC2 instance each time.
-
-Stop one of the EC2 instance
-
-```
-$ aws ec2 stop-instances --instance-id i-xxxxxxxx
-```
-
-refresh the page again and the content should not change again since only one instance is healthy in the target group.
+Because the current DesiredCapacity is set to 1, the content will always remain the same when you refresh the page.   
+Update the DesiredCapacity to 2 and the deploy the stack again.  
+Now the instances InService for the ASG will change to 2. Refreshing the page on the browser should now show different content from time to time.   
 
 **Debug Errors**
 In the case of error during deployment, checkout the stack events

@@ -9,8 +9,8 @@ __Connection Draining__
 
 __Auto Scaling Groups - Scaling Policies__  
 1. Dynamic Scaling
-  * Target Traking Scaling
-    - Simple  to setup
+  * Target Tracking Scaling
+    - Simple to setup
     - Example: I want the average ASG CPU to stay at around 40%
   * Simple / Step Scaling
     - When a CloudWatch alarm is triggered (example CPU > 70%), then add 2 units

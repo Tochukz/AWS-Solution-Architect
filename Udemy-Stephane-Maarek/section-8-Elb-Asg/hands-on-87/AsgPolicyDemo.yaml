@@ -1,0 +1,200 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an Auto Scaling Group with a Dynamic Scaling Policy
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Vpc Id
+    Default: vpc-097728e00a72ac827 # Default VPC
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet Id in the Vpc provided
+    Default: subnet-01e6764eb590a6eb3 # Default Subnet 1
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet Id in the Vpc provided
+    Default: subnet-08e8eaec953c85086 # Default Subnet 2
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Default: t2.micro
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: Amazon Machine Image
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Keypair name
+    Default: DevSimpleKey
+
+Resources:
+  AlbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: AlbSecGroup
+      GroupDescription: Application Load Balancer security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allows HTTP access
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group SSH and HTTP
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access to all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP traffic originating from AlbSecGroup only
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt AlbSecGroup.GroupId
+
+  SimpleLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: AsgDemoInstanceTemplate
+      LaunchTemplateData:
+        ImageId: !Ref ImageId
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref WebSecGroup
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: AsgDemoInstance
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            sudo yum update -y
+
+            ## Install Nginx
+            sudo amazon-linux-extras install nginx1 -y
+            sudo service nginx start
+
+            # Enable Nginx to Start on Boot
+            sudo systemctl enable nginx
+
+            echo "<h3>Hello world from $(hostname -f) </h3>" > /usr/share/nginx/html/index.html
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleTarget
+      Protocol: HTTP
+      Port: 80
+      VpcId: !Ref VpcId
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckPath: /
+
+  SimpleAsg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: SimpleScaling
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      HealthCheckType: ELB # Default is EC2 and cannot be disabled, thus you wil get EC2,ELB
+      HealthCheckGracePeriod: 300
+      # If the subnets under VPCZoneIdentifier are public and are in a VPC also defined in this stack, you must use the DependsOn attribute to declare a dependency on the VPC-gateway attachment (AWS::EC2::VPCGatewayAttachment).
+      VPCZoneIdentifier:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      TargetGroupARNs:
+        - !Ref AlbTargetGroup
+      LaunchTemplate:
+        LaunchTemplateId: !Ref SimpleLaunchTemplate
+        Version: !GetAtt SimpleLaunchTemplate.LatestVersionNumber
+
+  AlbBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleBalancer
+      Scheme: internet-facing
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      SecurityGroups:
+        - !Ref AlbSecGroup
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AlbBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup
+
+  ScaleOutPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref SimpleAsg
+      PolicyType: SimpleScaling
+      ScalingAdjustment: 1
+      AdjustmentType: ChangeInCapacity
+      Cooldown: 300
+
+  ScaleInPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref SimpleAsg
+      PolicyType: SimpleScaling
+      ScalingAdjustment: -1
+      AdjustmentType: ChangeInCapacity
+      Cooldown: 300
+
+  ScaleOutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm to scale out when CPU utilization reaches 40%
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 40.0
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref SimpleAsg
+      AlarmActions:
+        - !Ref ScaleOutPolicy
+
+  ScaleInAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm to scale in when CPU utilization is below 40%
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 40.0
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref SimpleAsg
+      AlarmActions:
+        - !Ref ScaleInPolicy
+Outputs:
+  LoadBalancerDns:
+    Description: DNS name of the ALB
+    Value: !GetAtt AlbBalancer.DNSName
