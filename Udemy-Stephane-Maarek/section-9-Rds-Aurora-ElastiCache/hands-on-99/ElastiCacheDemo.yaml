@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template provisions a Redis ElastiCache cluster
+
+Parameters:
+  SubnetIds:
+    Type: List<String>
+    Description: Comma seperate list of subnet Ids
+    Default: subnet-01e6764eb590a6eb3,subnet-08e8eaec953c85086 # Default subnet 1 and 2
+  CacheNodeType:
+    Type: String
+    Description: The cache node type
+    AllowedValues:
+      - cache.t2.micro
+      - cache.t3.micro
+      - cache.t4g.micro
+    Default: cache.t2.micro
+  KeyName:
+    Description: EC2 Keyname
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+    Default: DevSimpleKey
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: EC2 AMI
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedPattern: t[2-3](.micro)
+    Default: t2.micro
+
+Resources:
+  Ec2SecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: HibernateSecGroup
+      GroupDescription: Security group for SSH access only
+      SecurityGroupIngress:
+        - Description: Allows SSH access to all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+
+  RedisSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: RedisSecGroup
+      GroupDescription: Security group for RDS instance
+      SecurityGroupIngress:
+        - Description: Allow Redis connection from any where
+          IpProtocol: TCP
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !GetAtt Ec2SecGroup.GroupId
+
+  ElastiCacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: ElasticCacheSubnetGp
+      Description: Subnet group for ElasticCache database cluster
+      SubnetIds: !Ref SubnetIds
+
+  ElastiCacheParameterGroup:
+    Type: AWS::ElastiCache::ParameterGroup
+    Properties:
+      Description: Custom parameters for Redis instance
+      CacheParameterGroupFamily: redis7
+      Properties:
+        maxmemory-policy: volatile-lru
+        timeout: 300
+
+  ElastiCacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      ClusterName: SimpleCluster
+      Engine: redis
+      EngineVersion: 7.1
+      CacheNodeType: !Ref CacheNodeType
+      AZMode: single-az # single-az or cross-az
+      NumCacheNodes: 1 # Must be 1 for redis
+      CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
+      CacheParameterGroupName: !Ref ElastiCacheParameterGroup
+      PreferredMaintenanceWindow: sun:05:00-sun:09:00
+      SnapshotRetentionLimit: 1
+      SnapshotWindow: 00:00-05:00
+      VpcSecurityGroupIds:
+        - !GetAtt RedisSecGroup.GroupId
+      TransitEncryptionEnabled: false # set to true in production
+
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref Ec2SecGroup
+      Tags:
+        - Key: Name
+          Value: DemoEc2
+
+Outputs:
+  RedisEndpoint:
+    Description: Endpoint of the ElasticCache cluster
+    Value: !GetAtt ElastiCacheCluster.RedisEndpoint.Address
+    # For Memche you can use ElastiCacheCluster.ConfigurationEndpoint.Address instead
+  RedisPort:
+    Description: The writer endpoint of the ElasticCache instance
+    Value:
+      !GetAtt ElastiCacheCluster.RedisEndpoint.Port
+      # For MemCache you can use ElastiCacheCluster.ConfigurationEndpoint.Port instead
+  PublicIp:
+    Description: Public IP for the EC2 instance
+    Value: !GetAtt SimpleInstance.PublicIp
