@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template provisions an RDS instance with an Aurora DB engine which is compatible with MySQL
+
+Parameters:
+  SubnetIds:
+    Type: List<String>
+    Description: Comma seperate list of subnet Ids
+    Default: subnet-01e6764eb590a6eb3,subnet-08e8eaec953c85086 # Default subnet 1 and 2
+  DbInstanceClass:
+    Type: String
+    Description: Instance class for the RDS instance
+    AllowedValues:
+      - db.r5.large
+      - db.r6g.large
+    Default: db.r5.large
+  MasterUsername:
+    Type: String
+    Description: Master username for the RDS instance
+    NoEcho: true
+  MasterPassword:
+    Type: String
+    Description: Master password for the RDS instance
+    NoEcho: true
+
+Resources:
+  DbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DbSecGroup
+      GroupDescription: Security group for RDS instance
+      SecurityGroupIngress:
+        - Description: Allow MySQL connection from any where
+          IpProtocol: TCP
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+  AuroraSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: AuroraSubnetGp
+      DBSubnetGroupDescription: Subnet group for Aurora database cluster
+      SubnetIds: !Ref SubnetIds
+
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: SimpleAuroraCluster
+      Engine: aurora-mysql
+      EngineVersion: 8.0.mysql_aurora.3.08.0
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterPassword
+      DatabaseName: aurora_demo
+      DBSubnetGroupName: !Ref AuroraSubnetGroup
+      VpcSecurityGroupIds:
+        - !GetAtt DbSecGroup.GroupId
+      BackupRetentionPeriod: 1 #  in days
+      PreferredBackupWindow: "07:00-09:00"
+      PreferredMaintenanceWindow: "Mon:03:00-Mon:05:00"
+      StorageEncrypted: true
+      DeletionProtection: false
+
+  AuroraDbInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: SimpleAuroraDb
+      DBClusterIdentifier: !Ref AuroraCluster
+      Engine: aurora-mysql
+      DBInstanceClass: !Ref DbInstanceClass
+      PubliclyAccessible: true
+
+Outputs:
+  ClusterEndpoint:
+    Description: Endpoint of the Aurora cluster
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+  DbEndpoint:
+    Description: The writer endpoint of the Aurora instance
+    Value: !GetAtt AuroraDbInstance.Endpoint.Address
+  ReaderEndpoint: # The read endpoint seems to allow writing
+    Description: The endpoint to the read replicas of the Aurora cluster
+    Value: !GetAtt AuroraCluster.ReadEndpoint.Address

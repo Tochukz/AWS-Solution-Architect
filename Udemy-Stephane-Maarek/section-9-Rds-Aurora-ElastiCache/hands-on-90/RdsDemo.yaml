@@ -52,7 +52,7 @@ Resources:
       DBName: rds_demo
       MultiAZ: false
       AvailabilityZone: !Sub ${AWS::Region}a
-      DeletionProtection: true
+      DeletionProtection: false
 
   ReadReplica1:
     Type: AWS::RDS::DBInstance
