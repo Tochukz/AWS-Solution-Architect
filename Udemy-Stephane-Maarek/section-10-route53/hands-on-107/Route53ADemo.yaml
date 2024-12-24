@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configures creates a A-type record in an existing Route53 hosted zone.
+
+Parameters:
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: AWS AMI ID
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  InstanceType:
+    Type: String
+    Description: AWS instance type
+    AllowedPattern: t[2-3].(micro)
+    Default: t2.micro
+  HostedZoneId:
+    Type: String
+    Description: The ID of an existing hosted zone
+    Default: "Z00226231TM9RP3FCC7TD" # for my goodguys.click domain
+  DomainName:
+    Type: String
+    Description: The domain name
+    Default: nginx.goodguys.click
+
+Resources:
+  Ec2SecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: HibernateSecGroup
+      GroupDescription: Security group for SSH access only
+      SecurityGroupIngress:
+        - Description: Allows SSH access to all
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+
+  SimpleEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref Ec2SecGroup
+      Tags:
+        - Key: Name
+          Value: CustomAmiUse
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # Update the instance
+          sudo yum update -y
+
+          ## Install Nginx
+          sudo amazon-linux-extras install nginx1 -y
+          sudo service nginx start
+
+          # Enable Nginx to start at Boot time
+          sudo chkconfig nginx o
+
+  SimpleARecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      TTL: 300
+      ResourceRecords:
+        - !GetAtt SimpleEc2.PublicIp
+
+Outputs:
+  PublicId:
+    Description: EC2 PublicIp
+    Value: !GetAtt SimpleEc2.PublicIp
