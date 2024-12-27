@@ -7,12 +7,12 @@ Parameters:
     ConstraintDescription: Must be the name of an existing EC2 KeyPair
     Default: DevSimpleKey
   ImageId:
+    Type: AWS::EC2::Image::Id
     Description: EC2 AMI
-    Type: String
     Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
   InstanceType:
-    Description: EC2 instance type
     Type: String
+    Description: EC2 instance type    
     AllowedPattern: t[2-3](.micro)
     Default: t2.micro
 Resources:
