@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration configures a weight route policy
+
+Parameters:
+  EuWest1Ec2Ip:
+    Type: String
+    Description: Public IP for EC2 instance in eu-west-1
+    Default: "108.129.97.191"
+  EuWest2Ec2Ip:
+    Type: String
+    Description: Public IP for EC2 instance in eu-west-1
+    Default: "13.40.84.83"
+  EuWest3Ec2Ip:
+    Type: String
+    Description: Public IP for EC2 instance in eu-west-3
+    Default: "13.39.24.82"
+
+Resources:
+  EuWest1Check:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref EuWest1Ec2Ip
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: EuWest1Health
+
+  EuWest2Check:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref EuWest2Ec2Ip
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: EuWest2Health
+
+  EuWest3Check:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref EuWest3Ec2Ip
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: EuWest3Health
+
+  CalculatedHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: CALCULATED
+        HealthThreshold: 2 # Number of health checks that must be healthy
+        ChildHealthChecks:
+          - !Ref EuWest1Check
+          - !Ref EuWest2Check
+          - !Ref EuWest3Check
+      HealthCheckTags:
+        - Key: Name
+          Value: CalculatedChecks

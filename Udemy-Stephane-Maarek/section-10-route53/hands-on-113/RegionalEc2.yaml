@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration deploys an EC2 instance to a given region.
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Default: t2.micro
+
+Mappings:
+  Ec2MachineImages: # All Amazon Linux 2 AMI (HVM) - 64-bit (x86)
+    eu-west-1:
+      ImageId: "ami-04f87c366aa353bc5"
+    eu-west-2:
+      ImageId: "ami-0fa3603ea544e5bf9"
+    eu-west-3:
+      ImageId: "ami-0f139a4a2cdfff8d1"
+
+Resources:
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group HTTP
+      SecurityGroupIngress:
+        - Description: Allow HTTP traffic only
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap
+        - Ec2MachineImages
+        - !Ref "AWS::Region"
+        - ImageId
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !GetAtt WebSecGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: !Ref "AWS::StackName"
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo yum update -y
+
+          ## Install Nginx
+          sudo amazon-linux-extras install nginx1 -y
+          sudo service nginx start
+
+          # Enable Nginx to Start on Boot
+          sudo systemctl enable nginx
+
+          echo "<h3>Hello world from $(hostname -f) </h3>" > /usr/share/nginx/html/index.html
+
+Outputs:
+  PublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt SimpleInstance.PublicIp
