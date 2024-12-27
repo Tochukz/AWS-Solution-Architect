@@ -1,4 +1,4 @@
-# Lesson 90: Aurora - Hands on
+# Lesson 93: Aurora - Hands on
 
 ### Description
 
@@ -59,7 +59,7 @@ $ aws cloudformation delete-stack --stack-name AuroraDemo
 To list all of the available engine versions for Aurora MySQL
 
 ```bash
-$ aws rds describe-db-engine-versions --engine aurora-mysql --query "DBEngineVersions[].EngineVersion
+$ aws rds describe-db-engine-versions --engine aurora-mysql --query "DBEngineVersions[].EngineVersion"
 ```
 
 To list all the engine version for MySQL, PostgreSQL or Aurora PostgreSQL just replace the `--engine` value by `mysql`, `postgres` or `aurora-postgresql` respectively.
