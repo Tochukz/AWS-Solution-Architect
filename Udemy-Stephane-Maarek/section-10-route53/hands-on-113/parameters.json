@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "EuWest1Ec2Ip",
+    "ParameterValue": "108.129.97.191"
+  },
+  {
+    "ParameterKey": "EuWest2Ec2Ip",
+    "ParameterValue": "13.40.84.83"
+  },
+  {
+    "ParameterKey": "EuWest3Ec2Ip",
+    "ParameterValue": "13.39.24.82"
+  }
+]

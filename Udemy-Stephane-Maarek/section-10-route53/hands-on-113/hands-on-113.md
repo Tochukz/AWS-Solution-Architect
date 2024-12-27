@@ -43,12 +43,12 @@ $ aws cloudformation describe-stacks --stack-name EuWest2Ec2 --query "Stacks[0].
 $ aws cloudformation describe-stacks --stack-name EuWest3Ec2 --query "Stacks[0].Outputs" --region eu-west-3 --no-cli-pager
 ```
 
-5. Copy the values of the public IP from 3 to the default values for `EuWest1Ec2Ip`, `EuWest2Ec2Ip` and `EuWest3Ec2Ip` parameters in `HealthCheck.yaml`
+5. Copy the values of the public IP for the `EuWest1Ec2Ip`, `EuWest2Ec2Ip` and `EuWest3Ec2Ip` parameters in `parameters.json`
 
 Now deploy `HealthCheck`
 
 ```bash
-$ aws cloudformation deploy --template-file HealthCheck.yaml  --stack-name HealthCheck --region eu-west-2
+$ aws cloudformation deploy --template-file HealthCheck.yaml  --stack-name HealthCheck --region eu-west-2 --parameter-overrides file://parameters.json
 ```
 
 **Testing**

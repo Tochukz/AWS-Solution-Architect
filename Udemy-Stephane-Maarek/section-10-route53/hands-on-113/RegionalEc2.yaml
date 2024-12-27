@@ -64,3 +64,6 @@ Outputs:
   PublicIp:
     Description: Public IP of the EC2 instance
     Value: !GetAtt SimpleInstance.PublicIp
+  InstanceId:
+    Description: InstanceId of the EC2 instance
+    Value: !Ref SimpleInstance
