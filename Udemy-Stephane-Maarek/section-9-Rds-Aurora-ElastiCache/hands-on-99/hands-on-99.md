@@ -59,7 +59,7 @@ You create an SSH tunnel by using the baston host to forward traffic from your l
 $ ssh -i dev-simple-key.pem -L 6379:<elasticache-endpoint>:6379 ec2-user@xx.xxx.xx
 ```
 
-Once the SSH tunnel is established, use the `redis-cli` or any Redis client of your choice to connect to the cluater.
+Once the SSH tunnel is established, use the `redis-cli` or any Redis client of your choice to connect to the cluster.
 
 ```bash
 $ redis-cli -h 127.0.0.1 -p 6379

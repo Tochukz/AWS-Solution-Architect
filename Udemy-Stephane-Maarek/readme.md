@@ -12,6 +12,7 @@ Section 6: EC2 - Solution Architect Associate Level
 Section 7: EC2 Instance Storage   
 Section 8: High Availability and Scalability: ELB & ASG   
 Section 9: AWS Fundamentals: RDS + Aurora + ElastiCache
+Section 10: Route 53
 
 
 __Connection Draining__  
@@ -40,6 +41,17 @@ __Good metrics to scale on__
 2. __RequestCountPerTarget__: to make sure the number of requests per EC2 instance is stable
 3. __Average Network In / Out__ (if your application is network bound)
 4.  __Any custom metric__(that you push using CloudWatch)
+
+
+__Routing Policies__  
+Route 53 supports the following Routing Policies
+* Simple
+* Weighted
+* Failover
+* Latency based
+* Geolocation
+* Multi-Value Answer
+* Geoproximity
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-pn9/)  
