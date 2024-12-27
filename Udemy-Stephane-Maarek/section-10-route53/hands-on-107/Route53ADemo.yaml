@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This configures creates a A-type record in an existing Route53 hosted zone.
+Description: This configures an A-type record in an existing Route53 hosted zone.
 
 Parameters:
   ImageId:
@@ -71,3 +71,6 @@ Outputs:
   PublicId:
     Description: EC2 PublicIp
     Value: !GetAtt SimpleEc2.PublicIp
+  DomainURL:
+    Description: Domain URL
+    Value: !Sub "http://${DomainName}"

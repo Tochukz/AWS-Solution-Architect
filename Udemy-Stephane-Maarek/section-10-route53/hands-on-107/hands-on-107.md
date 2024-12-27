@@ -23,7 +23,7 @@ $ aws cloudformation deploy --stack-name Route53ADemo --template-file Route53ADe
 ```
 
 **Testing**
-After the successful deployment of the stack, the Nginx Server in the EC2 instance should be accessible not only through the public IP but also through the _DomainName_ value used for the _DomainName_ parameter. i.e The site can be access at http://nginx.goodguys.click .
+After the successful deployment of the stack, the Nginx Server in the EC2 instance should be accessible not only through the public IP but also through the DomainURL stack output value. i.e The site can be access at http://nginx.goodguys.click .
 
 **Debug Errors**
 In the case of error during deployment, checkout the stack events leading to the failure
