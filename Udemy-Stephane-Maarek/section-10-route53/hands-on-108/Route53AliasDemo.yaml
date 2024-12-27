@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configures a Alias record in an existing Route53 hosted zone.
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: The ID of an existing hosted zone
+    Default: Z00226231TM9RP3FCC7TD # Host zone id for my goodguys.click domain
+  DomainName:
+    Type: String
+    Description: The domain name
+    Default: website.goodguys.click
+
+Mappings:
+  S3WebsiteHostedZoneIds:
+    eu-west-1:
+      HostedZoneId: Z1BKCTXD74EZPE
+    eu-west-2:
+      HostedZoneId: Z3GKZC51ZF0DB4
+    eu-west-3:
+      HostedZoneId: Z3R1K369G5AVDG
+    # For more S3 hosted zones details visit https://docs.aws.amazon.com/general/latest/gr/s3.html#s3_website_region_endpoints
+
+Resources:
+  S3WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # !Important: The website domain name must be the same as the bucket name for this alias to work properly.
+      BucketName: !Ref DomainName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+    DeletionPolicy: Delete # Delete or Retain
+
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3WebsiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "PublicReadGetObject"
+            Effect: "Allow"
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "${S3WebsiteBucket.Arn}/*"
+
+  S3AliasRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !Sub "s3-website.${AWS::Region}.amazonaws.com"
+        # DNSName: s3-website.eu-west-2.amazonaws.com
+        # HostedZoneId: Z3GKZC51ZF0DB4
+        HostedZoneId: !FindInMap
+          - S3WebsiteHostedZoneIds
+          - !Ref "AWS::Region"
+          - HostedZoneId
+        # Z3GKZC51ZF0DB4 #
+
+Outputs:
+  WebsiteURL:
+    Description: The URL of the website hosted on S3
+    Value: !GetAtt S3WebsiteBucket.WebsiteURL
+  RegionalDomainName:
+    Description: Remove this
+    Value: !GetAtt S3WebsiteBucket.RegionalDomainName
+  DomainURL:
+    Description: Domain URL
+    Value: !Sub "http://${DomainName}"
