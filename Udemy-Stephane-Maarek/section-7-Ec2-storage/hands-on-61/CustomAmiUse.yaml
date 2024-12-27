@@ -4,7 +4,7 @@ Description: This template configures an EC2 instance using a custom AMI
 
 Parameters:
   ImageId:
-    Type: String
+    Type: AWS::EC2::Image::Id
     Description: AWS AMI ID
     Default: ami-0f72a2351afe32d02 # My Custom AMI
   InstanceType:
