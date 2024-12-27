@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This child template configures an EC2 instance on a specified subnet.
+
+Parameters:
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group referenece
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Default: t2.micro
+
+Mappings:
+  Ec2MachineImages: # All Amazon Linux 2 AMI (HVM) - 64-bit (x86)
+    eu-west-1:
+      ImageId: "ami-04f87c366aa353bc5"
+    eu-west-2:
+      ImageId: "ami-0fa3603ea544e5bf9"
+    eu-west-3:
+      ImageId: "ami-0f139a4a2cdfff8d1"
+
+Resources:
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap
+        - Ec2MachineImages
+        - !Ref "AWS::Region"
+        - ImageId
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !Ref WebSecGroup
+      Tags:
+        - Key: Name
+          Value: !Ref "AWS::StackName"
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo yum update -y
+
+          ## Install Nginx
+          sudo amazon-linux-extras install nginx1 -y
+          sudo service nginx start
+
+          # Enable Nginx to Start on Boot
+          sudo systemctl enable nginx
+
+          echo "<h3>Hello world from $(hostname -f) </h3>" > /usr/share/nginx/html/index.html
+
+Outputs:
+  PublicIp:
+    Description: EC2 public Ip
+    Value: !GetAtt SimpleInstance.PublicIp

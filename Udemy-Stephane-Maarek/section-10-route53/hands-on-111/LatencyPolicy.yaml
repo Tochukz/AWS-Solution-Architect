@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration configures a weight route policy
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: The ID of an existing hosted zone
+    Default: Z00226231TM9RP3FCC7TD # Host zone id for my goodguys.click domain
+  DomainName:
+    Type: String
+    Description: The domain name
+    Default: latency.goodguys.click
+  EuWest1Ec2Ip:
+    Type: String
+    Description: Public IP for EC2 instance in eu-west-1
+    Default: "108.129.160.230"
+  EuWest3Ec2Ip:
+    Type: String
+    Description: Public IP for EC2 instance in eu-west-3
+    Default: "13.38.117.173"
+
+Resources:
+  WeightedRecord1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      SetIdentifier: ForEc2Instance1
+      TTL: 60
+      ResourceRecords:
+        - !Ref EuWest1Ec2Ip
+      Region: eu-west-1
+
+  WeightedRecord2:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      SetIdentifier: ForEc2Instance2
+      TTL: 60
+      ResourceRecords:
+        - !Ref EuWest3Ec2Ip
+      Region: eu-west-3

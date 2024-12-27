@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration deploys an EC2 instance to a given region.
+
+Parameters:
+  TemplateBucket:
+    Type: String
+    Description: S3 bucket where child templates are stored
+    Default: chucks-workspace-storage
+
+Resources:
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group HTTP
+      SecurityGroupIngress:
+        - Description: Allow HTTP traffic originating from AlbSecGroup only
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  Ec2Instance:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.eu-west-2.amazonaws.com/templates/LatencyChildEc2.yaml
+      Parameters:
+        WebSecGroup: !GetAtt WebSecGroup.GroupId
+
+Outputs:
+  PublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.Outputs.PublicIp
