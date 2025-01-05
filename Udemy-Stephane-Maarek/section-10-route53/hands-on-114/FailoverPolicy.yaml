@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration provisions a Route53 Failover routing policy.
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: Hosted zone ID
+    Default: "Z00226231TM9RP3FCC7TD" # for my goodguys.click domain
+  DomainName:
+    Type: String
+    Description: Hostname for the subdomain
+    Default: failover.goodguys.click
+  PrimaryIp:
+    Type: String
+    Description: IP address for EC2 instance in eu-west-1
+    Default: ""
+  SecondaryIp:
+    Type: String
+    Description: IP address for EC2 instance in eu-west-2
+    Default: ""
+
+Resources:
+  PrimaryHealth:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref PrimaryIp
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: PrimaryHealth
+
+  MainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      Failover: PRIMARY
+      HealthCheckId: !Ref PrimaryHealth
+      TTL: 60
+      SetIdentifier: PrimaryRecord
+      ResourceRecords:
+        - !Ref PrimaryIp
+
+  FailOverRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      Failover: SECONDARY
+      TTL: 60
+      SetIdentifier: SecondaryRecord
+      ResourceRecords:
+        - !Ref SecondaryIp
+# Outputs:
