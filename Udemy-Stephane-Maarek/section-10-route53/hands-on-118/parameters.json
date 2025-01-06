@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "Instance1Ip",
+    "ParameterValue": "54.247.133.112"
+  },
+  {
+    "ParameterKey": "Instance2Ip",
+    "ParameterValue": "18.175.254.241"
+  },
+  {
+    "ParameterKey": "Instance3Ip",
+    "ParameterValue": "35.180.192.62"
+  }
+]

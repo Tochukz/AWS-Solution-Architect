@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration provisions a Multi-Value routing policy
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: Hosted zone ID
+    Default: "Z00226231TM9RP3FCC7TD" # for my goodguys.click domain
+  DomainName:
+    Type: String
+    Description: Hostname for the subdomain
+    Default: multivalue.goodguys.click
+  Instance1Ip:
+    Type: String
+    Description: IP address for EC2 instance in eu-west-1
+    Default: ""
+  Instance2Ip:
+    Type: String
+    Description: IP address for EC2 instance in eu-west-2
+    Default: ""
+  Instance3Ip:
+    Type: String
+    Description: IP address for EC2 instance in eu-west-3
+    Default: ""
+
+Resources:
+  HealthCheck1:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref Instance1Ip
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: Instance1HealthCheck
+
+  HealthCheck2:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref Instance2Ip
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: Instance2HealthCheck
+
+  HealthCheck3:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        IPAddress: !Ref Instance3Ip
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: Instance3HealthCheck
+
+  FirstMultiRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      TTL: 60
+      SetIdentifier: FirstMultiRecord
+      MultiValueAnswer: true
+      HealthCheckId: !Ref HealthCheck1
+      ResourceRecords:
+        - !Ref Instance1Ip
+
+  SecondMultiRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      TTL: 60
+      SetIdentifier: SecondMultiRecrod
+      MultiValueAnswer: true
+      HealthCheckId: !Ref HealthCheck2
+      ResourceRecords:
+        - !Ref Instance2Ip
+
+  ThirdMultiRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      TTL: 60
+      SetIdentifier: ThirdMultiRecord
+      MultiValueAnswer: true
+      HealthCheckId: !Ref HealthCheck3
+      ResourceRecords:
+        - !Ref Instance3Ip
