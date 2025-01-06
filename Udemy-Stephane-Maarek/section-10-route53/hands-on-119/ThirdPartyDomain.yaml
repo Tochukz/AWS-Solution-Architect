@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a Route53 hosted zone using a third party domain name i.e domain name registered outside of Amazon
+
+Parameters:
+  HostedZoneDomain:
+    Type: String
+    Description: A third party domain name
+    Default: doctorchuks.com
+  MainSitePublicIp:
+    Type: String
+    Description: The public IP address of the EC2 instance representing the main website
+    Default: ""
+  SubDomainName:
+    Type: String
+    Description: The subdomain for a S3 website. This must also be the bucket name for the S3
+    Default: help.doctorchuks.com
+  AnotherSubDomain:
+    Type: String
+    Description: Another subdomain to access the S3 website
+    Default: ask.doctorchuks.com
+  S3WebsiteUrl:
+    Type: String
+    Description: S3 Website URL to use for CNAME DNS record
+    Default: ""
+
+Mappings:
+  S3WebsiteHostedZoneIds:
+    eu-west-1:
+      HostedZoneId: Z1BKCTXD74EZPE
+    eu-west-2:
+      HostedZoneId: Z3GKZC51ZF0DB4
+    eu-west-3:
+      HostedZoneId: Z3R1K369G5AVDG
+    # For more S3 hosted zones details visit https://docs.aws.amazon.com/general/latest/gr/s3.html#s3_website_region_endpoints
+
+Resources:
+  ThirdPartyHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref HostedZoneDomain
+
+  # SubDomainHostedZone:
+  #   Type: AWS::Route53::HostedZone
+  #   Properties:
+  #     Name: !Ref SubDomainName
+
+  RootRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref HostedZoneDomain
+      Type: A
+      HostedZoneId: !Ref ThirdPartyHostedZone
+      TTL: 60
+      ResourceRecords:
+        - !Ref MainSitePublicIp
+
+  SubDomainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref SubDomainName
+      Type: CNAME
+      HostedZoneId: !Ref ThirdPartyHostedZone
+      TTL: 60
+      ResourceRecords:
+        - !Ref S3WebsiteUrl
+
+Outputs:
+  HostedZoneId:
+    Description: ID of the hosted zone
+    Value: !Ref ThirdPartyHostedZone
+  NameServers:
+    Description: Route53 Name Servers associated with the hosted zone.
+    Value:
+      Fn::Join:
+        - ","
+        - !GetAtt ThirdPartyHostedZone.NameServers
+    # You must updated your Thirdparty DNS Name servers with these Name Servers

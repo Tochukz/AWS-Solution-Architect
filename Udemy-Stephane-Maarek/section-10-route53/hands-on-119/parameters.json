@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "MainSitePublicIp",
+    "ParameterValue": "18.171.167.225"
+  },
+  {
+    "ParameterKey": "S3WebsiteUrl",
+    "ParameterValue": "help.doctorchuks.com.s3-website.eu-west-2.amazonaws.com"
+  }
+]

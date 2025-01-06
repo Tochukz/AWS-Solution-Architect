@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configures a S3 website
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: The domain name
+    Default: help.doctorchuks.com
+
+Resources:
+  S3WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # !Important: The website domain name must be the same as the bucket name for the alias to work properly.
+      BucketName: !Ref DomainName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+    DeletionPolicy: Delete # Delete or Retain
+
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3WebsiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "PublicReadGetObject"
+            Effect: "Allow"
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "${S3WebsiteBucket.Arn}/*"
+
+Outputs:
+  WebsiteURL:
+    Description: The URL of the website hosted on S3
+    Value: !GetAtt S3WebsiteBucket.WebsiteURL
