@@ -40,11 +40,6 @@ Resources:
     Properties:
       Name: !Ref HostedZoneDomain
 
-  # SubDomainHostedZone:
-  #   Type: AWS::Route53::HostedZone
-  #   Properties:
-  #     Name: !Ref SubDomainName
-
   RootRecord:
     Type: AWS::Route53::RecordSet
     Properties:
