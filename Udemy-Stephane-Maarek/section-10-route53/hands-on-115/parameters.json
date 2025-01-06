@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "DefaultIp",
+    "ParameterValue": "35.178.185.161"
+  },
+  {
+    "ParameterKey": "AfricaIp",
+    "ParameterValue": "13.247.105.72"
+  },
+  {
+    "ParameterKey": "AmericaIp",
+    "ParameterValue": "3.82.125.244"
+  }
+]
