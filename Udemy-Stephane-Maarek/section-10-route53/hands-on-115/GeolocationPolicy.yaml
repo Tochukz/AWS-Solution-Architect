@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This configuration provisions a Route53 Failover routing policy.
+Description: This configuration provisions a Route53 Geolocation routing policy.
 
 Parameters:
   HostedZoneId:
@@ -25,27 +25,12 @@ Parameters:
     Default: ""
 
 Resources:
-  # PrimaryHealth:
-  #   Type: AWS::Route53::HealthCheck
-  #   Properties:
-  #     HealthCheckConfig:
-  #       Type: HTTP
-  #       IPAddress: !Ref DefaultIp
-  #       Port: 80
-  #       ResourcePath: /
-  #       RequestInterval: 30
-  #       FailureThreshold: 3
-  #     HealthCheckTags:
-  #       - Key: Name
-  #         Value: PrimaryHealth
-
   DefaultRecord:
     Type: AWS::Route53::RecordSet
     Properties:
       Name: !Ref DomainName
       Type: A
       HostedZoneId: !Ref HostedZoneId
-      # HealthCheckId: !Ref PrimaryHealth
       TTL: 60
       SetIdentifier: DefaultRecord
       ResourceRecords:
