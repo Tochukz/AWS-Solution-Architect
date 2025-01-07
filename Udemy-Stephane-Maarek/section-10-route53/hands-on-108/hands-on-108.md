@@ -4,7 +4,7 @@
 
 This configuration creates a Route 53 Alias record.
 Alias records are unique to Route 53.  
-Alias can use used to map a hostname to the hostname of an AWS service as such
+Alias can be used to map a hostname to the hostname of an AWS service such as
 
 - Elastic Load Balancers
 - Amazon CloudFront
@@ -45,7 +45,7 @@ $ aws s3 sync site s3://website.goodguys.click
 ```
 
 **Testing**
-After the successful deployment of the stack, the S3 website shoulda be accessible not only through the S3 endpoit but also through the _DomainName_ value used for the _DomainName_ parameter. i.e The site can be access at http://website.goodguys.click .
+After the successful deployment of the stack, the S3 website shoulda be accessible not only through the S3 endpoint but also through the _DomainName_ value used for the _DomainName_ parameter. i.e The site can be access at http://website.goodguys.click .
 
 **Debug Errors**
 In the case of error during deployment, checkout the stack events leading to the failure

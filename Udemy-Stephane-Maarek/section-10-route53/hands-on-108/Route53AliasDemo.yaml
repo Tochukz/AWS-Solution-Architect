@@ -59,13 +59,10 @@ Resources:
       Type: A
       AliasTarget:
         DNSName: !Sub "s3-website.${AWS::Region}.amazonaws.com"
-        # DNSName: s3-website.eu-west-2.amazonaws.com
-        # HostedZoneId: Z3GKZC51ZF0DB4
         HostedZoneId: !FindInMap
           - S3WebsiteHostedZoneIds
           - !Ref "AWS::Region"
           - HostedZoneId
-        # Z3GKZC51ZF0DB4 #
 
 Outputs:
   WebsiteURL:
