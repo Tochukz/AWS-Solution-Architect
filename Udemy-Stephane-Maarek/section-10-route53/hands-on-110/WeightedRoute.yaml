@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: The configuration configures a weight route policy
+Description: The configuration configures a weighted routing policy
 
 Parameters:
   VpcId:

@@ -2,7 +2,7 @@
 
 ### Description
 
-This template configures an a weighted routes in Route53. Two A type records are configured for the same domain to two EC2 instances with weighting of 70% and 30%.
+This template configures a weighted routes in Route53. Two A type records are configured for the same domain to two EC2 instances with weighting of 70% and 30%.
 
 Note that you can also manage multiple records such as weighted routes using `AWS::Route53::RecordSetGroup` for better organization.
 
