@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: The configuration configures a weight route policy
+Description: The configuration provisions a 3 regular Healthchecks and 1 Calculated Healthcheck based on the 3. 
 
 Parameters:
   EuWest1Ec2Ip:

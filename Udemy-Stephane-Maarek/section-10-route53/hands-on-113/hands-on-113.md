@@ -15,7 +15,7 @@ $ cfn-lint RegionalEc2.yaml
 $ cfn-lint HealthCheck.yaml
 ```
 
-There are three stacks to deploy
+There are four stacks to deploy
 
 1. Deploy first EC2 instance to eu-west-1
 
@@ -52,15 +52,12 @@ $ aws cloudformation deploy --template-file HealthCheck.yaml  --stack-name Healt
 ```
 
 **Testing**
-Use the domain to access the route: http://latency.goodguys.click
 
-Use the `dig` utility to gain insight into the route
+1. Stop one of the EC2 instances and go to the Route53 console to watch the Health check status go from green to red.
+2. Stop another EC2 instance and watch another Health check status go from red to green.
+3. Since 2 of the 3 EC2 instances are now marked as unhealthy, the calculated health check should also be marked as unhealther since it's health threshold is set to 2.
 
-```bash
-$ dig latency.goodguys.click
-```
-
-**Debug Errors**
+**Debug Errors**  
 In the case of error during deployment, checkout the stack events
 
 ```
@@ -69,7 +66,7 @@ $ aws cloudformation describe-stack-events --stack-name HealthCheck
 
 ```
 
-**Cleanup**
+**Cleanup**  
 To delete the stacks
 
 ```bash

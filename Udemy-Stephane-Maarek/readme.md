@@ -53,6 +53,8 @@ Route 53 supports the following Routing Policies
 * __Multi-Value Answer__:
 * __Geoproximity__:  (using Route 53 Traffic Flow feature)
 
+When configuring `AWS::Route53::RecordSet` the properties expects one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig.
+
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-pn9/)  
 [AWS Global Infrastructure](https://aws.amazon.com/about-aws/global-infrastructure)  
