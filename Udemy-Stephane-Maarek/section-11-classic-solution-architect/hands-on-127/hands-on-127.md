@@ -55,6 +55,13 @@ $ aws cloudformation deploy --stack-name BeanStalkApp --template-file BeanStalkA
 ```
 
 **Testing**
+Get the Environment URL and Environment IP from the stack outputs
+
+```bash
+$ aws cloudformation describe-stacks --stack-name BeanStalkApp --query "Stacks[0].Outputs" --no-cli-pager
+```
+
+Use the Environment URL or Environment IP on a browser to test the application.
 
 **Debug Errors**
 When the _Environment_ resource, `AWS::ElasticBeanstalk::Environment`, is created, it in turn creates a CloudFormation stack of it's own as describe above in the description.
@@ -85,6 +92,6 @@ But first you must upload the updated application source bundle to S3 again.
 **Cleanup**
 To delete the stack
 
-```
+```bash
 $ aws cloudformation delete-stack --stack-name BeanStalkApp
 ```

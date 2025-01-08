@@ -71,36 +71,6 @@ Resources:
       Roles:
         - !Ref EC2InstanceRole
 
-  # ConfigTemplate:
-  #   Type: AWS::ElasticBeanstalk::ConfigurationTemplate
-  #   Properties:
-  #     ApplicationName: !Ref App
-  #     Description: App configuration template
-  #     SolutionStackName: !FindInMap
-  #       - SolutionStackNames
-  #       - NodeV22
-  #       - Value
-  #     OptionSettings:
-  #       - Namespace: aws:autoscaling:launchconfiguration
-  #         OptionName: IamInstanceProfile
-  #         Value: !Ref EC2InstanceProfile
-  #       - Namespace: aws:autoscaling:launchconfiguration
-  #         OptionName: InstanceType
-  #         Value: t2.micro
-  #       - Namespace: aws:autoscaling:launchconfiguration
-  #         OptionName: EC2KeyName
-  #         Value: !Ref KeyName
-  #       - Namespace: aws:elasticbeanstalk:environment
-  #         OptionName: EnvironmentType
-  #         Value: SingleInstance
-  #       - Namespace: aws:autoscaling:asg
-  #         OptionName: MinSize
-  #         Value: 1
-  #       - Namespace: aws:autoscaling:asg
-  #         OptionName: MaxSize
-  #         Value: 2
-  #       # See more configuration options here https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options.html
-
   AppEnvironment:
     Type: AWS::ElasticBeanstalk::Environment
     Properties:
@@ -112,7 +82,6 @@ Resources:
         - NodeV22
         - Value
       CNAMEPrefix: !Ref CNamePrefix
-      # TemplateName: !Ref ConfigTemplate
       VersionLabel: !Ref AppVersion
       Tier:
         Name: WebServer # or Worker for worker tier
