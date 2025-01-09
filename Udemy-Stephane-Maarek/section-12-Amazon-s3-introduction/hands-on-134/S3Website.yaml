@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: The configuration makes an S3 bucket with a Public Bucket Policy
+Description: The configuration enables static website hosting for an S3 bucket
 
 Parameters:
   BucketName:
