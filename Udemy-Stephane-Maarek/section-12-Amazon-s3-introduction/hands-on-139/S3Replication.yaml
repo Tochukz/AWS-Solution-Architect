@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration enables versioning for an S3 bucket
+
+Parameters:
+  SourceBucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: source-bucket-01-25
+  DestinationBucketArn:
+    Type: String
+    Description: The ARN of the destination bucket
+
+Resources:
+  ReplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - s3.amazonaws.com
+                - batchoperations.s3.amazonaws.com # For Batch Replication job. May be omitted if no Batch Replication is required
+      Policies:
+        - PolicyName: S3ReplicationPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetReplicationConfiguration
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${SourceBucketName}
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  # - s3:GetObjectVersion
+                  - s3:GetObjectVersionAcl
+                  - s3:GetObjectVersionTagging
+                Resource:
+                  - !Sub arn:aws:s3:::${SourceBucketName}/*
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateDelete
+                  - s3:ReplicateTags
+                Resource:
+                  - !Sub "${DestinationBucketArn}/*"
+  # Learn more about setting up policy including case for different AWS account between source and destination bucket
+  # https://docs.aws.amazon.com/AmazonS3/latest/userguide/setting-repl-config-perm-overview.html
+
+  SourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref SourceBucketName
+      VersioningConfiguration:
+        Status: Enabled # Versioning must be turned own for replication can be configured
+      ReplicationConfiguration:
+        Role: !GetAtt ReplicationRole.Arn
+        Rules:
+          - Id: CrossRegionReplication
+            Status: Enabled
+            Prefix: "" # Empty string for all object. May be ommited
+            Destination:
+              Bucket: !Ref DestinationBucketArn
+            # DeleteMarkerReplication: # Delete marker replication is enabled by default.
+            #   Status: Enabled        # Only use this property to turn it off when needed by setting it's Status to Disabled
+    DeletionPolicy: Delete # or Retain

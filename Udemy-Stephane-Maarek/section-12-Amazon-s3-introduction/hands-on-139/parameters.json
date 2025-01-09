@@ -1,0 +1,6 @@
+[
+  {
+    "ParameterKey": "DestinationBucketArn",
+    "ParameterValue": "arn:aws:s3:::destination-bucket-01-25"
+  }
+]

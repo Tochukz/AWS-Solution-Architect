@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration enables versioning for an S3 bucket
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: destination-bucket-01-25
+
+Resources:
+  DestinationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled # Versioning must be turned own for replication can be configured
+    DeletionPolicy: Delete # or Retain
+
+Outputs:
+  DestinationBucketArn:
+    Description: ARN of the destination bucket
+    Value: !GetAtt DestinationBucket.Arn
