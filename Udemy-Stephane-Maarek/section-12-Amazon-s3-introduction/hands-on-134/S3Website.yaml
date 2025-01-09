@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration makes an S3 bucket with a Public Bucket Policy
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: website-bucket-01-25
+
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false # I recommend turning this back on after PUTing the desired Bucket policy
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+    DeletionPolicy: Delete # or Retain
+
+  PublicBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForAll
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Join ["", [!GetAtt WebsiteBucket.Arn, "/*"]]
+
+Outputs:
+  WebsiteUrl:
+    Description: The URL of the Website
+    Value: !GetAtt WebsiteBucket.WebsiteURL
