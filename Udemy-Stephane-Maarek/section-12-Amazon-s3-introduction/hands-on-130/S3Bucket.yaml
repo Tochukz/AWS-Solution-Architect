@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration creates an S3 bucket for Server Side Encryption enabled
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: simple-demo-bucket-01-25
+
+Resources:
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+    DeletionPolicy: Delete # or Retain
