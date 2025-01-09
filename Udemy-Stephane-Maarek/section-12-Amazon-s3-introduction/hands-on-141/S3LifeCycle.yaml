@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration setup a Life Cycle Configuration for an S3 bucket
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: lifecycle-bucket-01-25
+
+Resources:
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      LifecycleConfiguration:
+        Rules:
+          - Id: StandardIaToDeepArchive
+            Status: Enabled
+            ExpirationInDays: 365 # Objects will be deleted automatically after 365 days
+            Prefix: "reports" # Applies to only object having this prefix
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+              - StorageClass: INTELLIGENT_TIERING
+                TransitionInDays: 60
+              - StorageClass: GLACIER_IR
+                TransitionInDays: 90
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 180
+    DeletionPolicy: Delete # or Retain
+
