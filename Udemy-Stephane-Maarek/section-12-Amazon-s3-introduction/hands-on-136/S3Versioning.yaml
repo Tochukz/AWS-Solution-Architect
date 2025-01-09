@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration enables versioning for an S3 bucket
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: versioned-bucket-01-25
+
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled # To turn is off, change value to Suspended
+    DeletionPolicy: Delete # or Retain
