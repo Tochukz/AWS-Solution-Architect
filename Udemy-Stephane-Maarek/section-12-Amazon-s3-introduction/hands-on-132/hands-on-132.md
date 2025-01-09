@@ -1,4 +1,4 @@
-# Lesson 130: S3 Hands On
+# Lesson 132: S3 Security: Bucket Policy Hands On
 
 ### Description
 
