@@ -20,7 +20,7 @@ will not be replicated to bucket 3.
 Lint all templates
 
 ```bash
-cfn-lint DestinationBucket.yaml
+$ cfn-lint DestinationBucket.yaml
 $ cfn-lint S3Replication.yaml
 ```
 
