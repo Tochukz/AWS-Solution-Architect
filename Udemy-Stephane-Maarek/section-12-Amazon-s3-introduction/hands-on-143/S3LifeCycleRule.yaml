@@ -1,24 +1,28 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: The configuration setup a Life Cycle Configuration for an S3 bucket
+Description: The configuration setup a Life Cycle Configuration for an S3 bucket which has versioning enabled
 
 Parameters:
   BucketName:
     Type: String
     Description: A globally unique name for your S3 bucket
-    Default: lifecycle-bucket-01-25
+    Default: lifecycle-rule-bucket-01-25
 
 Resources:
   SimpleBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled
       LifecycleConfiguration:
         Rules:
           - Id: StandardIaToDeepArchive
             Status: Enabled
-            ExpirationInDays: 365 # Objects will be deleted automatically after 365 days
             Prefix: "reports" # Applies to only object having this prefix
+            ExpirationInDays: 365 # Objects will be deleted automatically after 365 days
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 180 # Non-current object version will be deleted after 180 days
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 2
             Transitions:
@@ -30,5 +34,10 @@ Resources:
                 TransitionInDays: 90
               - StorageClass: DEEP_ARCHIVE
                 TransitionInDays: 180
+            NoncurrentVersionTransitions:
+              - StorageClass: ONEZONE_IA
+                TransitionInDays: 30
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 60
     DeletionPolicy: Delete # or Retain
 
