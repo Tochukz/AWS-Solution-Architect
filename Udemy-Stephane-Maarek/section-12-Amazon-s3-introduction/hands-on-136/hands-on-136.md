@@ -1,4 +1,4 @@
-# Lesson 136: S3 Versioning - Hands ON
+# Lesson 136: S3 Versioning - Hands On
 
 ### Description
 
