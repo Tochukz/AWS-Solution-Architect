@@ -39,7 +39,13 @@ Also remember to replace _mfa-code_ by the current code on you Authenticator dev
 4. After MFA delete is enabled, you can check it by looking at the Bucket's Properties in the S3 console.
    Under the _Bucket Versioning_ section MFA delete should be marked as _Enabled_.
 
-5. To disable the MFA delete on the bucket
+5. To delete an object version using the MFA
+
+```bash
+$ aws s3api delete-object --bucket bucket-name --key filename.txt --version-id xxxxxxx --mfa "arn-of-mfa-device mfa-code"
+```
+
+6. To disable the MFA delete on the bucket
 
 ```bash
 $ aws s3api put-bucket-versioning --bucket mfa-demo-stephane --versioning-configuration Status=Enabled,MFADelete=Disabled --mfa "arn-of-mfa-device mfa-code" --profile root-mfa-delete-demo
