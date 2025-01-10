@@ -55,7 +55,7 @@ $ aws s3api get-object --bucket versioned-bucket-01-25 --key introduction.txt --
 ```
 
 Deleting the object will create a delete marker and make the object no longer available
-to normaly object listing using `list-objects` command.
+to normally object listing using `list-objects` command.
 
 ```bash
 $ aws s3 rm s3://versioned-bucket-01-25/introduction.txt
@@ -80,7 +80,7 @@ $ aws cloudformation describe-stack-events --stack-name S3Versioning
 ```
 
 **Cleanup**  
-Delete all the versions of the object and any available delete merkers.
+Delete all the versions of the object and any available delete markers.
 
 To delete the stacks
 
