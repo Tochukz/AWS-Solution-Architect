@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration creates an 2 S3 bucket, one with SSE-S3 (default) encryption type and another with SSE-KMS encryption type
+
+Parameters:
+  BucketName1:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: ss3-s3-enc-bucket-01-25
+  BucketName2:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: ss3-kms-enc-bucket-01-25
+
+Resources:
+  # By default, any bucket that does not specify an encryption type will have SSE-S3 as it's default encryption type
+  SseS3EncTypeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName1
+    DeletionPolicy: Delete # or Retain
+
+  # This bucket specified a SSE-KMS encryption type to be it's default encryption type
+  SseKmsEncTypeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName2
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true # Using an S3 Bucket key saves cost as it reduces API calls to KMS API
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+    DeletionPolicy: Delete # or Retain
