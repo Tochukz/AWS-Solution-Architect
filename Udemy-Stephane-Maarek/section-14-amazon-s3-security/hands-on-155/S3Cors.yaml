@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration creates two S3 bucket, one without CORS enable and the second with cors enables
+
+Parameters:
+  BucketName1:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: cors-disabled-bucket-01-25
+  BucketName2:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: cors-enabled-bucket-01-25
+
+Resources:
+  CorsDisabledBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName1
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+    DeletionPolicy: Delete
+
+  CorsEnabledBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName2
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false #
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - Id: AllowLocalhost3000
+            AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+            AllowedOrigins:
+              - http://localhost:3000
+            ExposedHeaders:
+              - Date
+            MaxAge: 3600
+    DeletionPolicy: Delete
+
+  PublicBucketPolicy1:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BucketName1
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForAll
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Join ["", [!GetAtt CorsDisabledBucket.Arn, "/*"]]
+
+  PublicBucketPolicy2:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BucketName2
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForAll
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Join ["", [!GetAtt CorsEnabledBucket.Arn, "/*"]]
+
+Outputs:
+  Bucket1DomainName:
+    Description: Regional domain name of the CORS disabled bucket
+    Value: !GetAtt CorsDisabledBucket.RegionalDomainName
+  Bucket2DomainName:
+    Description: Regional domain name of CORS enabled bucket
+    Value: !GetAtt CorsEnabledBucket.RegionalDomainName

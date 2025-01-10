@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CORS Demo</title>
+    <link
+      rel="stylesheet"
+      href="https://bootswatch.com/4/darkly/bootstrap.min.css"
+    />
+    <script src="js/main.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h2>S3 CORS Demo</h2>
+          <p>
+            The page demonstrates the difference between and S3 bucket with CORS
+            disabled and another S3 with CORS enabled
+          </p>
+        </div>
+        <div class="col-sm-6">
+          <div>
+            <p>Load Users from Bucket 1 (CORS disabled)</p>
+            <button
+              class="btn-primary form-control"
+              onclick="getUsersFromBucket1()"
+            >
+              Load Users (CORS NOT allowed)
+            </button>
+          </div>
+          <div id="result1" class="text-center mt-4">Result Output</div>
+        </div>
+        <div class="col-sm-6">
+          <div>
+            <p>Load Users from Bucket 2 (CORS enabled)</p>
+            <button
+              class="btn-primary form-control"
+              onclick="getUsersFromBucket2()"
+            >
+              Load Users (CORS allowed)
+            </button>
+          </div>
+          <div id="result2" class="text-center mt-4">Result Output</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
