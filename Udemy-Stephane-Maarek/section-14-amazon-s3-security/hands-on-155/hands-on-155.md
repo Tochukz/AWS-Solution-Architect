@@ -1,4 +1,4 @@
-# Lesson 152: S3 Event Notifications - Hands On
+# Lesson 155: S3 CORS Hands On
 
 ### Description
 

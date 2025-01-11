@@ -2,18 +2,28 @@
 __By Stephane Maarek__  
 [AWS Certified Solution Architect](https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03)
 
-__Content__
-Section 1: Introduction   
-Section 2: Code & Slide Download   
-Section 3: Getting Started with AWS   
-Section 4: IAM & AWS CLI   
-Section 5: EC2 Fundamentals   
-Section 6: EC2 - Solution Architect Associate Level   
-Section 7: EC2 Instance Storage   
-Section 8: High Availability and Scalability: ELB & ASG   
-Section 9: AWS Fundamentals: RDS + Aurora + ElastiCache
-Section 10: Route 53
+__Content__  
 
+Section    | Title
+-----------|--------
+Section 1  | Introduction   
+Section 2  | Code & Slide Download   
+Section 3  | Getting Started with AWS   
+Section 4  | IAM & AWS CLI   
+Section 5  | EC2 Fundamentals   
+Section 6  | EC2 - Solution Architect Associate Level   
+Section 7  | EC2 Instance Storage   
+Section 8  | High Availability and Scalability: ELB & ASG   
+Section 9  | AWS Fundamentals: RDS + Aurora + ElastiCache
+Section 10 | Route 53
+Section 11 | Classic Solution Architecture Discussions
+Section 12 | Amazone S3 Introduction
+Section 13 | Advanced Amazon S3
+Section 14 | Amazon S3 Security
+Section 15 | CloudFront & AWS Global Accelerator
+Section 16 | AWS Storage Extras
+Section 17 | Decoupling applications: SQS, SNS, Kinesis, Active MQ
+Section 18 | Containers on AWS: ECS, Fargate, ECR & EKS
 
 __Connection Draining__  
 * Connection Draining - for CLB
@@ -54,6 +64,11 @@ Route 53 supports the following Routing Policies
 * __Geoproximity__:  (using Route 53 Traffic Flow feature)
 
 When configuring `AWS::Route53::RecordSet` the properties expects one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig.
+
+__S3 Byte-Range Fetches__  
+* Parallelize GETs by requesting specific ranges
+* Better resilience in case of failures
+* Can be used to speed up downloads
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-pn9/)  
