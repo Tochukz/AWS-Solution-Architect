@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration sets up Event Notification on S3 bucket which send notification to SQS queue only when images are uploaded with the profile prefix.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A globally unique name for your S3 bucket
+    Default: event-notif-bucket-01-25
+
+Resources:
+  S3EventsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: S3EventMessages
+    DeletionPolicy: Delete
+
+  S3EventsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref S3EventsQueue
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowS3EventToQueue
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt S3EventsQueue.Arn
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub arn:aws:s3:::${BucketName}
+
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Event: s3:ObjectCreated:*
+            Queue: !GetAtt S3EventsQueue.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: "profile/"
+                  - Name: suffix
+                    Value: ".png"
+          - Event: s3:ObjectCreated:*
+            Queue: !GetAtt S3EventsQueue.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: "profile/"
+                  - Name: suffix
+                    Value: ".jpeg"
+    DeletionPolicy: Delete # or Retain
+
+Outputs:
+  QueueUrl:
+    Description: URL of the SQS Queue
+    Value: !Ref S3EventsQueue
+  QueueArn:
+    Description: ARN of the SQS Queue
+    Value: !GetAtt S3EventsQueue.Arn
