@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates two S3 bucket, one bucket is the main object and the other a logging bucket to store logs from the first.
+
+Parameters:
+  AccessBucketName:
+    Type: String
+    Description: A globally unique name for the logs bucket
+    Default: access-logs-bucket-01-25
+  MainBucketName:
+    Type: String
+    Description: A globally unique name for the main bucket
+    Default: main-bucket-01-25
+
+Resources:
+  AccessLogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref AccessBucketName
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldLogs
+            Status: Enabled
+            ExpirationInDays: 365 # Adjust retention period as needed
+    DeletionPolicy: Delete
+
+  AccessLogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AccessLogBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowLoggingFromS3
+            Effect: Allow
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Action:
+              - s3:PutObject
+            Resource: !Sub "${AccessLogBucket.Arn}/*"
+
+  MainBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref MainBucketName
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogBucket
+        LogFilePrefix: logs/
+    DeletionPolicy: Delete
