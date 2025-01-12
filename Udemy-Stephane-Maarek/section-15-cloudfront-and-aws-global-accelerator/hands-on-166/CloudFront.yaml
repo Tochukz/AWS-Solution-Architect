@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures a CloudFront Distribution with an S3 bucket for it's  origin server
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: A name for the origin S3 bucket.
+    Default: origin-bucket-01-25
+
+Mappings:
+  Dev:
+    Constants:
+      OriginId: SimpleS3Bucket
+    Policies: # To see other manages cache policies, go to CloudFront console > Policies > Cache
+      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+Resources:
+  OriginBucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Delete
+    Properties:
+      BucketName: !Ref BucketName
+
+  OriginBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref OriginBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: OriginBucketCloudFrontPolicy
+        Statement:
+          - Sid: AllowCloudFrontReadAccess
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${OriginBucket.Arn}/*
+            Condition:
+              StringEquals:
+                aws:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebsiteDistribution.Id} # arn:aws:cloudfront::314146339647:distribution/E3B10WTJ94206A # !GetAtt WebsiteDistribution.Arn
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: SimpleAccessControl
+        Description: Access Control to S3 bucket for CloudFront distribution
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /error.html
+        DefaultCacheBehavior:
+          TargetOriginId: !FindInMap [Dev, Constants, OriginId]
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+        Origins:
+          - Id: !FindInMap [Dev, Constants, OriginId]
+            DomainName: !GetAtt OriginBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+
+Outputs:
+  DistributionId:
+    Description: CloudFront Distribution Id
+    Value: !Ref WebsiteDistribution
+  DomainName:
+    Description: Cloudfront Distribution domain name
+    Value: !GetAtt WebsiteDistribution.DomainName
