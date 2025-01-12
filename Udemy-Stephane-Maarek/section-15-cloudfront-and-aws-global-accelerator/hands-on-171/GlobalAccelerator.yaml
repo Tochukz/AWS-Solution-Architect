@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template configures a Global Accelerator
+
+Parameters:
+  TemplateBucket:
+    Type: String
+    Description: S3 bucket where child templates are stored
+    Default: chucks-workspace-storage
+
+Resources:
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group HTTP
+      SecurityGroupIngress:
+        - Description: Allow HTTP traffic only
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  Ec2Instance1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/GlobalChildEc2.yaml
+      Parameters:
+        AvailabilityZone: !Sub ${AWS::Region}a
+        WebSecGroupId: !GetAtt WebSecGroup.GroupId
+        InstanceName: InstanceA
+
+  Ec2Instance2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/GlobalChildEc2.yaml
+      Parameters:
+        AvailabilityZone: !Sub ${AWS::Region}b
+        WebSecGroupId: !GetAtt WebSecGroup.GroupId
+        InstanceName: InstanceB
+
+  GlobalAccelerator:
+    Type: AWS::GlobalAccelerator::Accelerator
+    Properties:
+      Name: SimpleAccelerator
+      Enabled: true # This must be turned to false before the accelerator can be deleted.
+      IpAddressType: IPV4
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}Accel
+
+  Listener:
+    Type: AWS::GlobalAccelerator::Listener
+    Properties:
+      AcceleratorArn: !Ref GlobalAccelerator
+      Protocol: TCP
+      PortRanges:
+        - FromPort: 80
+          ToPort: 80
+      ClientAffinity: NONE # or SOURCE_IP
+
+  EndpointGroup:
+    Type: AWS::GlobalAccelerator::EndpointGroup
+    Properties:
+      ListenerArn: !Ref Listener
+      EndpointGroupRegion: !Ref AWS::Region
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      ThresholdCount: 3
+      TrafficDialPercentage: 100
+      EndpointConfigurations:
+        - EndpointId: !GetAtt Ec2Instance1.Outputs.InstanceId
+          Weight: 100
+          ClientIPPreservationEnabled: true
+        - EndpointId: !GetAtt Ec2Instance2.Outputs.InstanceId
+          Weight: 100
+          ClientIPPreservationEnabled: true
+
+Outputs:
+  AcceleratorDNS:
+    Description: Global Accelerator DNS Name
+    Value: !GetAtt GlobalAccelerator.DnsName
+  PublicIp1:
+    Description: Public IP of EC2 Instance 1
+    Value: !GetAtt Ec2Instance1.Outputs.PublicIp
+  PublicIp2:
+    Description: Public IP of EC2 Instance 2
+    Value: !GetAtt Ec2Instance2.Outputs.PublicIp
