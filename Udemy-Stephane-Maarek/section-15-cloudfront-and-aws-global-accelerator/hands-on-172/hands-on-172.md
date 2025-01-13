@@ -1,4 +1,4 @@
-# Lesson 108: AWS Global Accelerator - Hand One
+# Lesson 172: AWS Global Accelerator - Hand One
 
 ### Description
 
