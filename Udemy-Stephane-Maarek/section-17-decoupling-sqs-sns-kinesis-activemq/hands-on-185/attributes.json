@@ -1,0 +1,10 @@
+{
+  "from": {
+    "DataType": "String",
+    "StringValue": "Amazon AWS"
+  },
+  "to": {
+    "DataType": "String",
+    "StringValue": "Chucks Nwachukwu"
+  }
+}

@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a Standard Queue
+
+Parameters:
+  QueueName:
+    Type: String
+    Description: Name of the Queue
+    Default: DemoStandardQueue
+
+Resources:
+  SimpleStandardQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref QueueName
+
+Outputs:
+  QueueUrl:
+    Description: The URL of the Queue
+    Value: !Ref SimpleStandardQueue
+  QueueArn:
+    Description: The ARN of the Queue
+    Value: !GetAtt SimpleStandardQueue.Arn
