@@ -1,5 +1,6 @@
 # AWS Certified Solutions Architect Official Study Guide  (2019)
-Assessment Test Page [27], Answers to Assessment Page [33]
+Assessment Test       - Page [27],   
+Answers to Assessment - Page [33]
 
 ## Chapter 1: Introduction to Cloud Computing and AWS  
 [Introduction](https://github.com/Tochukz/Amazon-Web-Services/tree/master/AWS-Certified-Solutions-Architech-2019/chp1)

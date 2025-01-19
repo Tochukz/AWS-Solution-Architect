@@ -1,4 +1,4 @@
-# AWS Certified Solutions Architech Official Study Guide  (2017)
+# AWS Certified Solutions Architect Official Study Guide  (2017)
 __By AWS__   
 #### Foreword  
 This study guide provides coverage of the basic AWS Cloud services and architectural recommendation and best practices. However, nothing replaces hand on experience building and deploying a variety of cloud applications and controls on AWS.   
