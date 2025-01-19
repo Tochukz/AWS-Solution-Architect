@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration provisions an EC2 instance with Windows AMI
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: An existing EC2 key name
+    Default: DevSimpleKey
+  InstanceType:
+    Type: String
+    Description: An instance type
+    Default: t3.micro
+    AllowedValues:
+      - t3.nano
+      - t3.micro
+
+Mappings:
+  Images: # Microsoft Windows Server 2025 Base 64-bit (x86))
+    eu-west-1:
+      Ami: ami-00b19da53e9b57a30
+    eu-west-2:
+      Ami: ami-04f53e36c4155cef8
+    eu-west-3:
+      Ami: ami-03d12baf9447d0158
+
+Resources:
+  WindowsSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WindowsSecurityGroup
+      GroupDescription: Security group for Windows Instance
+      SecurityGroupIngress:
+        - Description: Allow RDP access from anywhere
+          IpProtocol: TCP
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+
+  WindowsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt WindowsSecGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: WindowsInstance
+
+Outputs:
+  PublicIp:
+    Description: Public IP of the instance
+    Value: !GetAtt WindowsInstance.PublicIp
+  InstanceId:
+    Description: Instance ID of the instance
+    Value: !Ref WindowsInstance
