@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a Standard SNS Topic and one SQS subscription to the Topic.
+
+Parameters:
+  TopicName:
+    Type: String
+    Description: Name for SNS topic
+    Default: JobRoles
+  QueueName:
+    Type: String
+    Description: Name for SQS Queue
+    Default: JobRoles
+
+Resources:
+  SimpleTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref TopicName
+
+  SimpleQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref QueueName
+
+  SimpleQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref SimpleQueue
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowSnsPublish
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt SimpleQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref SimpleTopic
+
+  SimpleQueueSub:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SimpleTopic
+      Protocol: sqs
+      Endpoint: !GetAtt SimpleQueue.Arn
+
+Outputs:
+  TopicArn:
+    Description: ARN of the SNS Topic
+    Value: !Ref SimpleTopic
+  QueueUrl:
+    Description: URL of the Queue
+    Value: !Ref SimpleQueue
