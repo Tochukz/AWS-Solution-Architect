@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a Standard Queue
+
+Parameters:
+  QueueName:
+    Type: String
+    Description: Name of the Queue
+    Default: SimpleQueue.fifo
+
+Resources:
+  SimpleFifoQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref QueueName
+      FifoQueue: true
+
+Outputs:
+  QueueUrl:
+    Description: The URL of the Queue
+    Value: !Ref SimpleFifoQueue
+  QueueArn:
+    Description: The ARN of the Queue
+    Value: !GetAtt SimpleFifoQueue.Arn
