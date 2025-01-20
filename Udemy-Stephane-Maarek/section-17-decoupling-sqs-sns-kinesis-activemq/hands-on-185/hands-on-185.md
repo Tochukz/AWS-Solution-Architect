@@ -37,7 +37,7 @@ $ aws sqs send-message --queue-url https://sqs.eu-west-2.amazonaws.com/314146339
 Receive messages from the Queue
 
 ```bash
-$ aws sqs receive-message --queue-url  https://sqs.eu-west-2.amazonaws.com/314146339647/DemoStandardQueue
+$ aws sqs receive-message --queue-url  https://sqs.eu-west-2.amazonaws.com/314146339647/DemoStandardQueue --max-number-of-messages 10 --wait-time-seconds 20 > messages.json
 ```
 
 Delete a message from the Queue
