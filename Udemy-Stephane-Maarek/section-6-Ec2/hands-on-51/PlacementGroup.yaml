@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template configures a 3 Placement Groups and launch EC2 instances into each Placement Group
+
+Parameters:
+  GeneralPurpose:
+    Type: String
+    Description: Instance Type for EC2
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t2.micro
+  ComputeOptimized:
+    Type: String
+    Description: Instance Type for EC2
+    Default: c5.large
+    AllowedValues:
+      - c4.large
+      - c5.large
+
+Mappings:
+  Images:
+    eu-west-1:
+      Ami: ami-04f87c366aa353bc5
+    eu-west-2:
+      Ami: ami-0fa3603ea544e5bf9
+    eu-west-3:
+      Ami: ami-0f139a4a2cdfff8d1
+
+Resources:
+  ClusterPlacement:
+    Type: AWS::EC2::PlacementGroup
+    Properties:
+      Strategy: cluster
+
+  PartitionPlacement:
+    Type: AWS::EC2::PlacementGroup
+    Properties:
+      Strategy: partition
+      PartitionCount: 2
+
+  SpreadPlacement:
+    Type: AWS::EC2::PlacementGroup
+    Properties:
+      Strategy: spread
+      SpreadLevel: rack
+
+  ClusterInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: !Ref ComputeOptimized
+      PlacementGroupName: !Ref ClusterPlacement
+
+  PartitionInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: !Ref GeneralPurpose
+      PlacementGroupName: !Ref PartitionPlacement
+
+  SpreadInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: !Ref GeneralPurpose
+      PlacementGroupName: !Ref SpreadPlacement
