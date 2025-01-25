@@ -30,7 +30,7 @@ $ chmod 400 dev-simple-key.pem
 Lint the template
 
 ```bash
-$ cfn-lint AccessAnalyzer.yaml
+$ cfn-lint WindowsServer.yaml
 ```
 
 Deploy a stack using the template

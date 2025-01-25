@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration creates an Access Analyzer resource
+
+Parameters:
+  AnalyzerName:
+    Type: String
+    Description: Name for the Access Analyzer
+    Default: SimpleAnalyzer
+
+Resources:
+  SimpleAccessAnalyzer:
+    Type: AWS::AccessAnalyzer::Analyzer
+    Properties:
+      AnalyzerName: !Ref AnalyzerName
+      Type: ACCOUNT
