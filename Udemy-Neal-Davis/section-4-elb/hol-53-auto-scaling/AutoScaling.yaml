@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template deploys an Auto Scaling Group
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: Instance type for the EC2
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecurityGroup
+      GroupDescription: Allow  HTTP and SSH from anywhere
+      SecurityGroupIngress:
+        - Description: Allow SSH access
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: SimpleTemplate
+      LaunchTemplateData:
+        ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds:
+          - !GetAtt WebSecGroup.GroupId
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+
+            # Update the system and install necessary packages
+            yum update -y
+            yum install -y httpd
+
+            # Start the Apache server
+            systemctl start httpd
+            systemctl enable httpd
+
+            # Fetch the Availability Zone information using IMDSv2
+            TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+            AZ=`curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone`
+
+            # Create the index.html file
+            cat > /var/www/html/index.html <<EOF
+            <html>
+            <head>
+              <title>Instance Availability Zone</title>
+            </head>
+            <body>
+                <div>This instance is located in Availability Zone: $AZ</div>
+            </body>
+            </html>
+            EOF
+
+            # Ensure the httpd service is correctly set up to start on boot
+            chkconfig httpd on
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: SimpleAutoScaling
+      DesiredCapacity: 2
+      MinSize: 1
+      MaxSize: 3
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: 1 #  Either '$Default', '$Latest', or a numeric version are allowed
+      AvailabilityZones:
+        - !Select [0, !GetAZs ""]
+        - !Select [1, !GetAZs ""]
