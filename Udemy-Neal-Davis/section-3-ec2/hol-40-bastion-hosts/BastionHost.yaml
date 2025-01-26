@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template demonstrates the use of a Bastion host or Jump Host. A Bastion host helps you to connect to a private EC2 instance
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing Key Name for the EC2 instance
+    Default: DevSimpleKey
+
+Mappings:
+  Images:
+    eu-west-1:
+      Ami: ami-04f87c366aa353bc5
+    eu-west-2:
+      Ami: ami-0fa3603ea544e5bf9
+    eu-west-3:
+      Ami: ami-0f139a4a2cdfff8d1
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: BastionVpc
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VpcGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  BastionSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BastionSecGroup
+      GroupDescription: Allow SSH access from anywhere
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow SSH acces
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  PrivateSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: PrivateSecGroup
+      GroupDescription: Allow SSH access only from the Bastion Sec Group
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow SSH acces from Bastion Sec Group
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSecGroup
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.0.0/17
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet
+
+  PrivateInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      SubnetId: !Ref PrivateSubnet
+      SecurityGroupIds:
+        - !Ref PrivateSecGroup
+      Tags:
+        - Key: Name
+          Value: PrivateInstance
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: 10.0.128.0/17
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+    DependsOn: VpcGatewayAttach
+
+  PublicSubnetAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  BastonHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref BastionSecGroup
+      Tags:
+        - Key: Name
+          Value: BastionInstance
+
+Outputs:
+  PublicIp:
+    Description: Public IP of the Bastion instance
+    Value: !GetAtt BastonHost.PublicIp
+  PrivateIp:
+    Description: Private IP of the private instance
+    Value: !GetAtt PrivateInstance.PrivateIp
+  PrivateInstanceId:
+    Description: Instance Id of the private instance
+    Value: !Ref PrivateInstance
