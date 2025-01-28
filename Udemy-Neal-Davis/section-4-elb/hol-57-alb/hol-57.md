@@ -2,7 +2,7 @@
 
 ### Description
 
-This template configures an Application Load Balancer
+This template configures an Application Load Balancer with an Auto Scaling Group
 
 ### Operation
 
