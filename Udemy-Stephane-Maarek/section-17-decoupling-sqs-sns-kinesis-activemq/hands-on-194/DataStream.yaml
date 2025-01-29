@@ -1,0 +1,12 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template provision a Kinesis Data stream
+
+Resources:
+  DataStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: DemoStream
+      StreamModeDetails:
+        StreamMode: PROVISIONED # or ON_DEMAND
+      ShardCount: 1
