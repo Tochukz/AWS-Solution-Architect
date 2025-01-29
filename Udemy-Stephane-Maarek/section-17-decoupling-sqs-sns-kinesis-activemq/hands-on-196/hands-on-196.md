@@ -32,7 +32,7 @@ Wait for 60 seconds so that the data will be delivered to the S3 destination.
 Check the S3 destination
 
 ```bash
-$ aws s3api list-objects --bucket direhose-delivery-destination --prefix demo-firehose/
+$ aws s3api list-objects --bucket firehose-delivery-destination --prefix demo-firehose/
 ```
 
 Download the data object from S3
@@ -43,11 +43,18 @@ $ aws s3 cp s3://direhose-delivery-destination/demo-firehose/2025/01/29/05/DemoD
 
 **Debug Errors**  
 In the case of error during deployment, checkout the stack events
+
 ```bash
 $ aws cloudformation describe-stack-events --stack-name FirehoseStream > events.json
 ```
 
 **Cleanup**  
+Empty the S3 bucket
+
+```bash
+$ aws s3 rm s3://firehose-delivery-destination/ --recursive
+```
+
 To delete the stack
 
 ```bash

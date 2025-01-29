@@ -14,7 +14,7 @@ Resources:
   DestinationBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: direhose-delivery-destination
+      BucketName: firehose-delivery-destination
 
   FirehoseRole:
     Type: AWS::IAM::Role
