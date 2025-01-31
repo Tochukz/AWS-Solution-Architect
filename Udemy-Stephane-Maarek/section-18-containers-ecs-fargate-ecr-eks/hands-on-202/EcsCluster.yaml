@@ -10,6 +10,10 @@ Parameters:
     AllowedValues:
       - t2.micro
       - t3.micro
+  ClusterName:
+    Type: String
+    Description: Name for the ECS Cluster
+    Default: DemoCluster
 
 Mappings:
   Images: # ECS Optimized AMIs
@@ -151,7 +155,7 @@ Resources:
         IamInstanceProfile:
           Name: !Ref Ec2Profile
         UserData:
-          Fn::Base64: |
+          Fn::Base64: !Sub |
             #!/bin/bash
             sudo yum update -y
 
@@ -163,6 +167,9 @@ Resources:
             sudo systemctl enable nginx
 
             echo "<h3>Hello world from $(hostname -f) </h3>" > /usr/share/nginx/html/index.html
+
+            # Setup Cluster
+            echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config;
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -196,7 +203,7 @@ Resources:
   SimpleCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: DemoCluster
+      ClusterName: !Ref ClusterName
       CapacityProviders:
         - FARGATE
         - FARGATE_SPOT

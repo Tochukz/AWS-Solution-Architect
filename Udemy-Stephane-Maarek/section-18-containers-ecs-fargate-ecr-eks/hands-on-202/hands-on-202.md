@@ -9,7 +9,7 @@ With the Fargate and ECS Capacity providers in place, the ECS Cluster will be ab
 
 ### Operation
 
-**Debfore deployment**  
+**Before deployment**  
 The template used ECS Optimized AMI for the Launch Template.  
 If your chosen region is not inlcuded in the _Images_ Mappings that list the AMIs, you can get the ECS optimized AMI for your region
 
