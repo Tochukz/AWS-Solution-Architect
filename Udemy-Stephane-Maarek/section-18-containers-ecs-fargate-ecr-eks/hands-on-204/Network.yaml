@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template build on the hands-on-202/EcsCluster.yaml template by adding a Task Definition resource to the stack
+
+Parameters:
+  # InstanceType:
+  #   Type: String
+  #   Description: Instance type for EC2
+  #   Default: t2.micro
+  #   AllowedValues:
+  #     - t2.micro
+  #     - t3.micro
+  # KeyName:
+  #   Type: AWS::EC2::KeyPair::KeyName
+  #   Description: Existing EC2 Keypair Keyname
+  #   Default: DevSimpleKey
+  ClusterName:
+    Type: String
+    Description: Name for the ECS Cluster
+    Default: DemoCluster
+
+# Mappings:
+#   Images: # Amazon Linux 2 ECS Optimized AMIs
+#     eu-west-1:
+#       Ami: ami-04e4276e5318ff4e8
+#     eu-west-2:
+#       Ami: ami-04d306b44620fa308
+#     eu-west-3:
+#       Ami: ami-098290db400ddc853
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: CustomVpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: DemoInternetGateway
+
+  VpcGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.0.0/18
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.64.0/18
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet2
+
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.128.0/18
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: PublicSubnet3
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttach
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PublicSubnet1RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet3RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet3
+      RouteTableId: !Ref PublicRouteTable
+
+  # Ec2SecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupName: InstanceAccessSG
+  #     GroupDescription: Allows SSH and HTTP access from anywhere
+  #     VpcId: !Ref CustomVpc
+  #     SecurityGroupIngress:
+  #       - Description: Allow HTTP access from anywhere
+  #         IpProtocol: TCP
+  #         FromPort: 80
+  #         ToPort: 80
+  #         CidrIp: 0.0.0.0/0
+  #       - Description: Allow SSH access from anywhere
+  #         IpProtocol: TCP
+  #         FromPort: 22
+  #         ToPort: 22
+  #         CidrIp: 0.0.0.0/0
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebAccessSG
+      GroupDescription: Allows HTTP access
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow HTTP access from anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # Ec2Role:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: Ec2InstanceRole
+  #     Description: Role for EC2 instance
+  #     AssumeRolePolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Action: sts:AssumeRole
+  #           Principal:
+  #             Service: ec2.amazonaws.com
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+  #       - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  # Ec2Profile:
+  #   Type: AWS::IAM::InstanceProfile
+  #   Properties:
+  #     InstanceProfileName: TemplateInstanceProfile
+  #     Roles:
+  #       - !Ref Ec2Role
+
+  # LaunchTemplate:
+  #   Type: AWS::EC2::LaunchTemplate
+  #   # DeletionPolicy: Delete
+  #   Properties:
+  #     LaunchTemplateName: SimpleTemplate
+  #     LaunchTemplateData:
+  #       ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+  #       InstanceType: !Ref InstanceType
+  #       KeyName: !Ref KeyName
+  #       SecurityGroupIds:
+  #         - !Ref Ec2SecurityGroup
+  #       IamInstanceProfile:
+  #         Name: !Ref Ec2Profile
+  #       UserData:
+  #         Fn::Base64: !Sub |
+  #           #!/bin/bash
+  #           sudo yum update -y
+
+  #           ## Install Nginx
+  #           sudo amazon-linux-extras install nginx1 -y
+  #           sudo service nginx start
+
+  #           # Enable Nginx to Start on Boot
+  #           sudo systemctl enable nginx
+
+  #           echo "<h3>Hello world from $(hostname -f) </h3>" > /usr/share/nginx/html/index.html
+
+  #           # Setup Cluster
+  #           echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config;
+
+  # AutoScalingGroup:
+  #   Type: AWS::AutoScaling::AutoScalingGroup
+  #   DependsOn: VpcGatewayAttach
+  #   Properties:
+  #     AutoScalingGroupName: SimpleScaling
+  #     DesiredCapacity: 0
+  #     MinSize: 0
+  #     MaxSize: 3
+  #     LaunchTemplate:
+  #       LaunchTemplateId: !Ref LaunchTemplate
+  #       Version: !GetAtt LaunchTemplate.LatestVersionNumber
+  #     VPCZoneIdentifier:
+  #       - !Ref PublicSubnet1
+  #       - !Ref PublicSubnet2
+  #       - !Ref PublicSubnet3
+
+Outputs:
+  # AutoScalingGroup:
+  #   Description: AutoScaling Group
+  #   Value: !Ref AutoScalingGroup
+  #   Export:
+  #     Name: Network-AutoScalingGroup # Must be unique in the AWS Region
+  ClusterName:
+    Description: Name for the Cluster
+    Value: !Ref ClusterName
+    Export:
+      Name: Network-ClusterName
+  VpcId:
+    Description: Custom VPC Id
+    Value: !Ref CustomVpc
+    Export:
+      Name: Network-VpcId
+  WebSecurityGroupId:
+    Description: Security group ID
+    Value: !Ref WebSecurityGroup
+    Export:
+      Name: Network-WebSecurityGroupId
+  PublicSubnetId1:
+    Description: Subnet ID for Public Subnet 1
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: Network-PublicSubnetId1
+  PublicSubnetId2:
+    Description: Subnet ID for Public Subnet 2
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: Network-PublicSubnetId2
+  PublicSubnetId3:
+    Description: Subnet ID for Public Subnet 3
+    Value: !Ref PublicSubnet3
+    Export:
+      Name: Network-PublicSubnetId3
