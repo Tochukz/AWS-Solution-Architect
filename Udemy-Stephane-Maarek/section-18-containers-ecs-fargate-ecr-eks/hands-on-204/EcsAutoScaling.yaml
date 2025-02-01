@@ -19,29 +19,10 @@ Parameters:
     Default: NginxDemoHello
 
 Resources:
-  # Ec2CapcityProvider:
-  #   Type: AWS::ECS::CapacityProvider
-  #   Properties:
-  #     Name: SimpleScalableProvider
-  #     AutoScalingGroupProvider:
-  #       AutoScalingGroupArn: !ImportValue Network-AutoScalingGroup
-  #       ManagedTerminationProtection: DISABLED # ENABLED
-  #       ManagedScaling:
-  #         Status: ENABLED
-  #         TargetCapacity: 100
-
   SimpleCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !ImportValue Network-ClusterName
-      # CapacityProviders:
-      #   - FARGATE
-      #   - FARGATE_SPOT
-      #   - !Ref Ec2CapcityProvider
-      # DefaultCapacityProviderStrategy:
-      #   - CapacityProvider: !Ref Ec2CapcityProvider
-      #     Weight: 1
-      #     Base: 0
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -198,7 +179,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
 
-
   ScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
@@ -220,7 +200,7 @@ Resources:
       TargetTrackingScalingPolicyConfiguration:
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageCPUUtilization # or ECSServiceAverageMemoryUtilization, ALBRequestCountPerTarget?
-        TargetValue: 20
+        TargetValue: 3 # 3% Avg. CPU Utilization
         ScaleInCooldown: 60
         ScaleOutCooldown: 60
 

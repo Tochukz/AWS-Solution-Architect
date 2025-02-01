@@ -3,30 +3,10 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: This template build on the hands-on-202/EcsCluster.yaml template by adding a Task Definition resource to the stack
 
 Parameters:
-  # InstanceType:
-  #   Type: String
-  #   Description: Instance type for EC2
-  #   Default: t2.micro
-  #   AllowedValues:
-  #     - t2.micro
-  #     - t3.micro
-  # KeyName:
-  #   Type: AWS::EC2::KeyPair::KeyName
-  #   Description: Existing EC2 Keypair Keyname
-  #   Default: DevSimpleKey
   ClusterName:
     Type: String
     Description: Name for the ECS Cluster
     Default: DemoCluster
-
-# Mappings:
-#   Images: # Amazon Linux 2 ECS Optimized AMIs
-#     eu-west-1:
-#       Ami: ami-04e4276e5318ff4e8
-#     eu-west-2:
-#       Ami: ami-04d306b44620fa308
-#     eu-west-3:
-#       Ami: ami-098290db400ddc853
 
 Resources:
   CustomVpc:
@@ -115,24 +95,6 @@ Resources:
       SubnetId: !Ref PublicSubnet3
       RouteTableId: !Ref PublicRouteTable
 
-  # Ec2SecurityGroup:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Properties:
-  #     GroupName: InstanceAccessSG
-  #     GroupDescription: Allows SSH and HTTP access from anywhere
-  #     VpcId: !Ref CustomVpc
-  #     SecurityGroupIngress:
-  #       - Description: Allow HTTP access from anywhere
-  #         IpProtocol: TCP
-  #         FromPort: 80
-  #         ToPort: 80
-  #         CidrIp: 0.0.0.0/0
-  #       - Description: Allow SSH access from anywhere
-  #         IpProtocol: TCP
-  #         FromPort: 22
-  #         ToPort: 22
-  #         CidrIp: 0.0.0.0/0
-
   WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -146,81 +108,7 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
 
-  # Ec2Role:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     RoleName: Ec2InstanceRole
-  #     Description: Role for EC2 instance
-  #     AssumeRolePolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Effect: Allow
-  #           Action: sts:AssumeRole
-  #           Principal:
-  #             Service: ec2.amazonaws.com
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-  #       - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-
-  # Ec2Profile:
-  #   Type: AWS::IAM::InstanceProfile
-  #   Properties:
-  #     InstanceProfileName: TemplateInstanceProfile
-  #     Roles:
-  #       - !Ref Ec2Role
-
-  # LaunchTemplate:
-  #   Type: AWS::EC2::LaunchTemplate
-  #   # DeletionPolicy: Delete
-  #   Properties:
-  #     LaunchTemplateName: SimpleTemplate
-  #     LaunchTemplateData:
-  #       ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
-  #       InstanceType: !Ref InstanceType
-  #       KeyName: !Ref KeyName
-  #       SecurityGroupIds:
-  #         - !Ref Ec2SecurityGroup
-  #       IamInstanceProfile:
-  #         Name: !Ref Ec2Profile
-  #       UserData:
-  #         Fn::Base64: !Sub |
-  #           #!/bin/bash
-  #           sudo yum update -y
-
-  #           ## Install Nginx
-  #           sudo amazon-linux-extras install nginx1 -y
-  #           sudo service nginx start
-
-  #           # Enable Nginx to Start on Boot
-  #           sudo systemctl enable nginx
-
-  #           echo "<h3>Hello world from $(hostname -f) </h3>" > /usr/share/nginx/html/index.html
-
-  #           # Setup Cluster
-  #           echo "ECS_CLUSTER=${ClusterName}" >> /etc/ecs/ecs.config;
-
-  # AutoScalingGroup:
-  #   Type: AWS::AutoScaling::AutoScalingGroup
-  #   DependsOn: VpcGatewayAttach
-  #   Properties:
-  #     AutoScalingGroupName: SimpleScaling
-  #     DesiredCapacity: 0
-  #     MinSize: 0
-  #     MaxSize: 3
-  #     LaunchTemplate:
-  #       LaunchTemplateId: !Ref LaunchTemplate
-  #       Version: !GetAtt LaunchTemplate.LatestVersionNumber
-  #     VPCZoneIdentifier:
-  #       - !Ref PublicSubnet1
-  #       - !Ref PublicSubnet2
-  #       - !Ref PublicSubnet3
-
 Outputs:
-  # AutoScalingGroup:
-  #   Description: AutoScaling Group
-  #   Value: !Ref AutoScalingGroup
-  #   Export:
-  #     Name: Network-AutoScalingGroup # Must be unique in the AWS Region
   ClusterName:
     Description: Name for the Cluster
     Value: !Ref ClusterName
