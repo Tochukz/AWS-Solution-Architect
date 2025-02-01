@@ -9,17 +9,6 @@ In production the Scaling Policy may be based on _ECS Service Average CPU Utiliz
 
 ### Operation
 
-**Before deployment**
-
-<!-- The template used ECS Optimized AMI for the Launch Template.
-If your chosen region is not inlcuded in the _Images_ Mappings that list the AMIs, you can get the ECS optimized AMI for your region
-
-```bash
-$ aws ssm get-parameters --names /aws/service/ecs/optimized-ami/amazon-linux-2/recommended
-```
-
-Copy the AMI and add to the _Images_ map. -->
-
 **Deployment**  
 There are two template files `Network.yaml` and `EcsAutoScaling.yaml`.  
 The Stack created from the `Network` template will be a dependency for the Stack created from `EcsAutoScaling` template beecause `EcsAutoScaling` stack imports exported output from `Network` stack.  
