@@ -1,8 +1,8 @@
-# Lesson 188: SNS - Hands On
+# Lesson 192: SNS - Hands On
 
 ### Description
 
-This template configures a Standard SNS Topic with one SQS Queu subscrion.
+This template configures a Standard SNS Topic with one SQS Queue subscription.  
 
 ### Operation
 

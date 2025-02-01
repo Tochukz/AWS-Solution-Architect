@@ -34,8 +34,7 @@ $ aws cloudformation deploy \
 
 **Testing**
 A Redis ElastiCache cluster does not allow direct access from the internet for security reasons.  
-To access the Redis Cluster, we use a _Bastion Host_, an EC2 instance
-in the same VPC as the ElasticCache cluster can act as a Bastion host.
+To access the Redis Cluster, we use a _Bastion Host_, an EC2 instance in the same VPC as the ElasticCache cluster can act as a Bastion host.
 
 SSH into your EC2 instance and test to see if you have access to the Redis Cluster
 

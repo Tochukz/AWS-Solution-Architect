@@ -1,10 +1,10 @@
-# Lesson 202: Creating ECS Service - Hands On
+# Lesson 203: Creating ECS Service - Hands On
 
 ### Description
 
-This template builds ontop of the `hands-on-202/EcsCluster.yaml` template.  
-Here we have split the resource into two stacks - `Network` and `EcsService`. where the `EcsService` stack consumes outputs imorted from the `Network` stack.  
-We have also addedd a few resources - Task Definition, ECS Service, Application LoadBalacer and related resources.
+This template builds ontop of the `hands-on-202` template which created an ECS Cluster.   
+Here we have split the resource into two stacks - `Network` and `EcsService`. where the `EcsService` stack consumes outputs imported from the `Network` stack.  
+We have also added a few resources - Task Definition, ECS Service, Application LoadBalacer and related resources.
 
 The ECS Cluster is configured to support both FARGATE and _AutoScalingGroup_ Capacity provider but the Task Container and ECS service uses the FARGATE launch type. For this reason, the _AutoScalingGroup_ capacity provider may be removed from the ECS Cluster.
 
