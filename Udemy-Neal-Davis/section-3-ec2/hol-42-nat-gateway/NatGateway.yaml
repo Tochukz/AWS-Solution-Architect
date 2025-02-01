@@ -32,6 +32,7 @@ Resources:
       Tags:
         - Key: Name
           Value: BastionVpc
+
   InternetGateway:
     Type: AWS::EC2::InternetGateway
 

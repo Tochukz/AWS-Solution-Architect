@@ -10,3 +10,4 @@ Section | Title
 1       | Let's Get Started
 2       | AWS Identity and Access Management (IAM)
 3       | Amazon Elastic Compute Cloud (EC2)
+4       | Elastic Load Balancing and Auto Scaling

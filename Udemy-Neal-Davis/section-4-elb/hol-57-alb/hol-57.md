@@ -1,8 +1,9 @@
-# Create an Application Load Balancer - HOL-53
+# Create an Application Load Balancer - HOL-57
 
 ### Description
 
-This template configures an Application Load Balancer with an Auto Scaling Group
+This template is an extension of _hol-53-auto-scaling_ which configures an Auto Scaling Group.   
+Here we add an _Application Load Balancer_ to the stack.  
 
 ### Operation
 

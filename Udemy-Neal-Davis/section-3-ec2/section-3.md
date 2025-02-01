@@ -17,3 +17,7 @@ There are 3 types of placement Groups
 * Use with High Performance Computing (HPC) and Message Parsing Interface (MPI) and Machine Learning (ML) use cases
 * Tightly coupled application
 * Can use with all instance types
+
+### Cheat Sheets  
+[Amazon EC2 Cheat Sheet](https://digitalcloud.training/amazon-ec2/)  
+[Amazon VPC Cheat Sheet](https://digitalcloud.training/amazon-vpc/)
