@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template build on the hands-on-202/EcsCluster.yaml template by adding a Task Definition resource to the stack
+
+Parameters:
+  DockerImage:
+    Type: String
+    Description: Public docker image
+    Default: nginxdemos/hello # See the image at https://hub.docker.com/r/nginxdemos/hello/
+    # For DockerHub repository it can be [provider/image]
+    # For Other respository, format must be [repository-url/image:tag] or [repository-url/image@digest]
+  BucketArn:
+    Type: String
+    Description: Bucket ARN for an existing bucket for the application
+    Default: arn:aws:s3:::chucks-workspace-storage
+  ContainerName:
+    Type: String
+    Description: Name for the container
+    Default: NginxDemoHello
+
+Resources:
+  Ec2CapcityProvider:
+    Type: AWS::ECS::CapacityProvider
+    Properties:
+      Name: SimpleScalableProvider
+      AutoScalingGroupProvider:
+        AutoScalingGroupArn: !ImportValue Network-AutoScalingGroup
+        ManagedTerminationProtection: DISABLED # ENABLED
+        ManagedScaling:
+          Status: ENABLED
+          TargetCapacity: 100
+
+  SimpleCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !ImportValue Network-ClusterName
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+        - !Ref Ec2CapcityProvider
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: !Ref Ec2CapcityProvider
+          Weight: 1
+          Base: 0
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EcsTaskExecRole
+      Description: Role for ECS Service Task management
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EcsTaskRole
+      Description: Role for ECS container application
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+      Policies:
+        - PolicyName: EcsTaskPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Id: AllowS3ListRead
+            Statement:
+              - Sid: AllowObjectRead
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub ${BucketArn}/*
+              - Sid: AllowObjectListing
+                Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Ref BucketArn
+
+  ContainerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/containers/${ContainerName}
+      RetentionInDays: 14
+
+  TaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: DevAppFamily
+      Cpu: 512 #0.5 vCPU
+      Memory: 1024 # IGB RAM
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      EphemeralStorage:
+        SizeInGiB: 21
+      ContainerDefinitions:
+        - Name: !Ref ContainerName
+          Image: !Ref DockerImage
+          Cpu: 256
+          Memory: 512
+          Essential: true
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ContainerLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: nginx-container
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: NginxServerBalancer
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - !ImportValue Network-WebSecurityGroupId # Imported from the Network Stack, see the Network.yaml template
+      Subnets:
+        - !ImportValue Network-PublicSubnetId1
+        - !ImportValue Network-PublicSubnetId2
+        - !ImportValue Network-PublicSubnetId3
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !ImportValue Network-VpcId
+      Protocol: HTTP
+      Port: 80
+      TargetType: ip
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  EcsService:
+    Type: AWS::ECS::Service
+    DependsOn: Listener
+    Properties:
+      Cluster: !Ref SimpleCluster
+      ServiceName: NginxHelloServer
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDef
+      SchedulingStrategy: REPLICA
+      DesiredCount: 1
+      LoadBalancers:
+        - TargetGroupArn: !Ref TargetGroup
+          ContainerName: !Ref ContainerName
+          ContainerPort: 80
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !ImportValue Network-WebSecurityGroupId # Imported from the Network Stack, see the Network.yaml template
+          Subnets:
+            - !ImportValue Network-PublicSubnetId1
+            - !ImportValue Network-PublicSubnetId2
+            - !ImportValue Network-PublicSubnetId3
+
+Outputs:
+  DnsName:
+    Description: DNS name for the Application Load Balancer
+    Value: !GetAtt LoadBalancer.DNSName
