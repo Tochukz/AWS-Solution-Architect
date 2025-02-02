@@ -1,7 +1,7 @@
 import threading
 import requests
 
-dns_name='NginxServerBalancer-1651106484.eu-west-2.elb.amazonaws.com'
+dns_name='nginxserverbalancer-604043728.eu-west-2.elb.amazonaws.com'
 server_url='http://' + dns_name
 
 count=0

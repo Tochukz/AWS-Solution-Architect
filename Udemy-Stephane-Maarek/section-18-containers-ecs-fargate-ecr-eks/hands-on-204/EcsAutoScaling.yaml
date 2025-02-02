@@ -185,9 +185,10 @@ Resources:
       MinCapacity: 1
       MaxCapacity: 3
       ResourceId: !Sub service/${SimpleCluster}/${EcsService.Name} # Format: service/cluster-name/service-name.
-      RoleARN: !GetAtt AutoScalingRole.Arn
-      # RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
+      # RoleARN: !GetAtt AutoScalingRole.Arn
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
       # See https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-service-linked-roles.html
+      # Also see https://docs.aws.amazon.com/autoscaling/application/userguide/security-iam-awsmanpol.html
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
