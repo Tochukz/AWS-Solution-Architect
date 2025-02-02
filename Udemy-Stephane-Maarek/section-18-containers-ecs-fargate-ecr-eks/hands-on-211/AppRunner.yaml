@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template deploy an App Runner service using a Docker image from ECR Public Repository
+
+Parameters:
+  ImageIdentifier:
+    Type: String
+    Description: The ECR Image Url from ECR Public Repository
+    Default: public.ecr.aws/docker/library/httpd:latest # See https://gallery.ecr.aws/docker/library/httpd
+
+Resources:
+  AppService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: SimpleApp
+      InstanceConfiguration:
+        Cpu: 512 # 0.5 vCPU
+        Memory: 1024 # 1GB
+        # InstanceRoleArn: "" # Grants permission to the Application running on the service.
+      SourceConfiguration:
+        AutoDeploymentsEnabled: false
+        ImageRepository:
+          ImageRepositoryType: ECR_PUBLIC # or ECR
+          ImageIdentifier: !Ref ImageIdentifier
+          ImageConfiguration:
+            Port: 80
+            # StartCommand: ""
+            # RuntimeEnvironmentSecrets: "" #
+            RuntimeEnvironmentVariables:
+              - Name: Env
+                Value: development
+
+Outputs:
+  ServiceUrl:
+    Description: The URL of the App Service
+    Value: !GetAtt AppService.ServiceUrl
+  Status:
+    Description: The status of the App Service
+    Value: !GetAtt AppService.Status
