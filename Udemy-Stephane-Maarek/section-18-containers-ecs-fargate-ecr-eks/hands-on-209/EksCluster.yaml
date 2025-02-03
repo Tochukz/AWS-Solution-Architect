@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an EKS Cluster and a Nodegroup
+
+Resources:
+  EksClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EksClusterRole
+      Description: Role for EKS cluster
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: eks.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+  EksCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: SimpleCluster
+      RoleArn: !GetAtt EksClusterRole.Arn
+      Version: 1.31
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !ImportValue Network-EksSecurityGroupId
+        SubnetIds:
+          - !ImportValue Network-PublicSubnetId1
+          - !ImportValue Network-PublicSubnetId2
+          - !ImportValue Network-PublicSubnetId3
+
+  NodeGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: NodeGroupRole
+      Description: Role for EKS Node Group
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: ec2.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  NodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      NodegroupName: SimpleNodeGroup
+      ClusterName: !Ref EksCluster
+      NodeRole: !GetAtt NodeGroupRole.Arn
+      AmiType: AL2_x86_64 # Amazon Linux 2
+      CapacityType: ON_DEMAND
+      InstanceTypes:
+        - t3.micro # t2 family may not be allowed
+      DiskSize: 20
+      ScalingConfig:
+        MinSize: 0
+        DesiredSize: 0
+        MaxSize: 3
+      Subnets:
+        - !ImportValue Network-PublicSubnetId1
+        - !ImportValue Network-PublicSubnetId2
+        - !ImportValue Network-PublicSubnetId3
+      UpdateConfig:
+        MaxUnavailable: 1
