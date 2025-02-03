@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template deploys a Lambda Function with Python code.
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      Description: Role for Lambda Function
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SimpleLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: DemoFunction
+      Role: !GetAtt LambdaRole.Arn
+      Architectures:
+        - x86_64
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Code:
+        ZipFile: |
+          import json
+
+          print('Loading function')
+
+          def handler(event, context):
+            print("Name: " + event['name'])
+            print("Role: " + event['role'])   
+            return event['role']
+
+Outputs:
+  LambdaArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt SimpleLambda.Arn
