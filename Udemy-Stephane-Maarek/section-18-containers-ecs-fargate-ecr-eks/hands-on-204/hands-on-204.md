@@ -3,15 +3,14 @@
 ### Description
 
 This template builds ontop of the `hands-on-203` templates which configures an Application Load Balancer on an ECS Task.  
-Here we update the ECS Cluster to only support FARGATE capacity provider and no longer _AutoScalingGroup_ capacity provider.  
-We than add Application Auto Scaling to increases the number of ECS Task based on the _ALB Request Count Per Target_.  
-In production the Scaling Policy may be based on _ECS Service Average CPU Utilization_ rather than _ALB Request Count Per Target_.
+Here we update the ECS Cluster to only support FARGATE capacity provider and no longer support _AutoScalingGroup_ capacity provider.  
+We than add Application Auto Scaling to increases the number of ECS Task based on the _ECS Service Average CPU Utilization_ metric.   
 
 ### Operation
 
 **Deployment**  
 There are two template files `Network.yaml` and `EcsAutoScaling.yaml`.  
-The Stack created from the `Network` template will be a dependency for the Stack created from `EcsAutoScaling` template beecause `EcsAutoScaling` stack imports exported output from `Network` stack.  
+The Stack created from the `Network` template will be a dependency for the Stack created from `EcsAutoScaling` template because `EcsAutoScaling` stack imports exported output from `Network` stack.  
 For this reason, `Network` stack must be deployed successfully before `EcsAutoScaling` stack is deployed.
 
 Lint the templates

@@ -60,6 +60,7 @@ Resources:
       VpcId: !Ref CustomVpc
       CidrBlock: 10.0.128.0/18
       AvailabilityZone: !Select [2, !GetAZs ""]
+      MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
           Value: PublicSubnet3

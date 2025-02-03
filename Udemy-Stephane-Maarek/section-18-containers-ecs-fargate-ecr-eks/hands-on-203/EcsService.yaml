@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This template build on the hands-on-202/EcsCluster.yaml template by adding a Task Definition resource to the stack
+Description: This template build on the hands-on-202 template by adding a Task Definition and ECS Service 
 
 Parameters:
   DockerImage:

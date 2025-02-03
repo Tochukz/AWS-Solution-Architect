@@ -4,7 +4,7 @@
 
 This template builds ontop of the `hands-on-202` template which created an ECS Cluster.   
 Here we have split the resource into two stacks - `Network` and `EcsService`. where the `EcsService` stack consumes outputs imported from the `Network` stack.  
-We have also added a few resources - Task Definition, ECS Service, Application LoadBalacer and related resources.
+We have also added a few resources - Task Definition, ECS Service, Application Load Balancer and related resources.  
 
 The ECS Cluster is configured to support both FARGATE and _AutoScalingGroup_ Capacity provider but the Task Container and ECS service uses the FARGATE launch type. For this reason, the _AutoScalingGroup_ capacity provider may be removed from the ECS Cluster.
 
@@ -22,7 +22,7 @@ Copy the AMI and add to the _Images_ map.
 
 **Deployment**  
 There are two template files `Network.yaml` and `EcsService.yaml`.  
-The Stack created from the `Network` template will be a dependency for the Stack created from `EcsService` template beecause `EcsService` stack imports exported output from `Network` stack.  
+The Stack created from the `Network` template will be a dependency for the Stack created from `EcsService` template because `EcsService` stack imports exported output from `Network` stack.  
 For this reason, `Network` stack must be deployed successfully before `EcsService` stack is deployed.
 
 Lint the templates

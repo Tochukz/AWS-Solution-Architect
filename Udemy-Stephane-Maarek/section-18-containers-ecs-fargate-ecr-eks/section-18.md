@@ -1,4 +1,4 @@
-## Section 17: Container Section
+## Section 18: Container Section
 ### Containers on AWS: ECS, Fargate, ECR and EKS
 __Docker Images__  
 Docker images are stored in Docker Repositories
@@ -40,6 +40,53 @@ __EC2 Launch Type - Auto Scaling EC2 Instances__
   - Used to automatically provision and scale the infrastructure for your ECS Tasks
   - Capacity Provider paired with an Auto Scaling Group
   * Add EC2 Instances when you are missing capacity (CPU, RAM)
+
+
+#### Amazon Elastic Kubernetes Service
+__Amazon EKS Overview__  
+Amazon Elastic Kubernetes Services is a way to launch managed Kubernetes clusters on AWS.  
+* EKS support EC2 if you want to deploy worker nodes or Fargate to deploy serverless containers.  
+* EKS is an open source alternative to ECS and it is cloud agnostic
+* If your company already use Kubernetes on-premise or in another cloud you can use AWS EKS to migrate to AWS
+
+__EKS Terms__
+* EKS node - This are EC2 instances running EKS optimized AMI
+* EKS Pods - This is Synanimous to ECS Task
+
+__Amazon EKS - Node Types__  
+* __Managed Node Group__
+  - Creates and manages Nodes (EC2 instances) for you
+  - Nodes are part of an ASG managed EKS
+  - Support On-DeMAND or Sport Instances
+* __Self-Managed Nodes__  
+  - Nodes created by you and registered to the EKS cluster and managed by an ASG
+  - You can use prebuilt AMI - Amazon EKS Optimized AMI
+  - Supports On-Demand or Spot Instances
+* __AWS Fargate__  
+  - No maintenance required; no nodes managed
+
+#### AWS App Runner
+__Description__  
+* Fully managed service that makes it easy to deploy web
+applications and APIs at scale
+* No infrastructure experience required
+* Start with your source code or container image
+* Automatically builds and deploy the web app
+* Automatic scaling, highly available, load balancer, encryption
+* VPC access support
+* Connect to database, cache, and message queue services
+* Use cases: web apps, APIs, microservices, rapid production
+deployments
+
+#### AWS App2Container (A2C)
+__Description__   
+* CLI tool for migrating and modernizing Java and .NET web apps into Docker Container
+* __Lift-and-shift__ your apps running in on-premises bare metal, virtual machines, or in any Cloud to AWS
+* Accelerate modernization, no code changes, migrate legacy apps
+* Generates CloudFormation templates (compute, network...)
+* Register generated Docker containers to ECR
+* Deploy to ECS, EKS, or App Runner
+* Supports pre-built CI/CD pipelines
 
 ### Resource
 [ECS Public Gallery](https://gallery.ecr.aws/)   
