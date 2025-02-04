@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template deploys a DynamoDB Table
+
+Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Users
+      BillingMode: PROVISIONED # or PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      DeletionProtectionEnabled: false
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH # HASH = partition key, RANGE = sort key (Primary key is combination ot partition key and sort key)
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: N
+
+Outputs:
+  TableName:
+    Description: DynamoDb Table name
+    Value: !Ref UsersTable
