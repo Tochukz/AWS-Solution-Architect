@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an API Gateway with a Lambda function backend.
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      Description: Role for a Lambda Func
+      AssumeRoleDocumentPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts.AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  BasicFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: BasicFunc
+      Handler: index.handler
+      MemorySize: 256 # 0.25GB
+      Architectures:
+        - x86_64
+      Runtime: python3.12
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          import json
+
+          def handler(event, context):
+            body = "Staff Engineer Chucks"
+            statusCode = 200
+            return {
+              "statusCode": statusCode,
+              "body": json.dumps(body),
+              "headers": { 
+                "Content-Type": "application/json"
+              }
+            }
+
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: SimpleApi
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: "demo"
+
+  SimpleGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ApiResource
+      HttpMethod: GET
+      OperationName: HomePage
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt BasicFunc.FunctionName
+      Principal: apigateway.amazonaws.com
+
+Outputs:
+# ApiEndpoint: https://{api_id}.execute-api.{region}.amazonaws.com
