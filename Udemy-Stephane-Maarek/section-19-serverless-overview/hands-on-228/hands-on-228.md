@@ -20,6 +20,11 @@ $ aws cloudformation deploy --template-file ApiGateway.yaml  --stack-name ApiGat
 ```
 
 **Testing**
+To test the Lambda function
+
+```bash
+$ aws lambda invoke --function-name BasicFunc  --cli-binary-format raw-in-base64-out output.json
+```
 
 **Debug Errors**  
  In the case of error during deployment, checkout the stack events

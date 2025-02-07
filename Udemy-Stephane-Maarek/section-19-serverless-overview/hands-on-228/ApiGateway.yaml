@@ -2,17 +2,31 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Description: This template configures an API Gateway with a Lambda function backend.
 
+Parameters:
+  StageName:
+    Type: String
+    Description: Name for the API gateway stage
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Default: dev
+  Path:
+    Type: String
+    Description: Path for the method
+    Default: demo
+
 Resources:
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: LambdaRole
       Description: Role for a Lambda Func
-      AssumeRoleDocumentPolicy:
+      AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
-            Action: sts.AssumeRole
+            Action: sts:AssumeRole
             Principal:
               Service: lambda.amazonaws.com
       ManagedPolicyArns:
@@ -56,27 +70,45 @@ Resources:
     Properties:
       RestApiId: !Ref ApiGateway
       ParentId: !GetAtt ApiGateway.RootResourceId
-      PathPart: "demo"
+      PathPart: !Ref Path # "{proxy+}"
 
   SimpleGetMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref ApiGateway
-      ResourceId: !Ref ApiResource
-      HttpMethod: GET
-      OperationName: HomePage
+      # ResourceId: !Ref ApiResource
+      ResourceId: !GetAtt ApiGateway.RootResourceId
+      HttpMethod: ANY #GET
+      # OperationName: HomePage
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
+        Uri:
+          !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BasicFunc.Arn}/invocations
+          # "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaForSimpleProxy.Arn}/invocations"
+          # arn:aws:apigateway:{region}:{subdomain.service|service}:path|action/{service_api}
 
   LambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt BasicFunc.FunctionName
+      FunctionName: !Ref BasicFunc
       Principal: apigateway.amazonaws.com
+      SourceArn:
+        !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway.RestApiId}/*/GET/
+        # !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/GET/ApiResource
+
+        # - ApiId: !Ref ApiGateway
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: SimpleGetMethod
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: !Ref StageName
 
 Outputs:
-# ApiEndpoint: https://{api_id}.execute-api.{region}.amazonaws.com
+  ApiEndpoint:
+    Description: "API Gateway Invoke URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/${Path}"
