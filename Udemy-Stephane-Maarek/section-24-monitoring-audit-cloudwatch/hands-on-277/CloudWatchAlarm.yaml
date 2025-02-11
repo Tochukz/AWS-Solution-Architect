@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures CloudWatch Alarm to shut down EC2 instance at 90% CPU Utilization.
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      Tags:
+        - Key: Name
+          Value: SimpleInstance
+
+  CpuHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: HighCpuUtilizationAlarm
+      AlarmDescription: Stop EC2 Instances at 90% CPU Utilization
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Statistic: "Average" # Statistic parameter is required
+      Threshold: 90
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Period: 300 # 5 minutes
+      AlarmActions:
+        - !Sub arn:aws:automate:${AWS::Region}:ec2:stop
+        # For more EC2 actions and other actions check out https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref SimpleInstance
+
+Outputs:
+  InstanceId:
+    Description: EC2 instance Id
+    Value: !Ref SimpleInstance
