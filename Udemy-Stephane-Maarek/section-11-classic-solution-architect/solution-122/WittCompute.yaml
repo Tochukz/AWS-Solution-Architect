@@ -1,0 +1,190 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Implement Solution for WhatIsTheTime.com
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+  AppName:
+    Type: String
+    Description: WhatIsTheTime.com  Compute
+    Default: WittCompute
+  Env:
+    Type: String
+    Description: Deployment environment
+    Default: Dev
+    AllowedValues:
+      - Dev
+      - Uat
+      - Prod
+  HostedZoneId:
+    Type: String
+    Description: The ID of an existing hosted zone
+    Default: Z00226231TM9RP3FCC7TD # Host zone id for my goodguys.click domain
+  DomainName:
+    Type: String
+    Description: Subdomain name for the application
+    Default: witt.goodguys.click
+  CertificateArn:
+    Type: String
+    Description: ARN of ACM certificate
+    Default: arn:aws:acm:eu-west-2:314146339647:certificate/d8f34203-cb9e-450d-9c72-0ac41ff48883
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${AppName}${Env}Template
+      LaunchTemplateData:
+        ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds:
+          - !ImportValue WittNetwork-Ec2SecurityGroupId
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+
+            # Update the system and install necessary packages
+            yum update -y
+            yum install -y httpd
+
+            # Start the Apache server
+            systemctl start httpd
+            systemctl enable httpd
+
+            # Fetch the Availability Zone information using IMDSv2
+            TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+            AZ=`curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone`
+
+            # Create the index.html file
+            cat > /var/www/html/index.html <<EOF
+            <html>
+            <head>
+              <title>Instance Availability Zone</title>
+              <link href="https://bootswatch.com/4/cerulean/bootstrap.min.css" />
+              <style>
+                body {background: cornflowerblue;}
+                h3 {margin-top: 45vh; color: white; text-align: center;}
+                p, input {text-align: center; font-size: 14px;}
+                input { border: solid lightblue 1px; }
+              </style>              
+            </head>
+            <body>
+                <h3>This instance is located in Availability Zone: $AZ</h3>
+                <p>
+                  <input class="form-control" id="clock" readonly />
+                </p>
+                <script>
+                  const clock = document.getElementById("clock")
+                  setInterval(() => {
+                    const date = new Date();
+                    clock.value = date.toLocaleTimeString();
+                  }, 1000);
+                </script>
+            </body>
+            </html>
+            EOF
+
+            # Ensure the httpd service is correctly set up to start on boot
+            chkconfig httpd on
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${Env}TargetGroup
+      VpcId: !ImportValue WittNetwork-VpcId
+      TargetType: instance
+      Protocol: HTTP
+      Port: 80
+      ProtocolVersion: HTTP1
+      HealthCheckEnabled: true
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: 80
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${Env}ScalingGroup
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      VPCZoneIdentifier:
+        - !ImportValue WittNetwork-PublicSubnet1Id
+        - !ImportValue WittNetwork-PublicSubnet2Id
+        - !ImportValue WittNetwork-PublicSubnet3Id
+      TargetGroupARNs:
+        - !Ref TargetGroup
+
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleAppLoadBalancer
+      Scheme: internet-facing
+      Type: application
+      IpAddressType: ipv4
+      Subnets:
+        - !ImportValue WittNetwork-PublicSubnet1Id
+        - !ImportValue WittNetwork-PublicSubnet2Id
+        - !ImportValue WittNetwork-PublicSubnet3Id
+      SecurityGroups:
+        - !ImportValue WittNetwork-AlbSecurityGroupId
+
+  ScalingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 50 # Will auto scale if avg CPU utilization is 50% or more
+    DependsOn: [AppLoadBalancer, TargetGroup]
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08 # Learn more https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  AliasRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      AliasTarget:
+        DNSName: !GetAtt AppLoadBalancer.DNSName # check it out
+        HostedZoneId: !GetAtt AppLoadBalancer.CanonicalHostedZoneID
+
+Outputs:
+  DnsName:
+    Description: App Load Balancer DNS name
+    Value: !GetAtt AppLoadBalancer.DNSName
+  Hostname:
+    Description: DNS Record Domain name
+    Value: !Sub https://${DomainName}

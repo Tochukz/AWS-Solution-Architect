@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <title>Instance Availability Zone</title>
+    <style>
+      body {
+        background: cornflowerblue;
+      }
+      h3 {
+        margin-top: 45vh;
+        color: white;
+        text-align: center;
+      }
+      p,
+      input {
+        text-align: center;
+        font-size: 14px;
+      }
+      input {
+        border: solid lightblue 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>This instance is located in Availability Zone: $AZ</h3>
+    <p>
+      <input class="form-control" id="clock" readonly />
+    </p>
+    <script>
+      const clock = document.getElementById("clock");
+      setInterval(() => {
+        const date = new Date();
+        clock.value = date.toLocaleTimeString();
+      }, 1000);
+    </script>
+  </body>
+</html>

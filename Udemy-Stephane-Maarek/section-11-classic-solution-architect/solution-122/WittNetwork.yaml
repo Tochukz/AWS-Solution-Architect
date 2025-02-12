@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures networking for the WhatIsTheTime application
+
+Parameters:
+  AppName:
+    Type: String
+    Description: WhatIsTheTime.com Network
+    Default: WittNetwork
+
+  Env:
+    Type: String
+    Description: Deployment environment
+    Default: Dev
+    AllowedValues:
+      - Dev
+      - Uat
+      - Prod
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}Vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VpcGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.0.0/18
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}${Env}PublicSubnet1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.64.0/18
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}{Env}PublicSubnet2
+
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.128.0/18
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AppName}${Env}PublicSubnet3
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttach
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PublicSubnet1RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet3RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet3
+      RouteTableId: !Ref PublicRouteTable
+
+  LoadBalancerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Env}AlbSecGroup
+      GroupDescription: Allow HTTPS access to the ALB
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow HTTPS access
+          IpProtocol: TCP
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  InstanceSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Env}InstanceSecGroup
+      GroupDescription: Allow ttraffic from ALB security group
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow HTTP traffic
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref LoadBalancerSecGroup
+
+Outputs:
+  VpcId:
+    Description: The ID of the VPC
+    Value: !Ref CustomVpc
+    Export:
+      Name: WittNetwork-VpcId
+  PublicSubnet1Id:
+    Description: Id for public subnet 1
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: WittNetwork-PublicSubnet1Id
+  PublicSubnet2Id:
+    Description: Id for public subnet 2
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: WittNetwork-PublicSubnet2Id
+  PublicSubnet3Id:
+    Description: Id for public subnet 3
+    Value: !Ref PublicSubnet3
+    Export:
+      Name: WittNetwork-PublicSubnet3Id
+  AlbSecurityGroupId:
+    Description: Security group for Application Load Balancer
+    Value: !Ref LoadBalancerSecGroup
+    Export:
+      Name: WittNetwork-AlbSecurityGroupId
+  Ec2SecurityGroupId:
+    Description: Securirty group for EC2 instances
+    Value: !Ref InstanceSecGroup
+    Export:
+      Name: WittNetwork-Ec2SecurityGroupId
