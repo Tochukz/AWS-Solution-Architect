@@ -25,10 +25,6 @@ Parameters:
     Type: String
     Description: Cache policy Id
     Default: 658327ea-f89d-4fab-a63d-7e88639e58f6 #cache optimized policy. To see other manages cache policies, go to CloudFront console > Policies > Cache
-  FuncVersion:
-    Type: String
-    Description: Function version for CloudFront Function
-    Default: 1
 
 Resources:
   OriginBucket:
@@ -78,7 +74,7 @@ Resources:
             const uri = request.uri;  
             const token = "Bearer ${ApiToken}";
           
-            request.headers["Authorization"] = { value: token };
+            request.headers["authorization"] = { value: token };
             if (uri.startsWith('/simulation/api')) {
               request.uri = uri.replace('/simulation', '');
             }
@@ -126,9 +122,15 @@ Resources:
               - DELETE
             ForwardedValues:
               QueryString: true
-            LambdaFunctionAssociations:
+              Headers:
+                - Authorization
+              Cookies:
+                Forward: all
+            FunctionAssociations:
               - EventType: viewer-request
-                LambdaFunctionARN: !Sub ${CloudFrontFunc.FunctionMetadata.FunctionARN}/${FuncVersion} # arn:aws:cloudfront::${AWS::AccountId}:function/CloudFrontFunc/${CloudFrontFunc.Version} #!GetAtt CloudFrontFunc.FunctionARN
+                FunctionARN: !GetAtt CloudFrontFunc.FunctionARN
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
         Origins:
           - Id: !Ref DefaultOriginId
             DomainName: !GetAtt OriginBucket.RegionalDomainName
@@ -138,12 +140,16 @@ Resources:
           - Id: !Ref ApiOriginId
             DomainName: !Ref ApiEndpoint
             CustomOriginConfig:
+              HTTPPort: 80
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
 
 Outputs:
+  DistributionId:
+    Description: CloudFront distribution Id
+    Value: !Ref AppDistribution
   ApplicationUrl:
     Description: CloudFront distribution URL
     Value: !Sub https://${AppDistribution.DomainName}
