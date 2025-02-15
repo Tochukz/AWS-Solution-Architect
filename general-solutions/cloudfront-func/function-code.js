@@ -3,7 +3,7 @@ function handler(event) {
   const uri = request.uri;
   const token = "Bearer ${ApiToken}";
 
-  request.headers["Authorization"] = { value: token };
+  request.headers["authorization"] = { value: token };
   if (uri.startsWith("/simulation/api")) {
     request.uri = uri.replace("/simulation", "");
   }

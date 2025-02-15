@@ -1,0 +1,11 @@
+[
+  {
+    "ParameterKey": "ApiEndpoint",
+    "ParameterValue": "xxxxxxx.lambda-url.eu-west-2.on.aws"
+  },
+
+  {
+    "ParameterKey": "ApiToken",
+    "ParameterValue": "xxxx.xxxxx.xxxxx"
+  }
+]
