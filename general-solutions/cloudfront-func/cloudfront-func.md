@@ -37,7 +37,7 @@ $ aws cloudformation deploy --template-file CloudFrontFunc.yaml --stack-name Clo
 Copy your frontend assets of you React or VueJS application into the origin S3 bucket
 
 ```bash
-$  aws s3 sync ../lab-site s3://app-asset-bucket-14-feb-24
+$  aws s3 sync lab-site s3://app-asset-bucket-14-feb-24
 ```
 
 If you make updates to the Single Page Application and you push the new assets to the S3 bucket, you should clear the CloudFront cache
