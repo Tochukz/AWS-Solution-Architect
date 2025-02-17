@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Description: This template configures an EC2 instance with Hibernation enable.
+
 Parameters:
   KeyName:
     Description: EC2 Keyname
@@ -12,7 +14,7 @@ Parameters:
     Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
   InstanceType:
     Type: String
-    Description: EC2 instance type    
+    Description: EC2 instance type
     AllowedPattern: t[2-3](.micro)
     Default: t2.micro
 Resources:

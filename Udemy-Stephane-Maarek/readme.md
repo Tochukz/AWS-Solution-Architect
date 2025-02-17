@@ -25,56 +25,45 @@ Section    | Title
 17 | Decoupling applications: SQS, SNS, Kinesis, Active MQ
 18 | Containers on AWS: ECS, Fargate, ECR & EKS
 
-__Connection Draining__  
-* Connection Draining - for CLB
-* Deregistration Delay - for ALB & NLB
+### Hands On
+__Section 6: EC2 - Solution Architect Level__  
+51. Placement group
+52. Elastic Network Interface
+55. EC2 Instance Hibernation
 
+__Section 7: EC2 Instance Storage__   
+60. EBS Snapshots
+62. Amazon Machine Image (AMI)
+67. Elastic File System (EFS)
 
-__Auto Scaling Groups - Scaling Policies__  
-1. Dynamic Scaling
-  * Target Tracking Scaling
-    - Simple to setup
-    - Example: I want the average ASG CPU to stay at around 40%
-  * Simple / Step Scaling
-    - When a CloudWatch alarm is triggered (example CPU > 70%), then add 2 units
-    - When a CloudWatch alarm is triggered (example CPU < 30 %), then remove
-2. Schedules Scaling
-  * Anticipate a scaling based on known usage pattern
-  * Example: increase the min capacity to 10 at 5 pm on Fridays
-3. Predictive Scaling:
-  * continuously forecast load and schedule scaling ahead
-  * useful for patterns that repeat themselves.  
-  * you analyze historical load, generate forecast and schedule scaling action.
+__Section 8: High Availability and Scalability - ELB & ASG__  
+74. Application Load Balancer (ALB)
+75. ALB with path bases routing
+77. Network Load Balancer (NLB)
+79. ALB Target Group with sticky session enabled
+82. ALB with SSL certificate (HTTPS listener), ACM Certificate
+85. Auto Scaling Group (ASG), manual scaling
+87. ASG with scaling policy, target scaling
 
-__Good metrics to scale on__  
-1. __CpuUtilization__: Average CPU utilization across your instances
-2. __RequestCountPerTarget__: to make sure the number of requests per EC2 instance is stable
-3. __Average Network In / Out__ (if your application is network bound)
-4.  __Any custom metric__(that you push using CloudWatch)
+__Section 9: AWS Fundamentals - RDS + Aurora + ElastiCache__  
+90. Relational Database Service (RDS), regional and cross-region replication
+93. Aurora MySQL database cluster
+99. ElastiCache instance with Redis
 
+__Section 10: Route 53__  
+107. A-Type Record
+108. Alias Record
+110. Routing Policy - Weighted Route
+111. Latency Based Routing Policy
+113. Calculated health check
+114. FailOver Routing policy
+115. Geolocation Routing policy
+118. Multi-Value Routing policy
+119. Routing 53 Hosted Zone using 3rd Party Domains Registrar 
 
-__Routing Policies__  
-Route 53 supports the following Routing Policies
-* __Simple__: Can map a subdomain to a single or multiple values
-* __Weighted__: Control the % of request to each resource
-* __Failover__:
-* __Latency based__: Redirects to the resource that has the least latency for the user
-* __Geolocation__:
-* __Multi-Value Answer__:
-* __Geoproximity__:  (using Route 53 Traffic Flow feature)
-
-When configuring `AWS::Route53::RecordSet` the properties expects one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig.
-
-__S3 Byte-Range Fetches__  
-* Parallelize GETs by requesting specific ranges
-* Better resilience in case of failures
-* Can be used to speed up downloads
-
-__S3 Glacier Vault Lock__
-Learn more...
-
-__S3 Object Lock (versioning must be enabled)__  
-Learn more...  
+### FAQs
+[IAM FAQs](https://aws.amazon.com/iam/faqs/)    
+[EC2 FAQs](https://aws.amazon.com/ec2/faqs/)
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-pn9/)  
