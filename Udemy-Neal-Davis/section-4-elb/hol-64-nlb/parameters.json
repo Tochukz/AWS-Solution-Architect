@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "ElasticIpCidr1",
+    "ParameterValue": "3.9.79.205/32"
+  },
+  {
+    "ParameterKey": "ElasticIpCidr2",
+    "ParameterValue": "13.43.200.241/32"
+  }
+]
