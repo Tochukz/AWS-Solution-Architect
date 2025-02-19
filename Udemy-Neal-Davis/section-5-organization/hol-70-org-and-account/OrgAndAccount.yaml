@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template creates an Organization and add an account to it.
+
+Parameters:
+  FirstAccountEmail:
+    Type: String
+    Description: Email address for the first AWS account
+
+Resources:
+  SimpleOrganization:
+    Type: AWS::Organizations::Organization
+    Properties:
+      FeatureSet: ALL
+
+  FirstAccount:
+    Type: AWS::Organizations::Account
+    Properties:
+      AccountName: FirstAccount
+      Email: !Ref FirstAccountEmail
+      RoleName: OrganizationAccountAccessRole
+      ParentIds:
+        - !GetAtt SimpleOrganization.RootId
+
+Outputs:
+  AccountStatus:
+    Description: The status of the FirstAccount
+    Value: !GetAtt FirstAccount.Status
+  AccountId:
+    Description: The FirstAccount AccountId
+    Value: !GetAtt FirstAccount.AccountId
