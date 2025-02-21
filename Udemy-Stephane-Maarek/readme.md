@@ -24,6 +24,12 @@ Section    | Title
 16 | AWS Storage Extras
 17 | Decoupling applications: SQS, SNS, Kinesis, Active MQ
 18 | Containers on AWS: ECS, Fargate, ECR & EKS
+19 | Serverless Overview from Solution Architect Perspective
+20 | Serverless Solution Architect Discusion
+21 | Database in AWS
+22 | Data Analytics
+23 | Machine Learning
+24 |  AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
 
 ### Hands On
 __Section 6: EC2 - Solution Architect Level__  
@@ -59,7 +65,76 @@ __Section 10: Route 53__
 114. FailOver Routing policy
 115. Geolocation Routing policy
 118. Multi-Value Routing policy
-119. Routing 53 Hosted Zone using 3rd Party Domains Registrar 
+119. Routing 53 Hosted Zone using 3rd Party Domains Registrar
+
+__Section 11: Classic Solution Architect__  
+122. WhatsTheTime.com
+123. MyClothes.com
+124. MyWordPress.com
+127. Beanstalk Hands On
+127b. Beanstalk Hands On with Variation
+
+__Section 12: Amazon S3 Introduction__  
+130. S3 Hands on
+132. S3 Security, Bucket Policy
+134. S3 Website Hands On
+136. S3 Versioning
+139. S3 Replication
+141. S3 Storage Class
+
+__Section 13: Advanced Amazon S3__  
+143. S3 Life Cycle Rule
+146. S3 Event Notifications
+
+__Section 14: Amazon S3 Security__  
+152. S3 Encryption
+155. S3 CORS
+157. S3 MFA Delete
+159. S3 Access Logs
+161. S3 Presigned URLs
+163. S3 Access Points
+164. S3 Object Lambda
+
+__Section 15: CloudFront and AWS Global Accelerator__  
+166. CloudFront with S3
+170. CloudFront - Cache Invalidation
+172. AWS Global Accelerator
+
+__Section 16: AWS Storage Extras__  
+
+__Section 17: Decoupling applications: SQS, SNS, Kinesis, Active MQ__  
+185. SQS - Standard Queue
+188. SQS - Fifo Queue
+192. SNS
+194. Amazon Kinesis Data Stream
+196. Amazon Data FireHose
+
+__Section 18: Containers on AWS: ECS, Fargate, ECR & EKS__   
+202. Creating ECS Cluster
+203. Creating ECS Service
+204. Amazon ECS Auto Scaling
+209. Amazon EKS
+211. AWS App Runner
+
+__Section 19: Serverless Overview from Solution Architect Perspective__  
+216. Lambda
+225. Amazon DynamoDB
+228. API Gateway Basics -
+
+__Section 20: Serverless Solution Architect Discusion__
+231. Mobile Application: MyTodoList
+232. Serverless Website MyBlog.com
+233. Microservices Architecture
+234. Software updates distribution
+
+__Section 22: Data Analytic__  
+247. Athena
+
+__Section 24: AWS Monitoring and Audit: CloudWatch, CloudTrail & Config__  
+273. CloudWatch Logs
+274. CloudWatch Logs - Live Tail
+277. CloudWatchAlarm Logs
+279. Amazon Event Bridge
 
 ### FAQs
 [IAM FAQs](https://aws.amazon.com/iam/faqs/)    
