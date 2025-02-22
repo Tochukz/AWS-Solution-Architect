@@ -8,6 +8,19 @@ const indexRouter = require("./routes/index");
 
 const app = express();
 
+// URI rewrite
+app.use((req, res, next) => {
+  const originalUrl = req.originalUrl;
+  if (originalUrl === "/order-service") {
+    req.url = "/";
+  } else if (originalUrl.startsWith("/order-service/")) {
+    const newPath = originalUrl.replace("/order-service", "");
+    req.url = newPath;
+  }
+
+  next();
+});
+
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
