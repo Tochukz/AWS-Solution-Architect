@@ -1,0 +1,6 @@
+fastapi==0.109.1
+uvicorn==0.27.0
+pydantic==2.6.0
+email-validator==2.1.0
+bcrypt==4.1.2
+mangum==0.17.0  # Required for AWS Lambda integration with FastAPI
