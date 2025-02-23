@@ -47,6 +47,25 @@ Parameters:
     Type: String
     Description: Name for the User Layer
     Default: OrderServiceLayer
+  AuthServiceCodeKey:
+    Type: String
+    Description: S3 bucket key for the Auth service code
+    Default: auth-service.zip
+  AuthLayerCodeKey:
+    Type: String
+    Description: S3 Bucket key for the Auth service node modules
+    Default: auth-service-module.zip
+  AuthServiceVersion:
+    Type: String
+    Description: Code version for the Auth service
+    Default: v0.0.2
+  AuthLayerName:
+    Type: String
+    Description: Name for the Auth Layer
+    Default: AuthServiceLayer
+  AuthEnvVariables:
+    Type: Map
+    Description: Environment variabled for Auth Service
 
 Resources:
   LambdaRole:
@@ -122,9 +141,36 @@ Resources:
         # - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${OrderLayerName}:${OrderLayerVersion}
         - !Ref OrderServiceLayer
 
+  AuthServiceLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Ref AuthLayerName
+      CompatibleRuntimes:
+        - nodejs18.x
+      Content:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${AuthServiceVersion}/${AuthLayerCodeKey}
+
+  AuthServiceFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: AuthServiceFunc
+      Hander: lambda.header
+      MemorySize: 256 # 0.25GB
+      Architectures:
+        - x86_64
+      Runtime: nodejs18.x
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3key: !Sub ${AuthServiceVersion}/{AuthServiceCodeKey}
+      Layers:
+        - !Ref AuthServiceLayer
+
 Outputs:
   UserServiceFuncName:
-    Description: ARN for the User Server Lambda
+    Description: Function name for the User Server Lambda
     Value: !Ref UserServiceFunc
     Export:
       Name: LambdaServices-UserServiceFuncName
@@ -134,7 +180,7 @@ Outputs:
     Export:
       Name: LambdaServices-UserServiceLambdaArn
   OrderServiceFuncName:
-    Description: ARN for the User Server Lambda
+    Description: Function name for the User Server Lambda
     Value: !Ref OrderServiceFunc
     Export:
       Name: LambdaServices-OrderServiceFuncName
@@ -143,3 +189,13 @@ Outputs:
     Value: !GetAtt OrderServiceFunc.Arn
     Export:
       Name: LambdaServices-OrderServiceLambdaArn
+  AuthServiceFuncName:
+    Description: Function name for the Auth Service Lambda
+    Value: !Ref AuthServiceFunc
+    Export:
+      Name: LambdaServices-AuthServiceFuncName
+  AuthServiceLambdaArn:
+    Description: ARN for the Auth Service Lambda
+    Value: !GetAtt AuthServiceFunc.Arn
+    Export:
+      Name: LambdaServices-AuthServiceLambdaArn
