@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures and EC2 instance on a different region to act as a client
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 Instance type
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+  NetworkAclId:
+    Type: String
+    Description: Exisitng Access Control List (ACL) Id
+    Default: acl-0e5fe6e7a90bd0d5d # Default ACL for default VPC in eu-west-3
+  ElasticIpCidr1:
+    Type: String
+    Description: Cidr block encompasing a single Elatic IP
+  ElasticIpCidr2:
+    Type: String
+    Description: Cidr block encompasing a single Elatic IP
+
+  # KeyName:
+  #   Type: AWS::EC2::KeyPair::KeyName
+  #   Description: Existing EC2 key-pair keyname
+  #   Default: "" # Create key in eu-west-1
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleSshSG
+      GroupDescription: Security group for SSH access only
+      SecurityGroupIngress:
+        - Description: Allow SSH from anywhere
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  ClientInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      SecurityGroupIds:
+        - !GetAtt WebSecurityGroup.GroupId
+
+  NetworkAclRule97:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAclId
+      RuleNumber: 97
+      Protocol: 6 # TCP(6), HTTP(10)
+      CidrBlock: !Ref ElasticIpCidr1
+      Egress: true
+      PortRange:
+        From: 8181
+        To: 8181
+      RuleAction: allow
+
+  NetworkAclRule98:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAclId
+      RuleNumber: 98
+      Protocol: 6 # TCP(6), HTTP(10)
+      CidrBlock: !Ref ElasticIpCidr2
+      Egress: true
+      PortRange:
+        From: 8181
+        To: 8181
+      RuleAction: allow
+
+  NetworkAclRule99:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAclId
+      RuleNumber: 99
+      Protocol: 6 # TCP(6), HTTP(10)
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      PortRange:
+        From: 8181
+        To: 8181
+      RuleAction: deny

@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configure Two Lambda Function to run two API microservices
+
+Parameters:
+  ArtifactBucket:
+    Type: String
+    Description: S3 Bucket name for zipped code package
+    Default: chucks-workspace-storage
+  UserServiceCodeKey:
+    Type: String
+    Description: S3 Bucket key for the user service code
+    Default: user-service.zip
+  UserLayerCodeKey:
+    Type: String
+    Description: S3 Bucket key for the user service packages
+    Default: user-service-packages.zip
+  UserServiceVersion:
+    Type: String
+    Description: Code version for the user service
+    Default: v0.0.2
+  # UserLayerVersion:
+  #   Type: Number
+  #   Description: Lambda layer version number for the UserLayer
+  #   Default: 1
+  UserLayerName:
+    Type: String
+    Description: Name for the User Layer
+    Default: UserServiceLayer
+  OrderServiceCodeKey:
+    Type: String
+    Description: S3 Bucket key for the order service code
+    Default: order-service.zip
+  OrderLayerCodeKey:
+    Type: String
+    Description: S3 Bucket key for the order service modules
+    Default: order-service-module.zip
+  OrderServiceVersion:
+    Type: String
+    Description: Code version for the order service
+    Default: v0.0.2
+  # OrderLayerVersion:
+  #   Type: Number
+  #   Description: Lambda layer version number for the OrderLayer
+  #   Default: 1
+  OrderLayerName:
+    Type: String
+    Description: Name for the User Layer
+    Default: OrderServiceLayer
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      Description: Role for a Lambda Func
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  UserServiceLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Ref UserLayerName
+      CompatibleRuntimes:
+        - python3.12
+      Content:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${UserServiceVersion}/${UserLayerCodeKey}
+
+  UserServiceFunc:
+    Type: AWS::Lambda::Function
+    # DependsOn: UserServiceLayer
+    Properties:
+      FunctionName: UserServiceFunc
+      Handler: main.handler
+      MemorySize: 256 # 0.25GB
+      Architectures:
+        - x86_64
+      Runtime: python3.12
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${UserServiceVersion}/${UserServiceCodeKey}
+      Layers:
+        # - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${UserLayerName}:${UserLayerVersion}
+        - !Ref UserServiceLayer
+
+  OrderServiceLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Ref OrderLayerName
+      CompatibleRuntimes:
+        - nodejs18.x
+      Content:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${OrderServiceVersion}/${OrderLayerCodeKey}
+
+  OrderServiceFunc:
+    Type: AWS::Lambda::Function
+    # DependsOn: OrderServiceLayer
+    Properties:
+      FunctionName: OrderServiceFunc
+      Handler: lambda.handler
+      MemorySize: 256 # 0.25GB
+      Architectures:
+        - x86_64
+      Runtime: nodejs18.x
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${OrderServiceVersion}/${OrderServiceCodeKey}
+      Layers:
+        # - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${OrderLayerName}:${OrderLayerVersion}
+        - !Ref OrderServiceLayer
+
+Outputs:
+  UserServiceFuncName:
+    Description: ARN for the User Server Lambda
+    Value: !Ref UserServiceFunc
+    Export:
+      Name: LambdaServices-UserServiceFuncName
+  UserServiceLambdaArn:
+    Description: ARN for the User Server Lambda
+    Value: !GetAtt UserServiceFunc.Arn
+    Export:
+      Name: LambdaServices-UserServiceLambdaArn
+  OrderServiceFuncName:
+    Description: ARN for the User Server Lambda
+    Value: !Ref OrderServiceFunc
+    Export:
+      Name: LambdaServices-OrderServiceFuncName
+  OrderServiceLambdaArn:
+    Description: ARN for the User Server Lambda
+    Value: !GetAtt OrderServiceFunc.Arn
+    Export:
+      Name: LambdaServices-OrderServiceLambdaArn

@@ -3,7 +3,7 @@
 ### Description
 
 The template configures a FailOver Routing policy.  
-The Route53 record sets respond with the IP for a primary EC2 instance if it is healthy, otherwise, it responds with the IP of a seconary EC2 instance.
+The Route53 record sets respond with the IP for a primary EC2 instance if it is healthy, otherwise, it responds with the IP of a secondary EC2 instance.
 
 ### Operation
 

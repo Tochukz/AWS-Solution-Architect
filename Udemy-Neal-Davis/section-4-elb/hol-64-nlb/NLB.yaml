@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a Network Load Balancer
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: Existing VPC Id
+    Default: vpc-097728e00a72ac827 # default VPC in eu-west-2
+  PublicSubnet1:
+    Type: String
+    Description: Existing Subnet Id
+    Default: subnet-01e6764eb590a6eb3 # default public subnet 1 in eu-west-2
+  PublicSubnet2:
+    Type: String
+    Description: Existing Subnet Id
+    Default: subnet-08e8eaec953c85086 # default public subnet 2 in eu-west-2
+  InstanceType:
+    Type: String
+    Description: EC2 Instance type
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 key-pair keyname
+    Default: DevSimpleKey
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleWebSG
+      GroupDescription: Security group for Web EC2 instances
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow HTTP from anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow SSH from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow access of port 8181 from anywhere
+          IpProtocol: TCP
+          FromPort: 8181
+          ToPort: 8181
+          CidrIp: 0.0.0.0/0
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: TemplateForNlb
+      LaunchTemplateData:
+        InstanceType: !Ref InstanceType
+        ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref WebSecurityGroup
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            # Update the system
+            yum update -y
+            # Install Python 3
+            yum install -y python3
+            # Create a simple Python web server script
+            cat > /home/ec2-user/webserver.py << EOF
+            import http.server
+            import socketserver
+
+            PORT = 8181
+            Handler = http.server.SimpleHTTPRequestHandler
+
+            class CustomHandler(Handler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(bytes("Welcome to My Custom SaaS App", "utf8"))
+
+            httpd = socketserver.TCPServer(("", PORT), CustomHandler)
+            print("serving at port", PORT)
+            httpd.serve_forever()
+            EOF
+            # Run the web server in the background
+            nohup python3 /home/ec2-user/webserver.py > /dev/null 2>&1 &
+
+  ElasticIp1:
+    Type: AWS::EC2::EIP
+    # DependsOn: !Ref CustomVpc # if in same template
+    Properties:
+      Domain: vpc
+
+  ElasticIp2:
+    Type: AWS::EC2::EIP
+    # DependsOn: !Ref CustomVpc # if in same template
+    Properties:
+      Domain: vpc
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleTargetGroup
+      VpcId: !Ref VpcId
+      TargetType: instance
+      Protocol: TCP
+      Port: 8181
+      HealthCheckProtocol: TCP
+
+  AutoScaling:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    # DependsOn: VpcGatewayAttachment # If custom VPC in same template
+    Properties:
+      AutoScalingGroupName: SimpleAutoScale
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      DesiredCapacity: 2
+      MinSize: 2
+      MaxSize: 2
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+
+  NetworkBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleNlb
+      Type: network
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref WebSecurityGroup
+      SubnetMappings:
+        - SubnetId: !Ref PublicSubnet1
+          AllocationId: !GetAtt ElasticIp1.AllocationId
+        - SubnetId: !Ref PublicSubnet2
+          AllocationId: !GetAtt ElasticIp2.AllocationId
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref NetworkBalancer
+      Protocol: TCP
+      Port: 8181
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+Outputs:
+  DnsName:
+    Description: Load balancer DNS name
+    Value: !Sub ${NetworkBalancer.DNSName}:8181
+  ElasticIpCidr1:
+    Description: Elastic IP 1 in a Cidr block
+    Value: !Sub ${ElasticIp1}/32
+  ElasticIpCidr2:
+    Description: Elastic IP 2 in a Cidr block
+    Value: !Sub ${ElasticIp2}/32

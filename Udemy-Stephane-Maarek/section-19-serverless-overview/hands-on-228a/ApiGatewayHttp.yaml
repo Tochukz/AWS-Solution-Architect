@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an HTTP API Gateway with a Lambda function backend.
+
+Resources:
+  HttpApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: SimpleHttpApi
+      ProtocolType: HTTP
+
+  UserLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !ImportValue LambdaServices-UserServiceLambdaArn
+      PayloadFormatVersion: 2.0
+
+  UserServiceRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      RouteKey: ANY /users
+      Target: !Sub integrations/${UserLambdaIntegration}
+
+  UserServiceWildCardRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      RouteKey: ANY /users/{proxy+}
+      Target: !Sub integrations/${UserLambdaIntegration}
+
+  UserLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue LambdaServices-UserServiceFuncName
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApiGateway}/*/*/*
+
+  OrderLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !ImportValue LambdaServices-OrderServiceLambdaArn
+      PayloadFormatVersion: 2.0
+
+  OrderServiceRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      RouteKey: ANY /order-service
+      Target: !Sub integrations/${OrderLambdaIntegration}
+
+  OrderServiceWildCardRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      RouteKey: ANY /order-service/{proxy+}
+      Target: !Sub integrations/${OrderLambdaIntegration}
+
+  OrderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue LambdaServices-OrderServiceFuncName
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApiGateway}/*/*/*
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApiGateway
+      StageName: $default
+      AutoDeploy: true
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway Invoke URL"
+    Value: !Sub "https://${HttpApiGateway}.execute-api.${AWS::Region}.amazonaws.com"

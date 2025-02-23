@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The template create a Service Control Policy that
+
+Resources:
+  DenyDeletePolicy:
+    Type: AWS::Organizations::Policy
+    DeletionPolicy: Delete
+    Properties:
+      Name: DenyS3ObjectDelete
+      Description: Deny Policy for the SimpleOrganization OU
+      Type: SERVICE_CONTROL_POLICY
+      TargetIds:
+        - !ImportValue OrgAndAccount-OrgUnitId
+      Content:
+        Version: 2012-10-17
+        Statement:
+          - Sid: DisallowS3Delete
+            Effect: Deny
+            Action:
+              - s3:DeleteBucket
+              - s3:DeleteBucketPolicy
+              - s3:DeleteObject
+              - s3:DeleteObjectVersion
+            Resource: "*"
