@@ -2,17 +2,17 @@
 # Deploy Python code for the UserService
 
 version=v0.0.2
-zip -r  user-service.zip user-service/ -x "*__pycache__*"
+cd user-service
+zip -r  user-service.zip . -x "*__pycache__*" "python/*"
 aws s3 cp user-service.zip s3://chucks-workspace-storage/$version/user-service.zip
 
 mkdir python
 cd python
 
 # Install packages
-pip install -r  ../user-service/requirements.txt --target .
-
-# Create zip file for the layer
+pip install -r  ../requirements.txt --target .
 cd ../
 zip -r user-service-packages.zip python/
 aws s3 cp user-service-packages.zip s3://chucks-workspace-storage/$version/user-service-packages.zip
 
+#  aws lambda update-function-code --function-name UserServiceFunc --s3-key $version/user-service.zip --s3-bucket chucks-workspace-storage > user-service-func.json

@@ -121,6 +121,7 @@ Resources:
       Layers:
         # - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${OrderLayerName}:${OrderLayerVersion}
         - !Ref OrderServiceLayer
+
 Outputs:
   UserServiceFuncName:
     Description: ARN for the User Server Lambda

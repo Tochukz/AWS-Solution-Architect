@@ -16,11 +16,6 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri: !ImportValue LambdaServices-UserServiceLambdaArn
       PayloadFormatVersion: 2.0
-      RequestParameters:
-        # Rewrite /user-service to /
-        "overwrite:path": "$request.path.user-service && '/'"
-        # Rewrite /user-service/* to /*
-        # "overwrite:path": "$request.path.proxy && '/' + $request.path.proxy"
 
   UserServiceRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -28,11 +23,6 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /users
       Target: !Sub integrations/${UserLambdaIntegration}
-      # RequestParameters:
-      #   - Source: "REQUEST"
-      #     Target: "PATH"
-      #     SourcePath: "/users"
-      #     TargetPath: "/"
 
   UserServiceWildCardRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -40,11 +30,6 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /users/{proxy+}
       Target: !Sub integrations/${UserLambdaIntegration}
-      # RequestParameters:
-      #   - Source: "REQUEST"
-      #     Target: "PATH"
-      #     SourcePath: "/users/*"
-      #     TargetPath: "/*"
 
   UserLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -61,11 +46,6 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri: !ImportValue LambdaServices-OrderServiceLambdaArn
       PayloadFormatVersion: 2.0
-      #RequestParameters:
-      # Rewrite /order-service to /
-      #"overwrite:path": "$request.path.order-service && '/'"
-      # Rewrite /order-service/* to /*
-      # "overwrite:path": "$request.path.proxy && '/' + $request.path.proxy"
 
   OrderServiceRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -73,11 +53,6 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /order-service
       Target: !Sub integrations/${OrderLambdaIntegration}
-      # RequestParameters:
-      #   - Source: "REQUEST"
-      #     Target: "PATH"
-      #     SourcePath: "/orders"
-      #     TargetPath: "/"
 
   OrderServiceWildCardRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -85,11 +60,6 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /order-service/{proxy+}
       Target: !Sub integrations/${OrderLambdaIntegration}
-      # RequestParameters:
-      #   - Source: "REQUEST"
-      #     Target: "PATH"
-      #     SourcePath: "/orders/*"
-      #     TargetPath: "/*"
 
   OrderLambdaPermission:
     Type: AWS::Lambda::Permission
