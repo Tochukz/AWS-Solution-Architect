@@ -9,6 +9,32 @@ Resources:
       Name: SimpleHttpApi
       ProtocolType: HTTP
 
+  CustomAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      Name: BasicCustomAuthorizer
+      ApiId: !Ref HttpApiGateway
+      AuthorizerType: REQUEST
+      AuthorizerPayloadFormatVersion: "2.0"
+      AuthorizerResultTtlInSeconds: 300
+      # AuthorizerUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomAuthorizerFunction.Arn}/invocations
+      AuthorizerUri: !Join
+        - /
+        - - !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions
+          - !ImportValue LambdaServices-AuthServiceLambdaArn
+          - invocations
+      EnableSimpleResponses: true
+      IdentitySource:
+        - $request.header.Authorization
+
+  AuthLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !ImportValue LambdaServices-AuthServiceFuncName
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApiGateway}/authorizers/*
+
   UserLambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
@@ -23,6 +49,8 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /users
       Target: !Sub integrations/${UserLambdaIntegration}
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref CustomAuthorizer
 
   UserServiceWildCardRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -30,6 +58,8 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /users/{proxy+}
       Target: !Sub integrations/${UserLambdaIntegration}
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref CustomAuthorizer
 
   UserLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -53,6 +83,8 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /order-service
       Target: !Sub integrations/${OrderLambdaIntegration}
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref CustomAuthorizer
 
   OrderServiceWildCardRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -60,6 +92,8 @@ Resources:
       ApiId: !Ref HttpApiGateway
       RouteKey: ANY /order-service/{proxy+}
       Target: !Sub integrations/${OrderLambdaIntegration}
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref CustomAuthorizer
 
   OrderLambdaPermission:
     Type: AWS::Lambda::Permission

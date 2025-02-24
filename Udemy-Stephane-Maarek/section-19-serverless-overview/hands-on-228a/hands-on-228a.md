@@ -17,7 +17,7 @@ $ cfn-lint ApiGatewayHttp.yaml
 1. Deploy the `LambdaServices` stack
 
 ```bash
-$ aws cloudformation deploy --template-file LambdaServices.yaml  --stack-name LambdaServices --capabilities CAPABILITY_NAMED_IAM
+$ aws cloudformation deploy --template-file LambdaServices.yaml  --stack-name LambdaServices  --parameter-overrides file://secret-parameters.json --capabilities CAPABILITY_NAMED_IAM
 ```
 
 2. Deploy the `ApiGatewayHttp` stack

@@ -63,8 +63,8 @@ Parameters:
     Type: String
     Description: Name for the Auth Layer
     Default: AuthServiceLayer
-  AuthEnvVariables:
-    Type: Map
+  JwtSecret:
+    Type: String
     Description: Environment variabled for Auth Service
 
 Resources:
@@ -82,6 +82,36 @@ Resources:
               Service: lambda.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  AuthServiceLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Ref AuthLayerName
+      CompatibleRuntimes:
+        - nodejs18.x
+      Content:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${AuthServiceVersion}/${AuthLayerCodeKey}
+
+  AuthServiceFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: AuthServiceFunc
+      Handler: lambda.handler
+      MemorySize: 256 # 0.25GB
+      Architectures:
+        - x86_64
+      Runtime: nodejs18.x
+      Role: !GetAtt LambdaRole.Arn
+      PackageType: Zip
+      Environment:
+        Variables:
+          JWT_SECRET: !Ref JwtSecret
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${AuthServiceVersion}/${AuthServiceCodeKey}
+      Layers:
+        - !Ref AuthServiceLayer
 
   UserServiceLayer:
     Type: AWS::Lambda::LayerVersion
@@ -141,34 +171,17 @@ Resources:
         # - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${OrderLayerName}:${OrderLayerVersion}
         - !Ref OrderServiceLayer
 
-  AuthServiceLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Ref AuthLayerName
-      CompatibleRuntimes:
-        - nodejs18.x
-      Content:
-        S3Bucket: !Ref ArtifactBucket
-        S3Key: !Sub ${AuthServiceVersion}/${AuthLayerCodeKey}
-
-  AuthServiceFunc:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: AuthServiceFunc
-      Hander: lambda.header
-      MemorySize: 256 # 0.25GB
-      Architectures:
-        - x86_64
-      Runtime: nodejs18.x
-      Role: !GetAtt LambdaRole.Arn
-      PackageType: Zip
-      Code:
-        S3Bucket: !Ref ArtifactBucket
-        S3key: !Sub ${AuthServiceVersion}/{AuthServiceCodeKey}
-      Layers:
-        - !Ref AuthServiceLayer
-
 Outputs:
+  AuthServiceFuncName:
+    Description: Function name for the Auth Service Lambda
+    Value: !Ref AuthServiceFunc
+    Export:
+      Name: LambdaServices-AuthServiceFuncName
+  AuthServiceLambdaArn:
+    Description: ARN for the Auth Service Lambda
+    Value: !GetAtt AuthServiceFunc.Arn
+    Export:
+      Name: LambdaServices-AuthServiceLambdaArn
   UserServiceFuncName:
     Description: Function name for the User Server Lambda
     Value: !Ref UserServiceFunc
@@ -189,13 +202,3 @@ Outputs:
     Value: !GetAtt OrderServiceFunc.Arn
     Export:
       Name: LambdaServices-OrderServiceLambdaArn
-  AuthServiceFuncName:
-    Description: Function name for the Auth Service Lambda
-    Value: !Ref AuthServiceFunc
-    Export:
-      Name: LambdaServices-AuthServiceFuncName
-  AuthServiceLambdaArn:
-    Description: ARN for the Auth Service Lambda
-    Value: !GetAtt AuthServiceFunc.Arn
-    Export:
-      Name: LambdaServices-AuthServiceLambdaArn

@@ -14,7 +14,7 @@ if (secret.length !== 32) {
   process.exit(1);
 }
 if (!username) {
-  console.error("Please provide an app name as second argument");
+  console.error("Please provide an username as second argument");
   process.exit(1);
 }
 
