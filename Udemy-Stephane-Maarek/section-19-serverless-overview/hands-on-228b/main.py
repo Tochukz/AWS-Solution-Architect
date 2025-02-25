@@ -2,11 +2,13 @@ import json
 
 def handler(event, context):
   body = "Staff Engineer Chucks"
-  statusCode = 200
   return {
-    "statusCode": statusCode,
+    "statusCode": 200,
     "body": json.dumps(body),
     "headers": { 
-    "Content-Type": "application/json"
+      "Content-Type": "application/json"
     }
   }
+
+result=handler({}, {})
+print(result)

@@ -112,7 +112,10 @@ $ aws sts get-caller-identity  --profile my-assumed-role
 
 ### Cleanup
 
-To delete the stack
+You must close the FirstAccount account first before you can delete the Organization.  
+You can do this on the Organization Console.
+
+After the account is successfully closed on Suspended, you can try deleting the Stack.
 
 ```bash
 $ aws cloudformation delete-stack --stack-name OrgAndAccount --profile default

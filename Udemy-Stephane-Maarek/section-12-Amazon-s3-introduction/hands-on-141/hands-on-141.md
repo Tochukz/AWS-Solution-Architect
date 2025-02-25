@@ -3,7 +3,7 @@
 ### Description
 
 This template sets up a Life Cycle Configuration for a S3 bucket.
-A Life Cycle Configuration specicify the rules that determines how objects are
+A Life Cycle Configuration specify the rules that determines how objects are
 automatically moved from one storage class to aother over time.
 
 ### Operation

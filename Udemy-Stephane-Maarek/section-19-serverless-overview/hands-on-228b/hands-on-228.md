@@ -16,7 +16,7 @@ $ cfn-lint ApiGateway.yaml
 Deploy the stack
 
 ```bash
-$ aws cloudformation deploy --template-file ApiGateway.yaml  --stack-name ApiGateway
+$ aws cloudformation deploy --template-file ApiGateway.yaml  --stack-name ApiGateway --capabilities CAPABILITY_NAMED_IAM
 ```
 
 **Testing**

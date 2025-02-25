@@ -1,4 +1,4 @@
-# Lesson 152: S3 Event Notifications - Hands On
+# Lesson 152: S3 Encryption - Hands On
 
 ### Description
 
@@ -7,7 +7,7 @@ You can choice other encryption type like
 
 - Server-side encryption with AWS Key Management Service keys (SSE-KMS)
 - Server-side encryption with AWS Key Management Service keys (SSE-KMS)
-- Server-side encryption wiht Customer provided keys (SSE-C)
+- Server-side encryption with Customer provided keys (SSE-C)
 
 Client Side Encryption is also another option to consider for S3 objects.
 

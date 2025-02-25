@@ -48,9 +48,8 @@ Resources:
 
           def handler(event, context):
             body = "Staff Engineer Chucks"
-            statusCode = 200
             return {
-              "statusCode": statusCode,
+              "statusCode": 200,
               "body": json.dumps(body),
               "headers": { 
                 "Content-Type": "application/json"
@@ -76,8 +75,8 @@ Resources:
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref ApiGateway
-      # ResourceId: !Ref ApiResource
-      ResourceId: !GetAtt ApiGateway.RootResourceId
+      ResourceId: !Ref ApiResource
+      #ResourceId: !GetAtt ApiGateway.RootResourceId
       HttpMethod: ANY #GET
       # OperationName: HomePage
       AuthorizationType: NONE
