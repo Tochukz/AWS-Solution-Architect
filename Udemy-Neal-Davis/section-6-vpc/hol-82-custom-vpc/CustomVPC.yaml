@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures a custom VPC and associated resources
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::Vpc
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: DemoVpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1A:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1A
+
+  PublicSubnet1B:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1B
+
+  PrivateSubnet1A:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet1A
+
+  PrivateSubnet1B:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: false 
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags: 
+        - Key: Name: 
+          Value: PrivateSubnet1B
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable 
+    Properties: 
+      VpcId: !Ref CustomVpc 
+
+  PublicRoute:
+    Type: AWS::EC2::Route 
+    Properties: 
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      
+  PublicSubnet1ARouteTableAssoc: 
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1A
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet1BRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      SubnetId: !Ref PublicSubnet1B
+      RouteTableId: !Ref PublicRouteTable
+
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecurityGroup
+      GroupDescription: Allow HTTP access 
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow HTTP access from anywhere 
+          IpProtocol: TCP 
+          FromPort: 80 
+          ToPort: 80
+          CidrIp: 0.0.0.0/0 
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      InstanceType: t2.micro 
+      ImageId: !FindInMap [Images, !Ref AWS::Region ]
+      SecurityGroupIds: 
+        - !Ref WebSecurityGroup 
