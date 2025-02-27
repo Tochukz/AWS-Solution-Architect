@@ -56,8 +56,11 @@ __Gateway Load Balancer___
 * Exchanges traffic with appliances using the GENEVE protocol on port 6081
 
 ### Auto Scaling Policies
-1. __Simple Scaling__: Will lauch a new instance when Alarm is breached
+1. __Simple Scaling__: Will launch a new instance when Alarm is breached
 2. __Step Scaling__: May launch more than one instance depending on the level of the Alarm e.g percentage CPU utilization
 3. __Scheduled Scaling__: Launches new instances at a scheduled time.
 4. __Target Tracking Scaling__: Scales instances count in Auto Scaling Group based on a target Metric value e.g CPU Utilization
 AWS recommends you use _Target Tracking_ over _Simple and Step Scaling_ whenever possible.  
+
+### Cheat Sheets  
+[AWS Elastic Load Balancing and EC2 Auto Scaling Cheat Sheet](https://digitalcloud.training/auto-scaling-and-elastic-load-balancing/)  
