@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an EC2 instance that can be used for building application 
+
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing Key Name for the EC2 instance
+    Default: DevSimpleKey
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  SimpleSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleSecGroup
+      GroupDescription: Allow SSH access from anywhere
+      SecurityGroupIngress:
+        - Description: Allow SSH acces
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleRole
+      Description: Role for Elastic Beanstalk environment
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: SimpleProfile
+      Roles:
+        - !Ref EC2InstanceRole
+
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      SecurityGroupIds:
+        - !GetAtt SimpleSecGroup.GroupId
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      Tags:
+        - Key: Name
+          Value: SimpleTestInstance
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          # Install Node Version Manager
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+
+          echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bash_profile
+          echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bash_profile
+          echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> ~/.bash_profile
+          source ~/.bash_profile
+
+          nvm install 20
+
+Outputs:
+  PublicIp:
+    Description: Public IP of the Bastion instance
+    Value: !GetAtt SimpleInstance.PublicIp
