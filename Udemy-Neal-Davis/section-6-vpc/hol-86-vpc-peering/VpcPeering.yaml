@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures the VPC peering connection between two VPCs in the same regions
+
+Parameters:
+  RequesterVpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id of the requester VPC that innitiated a connection request request
+  AccepterVpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id of accepter VPC that accepts a connection request
+  RequesterRouteTableId:
+    Type: String
+    Description: Route table Id of the requester VPC
+  AccepterRouteTableId:
+    Type: String
+    Description: Route table Id of the accepter VPC
+  RequesterCidrBlock:
+    Type: String
+    Description: Cidr block of the requester VPC
+  AccepterCidrBlock:
+    Type: String
+    Description: Cidr block of the accepter VPC
+
+Resources:
+  VpcPeeringConnection:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      VpcId: !Ref RequesterVpcId
+      PeerVpcId: !Ref AccepterVpcId
+      Tags:
+        - Key: Name
+          Value: Eu-West1-West2-Peering
+
+  RequesterVpcRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RequesterRouteTableId
+      DestinationCidrBlock: !Ref AccepterCidrBlock
+      VpcPeeringConnectionId: !Ref VpcPeeringConnection
+
+  AcceptorVpcRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AccepterRouteTableId
+      DestinationCidrBlock: !Ref RequesterCidrBlock
+      VpcPeeringConnectionId: !Ref VpcPeeringConnection

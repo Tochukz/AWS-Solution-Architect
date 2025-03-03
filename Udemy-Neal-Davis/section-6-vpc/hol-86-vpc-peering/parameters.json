@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "RequesterVpcId",
+    "ParameterValue": "vpc-005c5f8439a38d2b7"
+  },
+  {
+    "ParameterKey": "AccepterVpcId",
+    "ParameterValue": "vpc-09fd7a8386139f48d"
+  },
+  {
+    "ParameterKey": "RequesterRouteTableId",
+    "ParameterValue": "rtb-063a6cee2ac3be94c"
+  },
+  {
+    "ParameterKey": "AccepterRouteTableId",
+    "ParameterValue": "rtb-00cea1b82dfa4d362"
+  },
+  {
+    "ParameterKey": "RequesterCidrBlock",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "AccepterCidrBlock",
+    "ParameterValue": "10.1.0.0/16"
+  }
+]
