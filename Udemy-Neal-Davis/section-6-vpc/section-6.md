@@ -32,5 +32,20 @@ For VPC Peering to work, the CIDR blocks of the VPC must not overlap.
 
 VPC Peering does not support _transitive peering_ or _transitive routing_ which mean that you cannot have access from VPC 1 to 3 through 2 if VPC 1 and 3 does not have a direct peering.   
 
+### VPC Endpoints
+There are two kinds of VPC endpoints
+1. _VPC Gateway Endpoint_: can be used for S3 and DynamoDB only
+2. _VPC Interface Endpoint_: can be used for API Gateway, CloudFormation, CloudWatch etc
+
+### VPC Flow Logs
+* Flow logs capture information about the IP traffic going to and from network interfaces in a VPC
+* Flow log data is stored using Amazon CLoudWatch Logs or S3
+* Flow logs can be created at the following levels:
+  - VPC
+  - Subnet
+  - Network Interface 
+
+
+
 ### Resources
 [Subnet Calculator](https://www.site24x7.com/tools/ipv4-subnetcalculator.html)  

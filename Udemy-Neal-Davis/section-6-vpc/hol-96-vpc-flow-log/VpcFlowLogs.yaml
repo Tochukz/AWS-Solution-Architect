@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a VPC flow log
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Vpc ID of existing VPC
+    Default: vpc-097728e00a72ac827 # The default VPC Id. Run: aws ec2 describe-vpcs
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Key name of existing key pair
+    Default: DevSimpleKey
+
+Mappings:
+  Images:
+    eu-west-1:
+      Ami: ami-04f87c366aa353bc5
+    eu-west-2:
+      Ami: ami-0fa3603ea544e5bf9
+    eu-west-3:
+      Ami: ami-0f139a4a2cdfff8d1
+
+Resources:
+  VpcFlowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: FlowLogRole
+      Description: Role for VPC Flow Log
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+      Policies:
+        - PolicyName: VpcLogPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: "*"
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+
+  VpcFlowLog:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      ResourceId: !Ref VpcId
+      ResourceType: VPC
+      DeliverLogsPermissionArn: !GetAtt VpcFlowRole.Arn
+      # TrafficType: ALL
+      LogGroupName: "aws/vpc/DefaultVpcLogs"

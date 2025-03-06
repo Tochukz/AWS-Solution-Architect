@@ -1,4 +1,4 @@
-# COnfigure VPC Peering - HOL-86
+# Configure VPC Peering - HOL-86
 
 ### Description
 
