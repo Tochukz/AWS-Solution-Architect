@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This configuration creates a Gateway type VPC Endpoint that connects to S3
+Description: This configuration creates a Gateway type VPC Endpoint that allows EC2 instance to access S3 privately
 
 Parameters:
   KeyName:
@@ -90,17 +90,8 @@ Resources:
             Action: sts:AssumeRole
             Principal:
               Service: ec2.amazonaws.com
-      Policies:
-        - PolicyName: AllowS3Access
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Sid: Allow S3 access
-                Effect: Allow
-                Action:
-                  - s3:Get*
-                  - s3:List*
-                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -144,10 +135,20 @@ Resources:
       VpcEndpointType: Gateway
       RouteTableIds:
         - !Ref PublicRouteTable
+      Tags:
+        - Key: Name
+          Value: SimpleS3Endpoint
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Sid: AllowAllS3Actions
+            Effect: Allow
+            # Effect: Deny
             Principal: "*"
-            Action: "s3:*"
+            Action: "*"
             Resource: "*"
+
+Outputs:
+  PublicIp:
+    Description: Public IP for the EC2 instance
+    Value: !GetAtt Ec2Instance.PublicIp
