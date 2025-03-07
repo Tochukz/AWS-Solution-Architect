@@ -2,6 +2,8 @@
 
 ### Description
 
+This configuration creates a VPC flow log.
+
 ### Operation
 
 **Before deployment**
@@ -46,7 +48,8 @@ $ curl amazon.com
 
 Wait for about 10 minutes.  
 2. Open the VPC console, locate the default VPC and select it.  
-Under the VPC details, select the Flow logs tab and navigate to the log Destination using the link provided.
+Under the VPC details, select the Flow logs tab and navigate to the log Destination using the link provided.  
+Alternatively, you can just directly to the logs by going to the CloudWatch console and locating the log group name.
 
 **Cleanup**
 

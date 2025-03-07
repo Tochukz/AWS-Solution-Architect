@@ -49,12 +49,26 @@ Resources:
                   - logs:DescribeLogStreams
                 Resource: "*"
 
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Sec group for EC2
+      SecurityGroupIngress:
+        - Description: Allow SSH access
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
   Ec2Instance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
       ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
       KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt WebSecGroup.GroupId
 
   VpcFlowLog:
     Type: AWS::EC2::FlowLog
@@ -62,5 +76,13 @@ Resources:
       ResourceId: !Ref VpcId
       ResourceType: VPC
       DeliverLogsPermissionArn: !GetAtt VpcFlowRole.Arn
-      # TrafficType: ALL
-      LogGroupName: "aws/vpc/DefaultVpcLogs"
+      TrafficType: ALL
+      LogGroupName: DemoVpcLogs
+      Tags:
+        - Key: Name
+          Value: DemoVpcFlow
+
+Outputs:
+  PublicIp:
+    Description: EC2 Instance Public IP
+    Value: !GetAtt Ec2Instance.PublicIp
