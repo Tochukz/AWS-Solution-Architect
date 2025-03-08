@@ -22,6 +22,8 @@ const payload = {
   username,
   userId: 1,
 };
+// jwtOptions.expiresIn = "1h";
+jwtOptions.expiresIn = "60m";
 const token = jwt.sign(payload, secret, jwtOptions);
 
 console.log(`Token: ${token}`);

@@ -47,7 +47,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApiGateway
-      RouteKey: ANY /users
+      RouteKey: ANY /user-service
       Target: !Sub integrations/${UserLambdaIntegration}
       AuthorizationType: CUSTOM
       AuthorizerId: !Ref CustomAuthorizer
@@ -56,7 +56,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApiGateway
-      RouteKey: ANY /users/{proxy+}
+      RouteKey: ANY /user-service/{proxy+}
       Target: !Sub integrations/${UserLambdaIntegration}
       AuthorizationType: CUSTOM
       AuthorizerId: !Ref CustomAuthorizer

@@ -1,0 +1,41 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /user-service/users",
+  "rawPath": "/user-service/users",
+  "rawQueryString": "name=John",
+  "headers": {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "host": "s5fd5yb890.execute-api.eu-west-2.amazonaws.com",
+    "user-agent": "PostmanRuntime/7.26.8",
+    "x-amzn-trace-id": "Root=1-12345678-abcdef012345678912345678",
+    "x-forwarded-for": "192.168.1.1",
+    "x-forwarded-port": "443",
+    "x-forwarded-proto": "https"
+  },
+  "queryStringParameters": {
+    "name": "John"
+  },
+  "requestContext": {
+    "accountId": "123456789012",
+    "apiId": "1234567890",
+    "domainName": "1234567890.execute-api.us-east-1.amazonaws.com",
+    "domainPrefix": "1234567890",
+    "http": {
+      "method": "GET",
+      "path": "/user-service/users",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "192.168.1.1",
+      "userAgent": "PostmanRuntime/7.26.8"
+    },
+    "requestId": "abc123-def456-ghi789",
+    "routeKey": "GET /user-service/users",
+    "stage": "prod",
+    "time": "10/Oct/2023:12:34:56 +0000",
+    "timeEpoch": 1696948496000
+  },
+  "pathParameters": {
+    "proxy": "hello"
+  },
+  "isBase64Encoded": false
+}

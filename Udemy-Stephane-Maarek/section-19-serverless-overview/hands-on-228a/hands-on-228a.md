@@ -2,7 +2,14 @@
 
 ### Description
 
-This template configures an API Gateway with a Lambda function backend.
+This example configures an API Gateway with a two Lambda functions as Backend APIs.  
+The two Lambda function represents individual Microservices with base paths `/user-service` and `/order-service`.  
+The API Gateway is supported with an Authorizer which authenticates all requests before they reach the microservices.
+
+The solution is broken down into two stacks -
+
+1. LambdaServices which configures all the Lambda functions which hold the microservices.
+2. ApiGatewayHttp which configures the API Gateway and related resources
 
 ### Operation
 
@@ -26,17 +33,19 @@ $ aws cloudformation deploy --template-file LambdaServices.yaml  --stack-name La
 $ aws cloudformation deploy --template-file ApiGatewayHttp.yaml  --stack-name ApiGatewayHttp
 ```
 
-**Testing**
+**Testing**  
 Get the API Gateway endpoint from stack outputs
 
 ```bash
 $ aws cloudformation describe-stacks --stack-name ApiGatewayHttp --query "Stacks[0].Outputs" --no-cli-pager
 ```
 
-To test the Lambda function
+Use postman to run rude operation against the API Gateway endpoint targeting the microservices.
+
+To the UserService Lambda function
 
 ```bash
-$ aws lambda invoke --function-name BasicFunc  --cli-binary-format raw-in-base64-out output.json
+aws lambda invoke --function-name UserServiceFunc --payload file://user-service-event.json --cli-binary-format raw-in-base64-out output.json
 ```
 
 **Debug Errors**  
@@ -47,8 +56,9 @@ $ aws cloudformation describe-stack-events --stack-name ApiGatewayHttp > events.
 ```
 
 **Cleanup**  
-To delete the stack
+To delete the stacks
 
 ```bash
 $ aws cloudformation delete-stack --stack-name ApiGatewayHttp
+$ aws cloudformation delete-stack --stack-name LambdaServices
 ```

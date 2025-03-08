@@ -54,6 +54,7 @@ Resources:
     Properties:
       GroupName: WebSecGroup
       GroupDescription: Sec group for EC2
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
         - Description: Allow SSH access
           IpProtocol: TCP
@@ -68,7 +69,7 @@ Resources:
       ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
       KeyName: !Ref KeyName
       SecurityGroupIds:
-        - !GetAtt WebSecGroup.GroupId
+        - !Ref WebSecGroup
 
   VpcFlowLog:
     Type: AWS::EC2::FlowLog

@@ -6,7 +6,8 @@ from database.memory_store import UserStore
 from typing import List
 from mangum import Mangum
 
-app = FastAPI(title="User Management API")
+# app = FastAPI(title="User Management API")
+app = FastAPI(title="User Management API", root_path="/user-service")
 user_store = UserStore()
 
 # Create handler for Lambda
