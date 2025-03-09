@@ -20,8 +20,8 @@ export class AppController {
     return this.appService.generatePdfs();
   }
 
-  @Post('/send-email')
+  @Post('/send-emails')
   async sendEmails() {
-    return 'Email sent';
+    return this.appService.sendEmails();
   }
 }
