@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This template configures an EC2 instance that can be used for building application 
+Description: This template configures an EC2 instance that can be used for building application
 
 Parameters:
   InstanceType:
@@ -85,6 +85,9 @@ Resources:
           source ~/.bash_profile
 
           nvm install 20
+
+          # Install pip
+          sudo dnf install -y python3-pip
 
 Outputs:
   PublicIp:

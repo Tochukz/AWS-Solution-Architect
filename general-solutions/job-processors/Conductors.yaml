@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Solution to process long running jobs using Queues, Step Function, and Lambdas.
+
+Resources:
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Daily7AmTrigger
+      Description: Invoke the DataPreparationFunc at 7am daily
+      ScheduleExpression: "cron(0 7 * * ? *)"
+      State: ENABLED
+      Targets:
+        - Arn: !ImportValue Workers-DataPreparationFuncArn
+          Id: DataPreparationFunc
+
+  DataPreparationLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue Workers-DataPreparationFuncName
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventBridgeRule.Arn
+
+  StepFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AllowLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+              - Sid: AllowFuncInvoke
+                Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !ImportValue Workers-PdfGenerationFuncArn
+                  - !ImportValue Workers-PdfMailerFuncArn
+
+  # PdfGenConductor:
+  #   Type: AWS::StepFunctions::StateMachine
+  #   Properties:
+  #     RoleArn: !GetAtt StepFunctionRole.Arn
+  #     DefinitionString: !Sub
+  #       - |-
+  #         {
+  #           "Comment": "Step Function to process SQS queue until empty",
+  #           "StartAt": "PdfGeneration",
+  #           "States": {
+  #             "PdfGeneration": {
+  #               "Type": "Task",
+  #               "Resource": "${PdfGenerationFuncArn}",
+  #               "Parameters": {
+  #                 "queueUrl": "${QueueUrl}"
+  #               },
+  #               "ResultPath": "$.result",
+  #               "Next": "IsQueueEmpty"
+  #             },
+  #             "IsQueueEmpty": {
+  #               "Type": "Choice",
+  #               "Choices": [
+  #                 {
+  #                   "Variable": "$.result.messageCount",
+  #                   "NumericEquals": 0,
+  #                   "Next": "QueueEmpty"
+  #                 }
+  #               ],
+  #               "Default": "WaitAndRetry"
+  #             },
+  #             "WaitAndRetry": {
+  #               "Type": "Wait",
+  #               "Seconds": 300,
+  #               "Next": "PdfGeneration"
+  #             },
+  #             "QueueEmpty": {
+  #               "Type": "Pass",
+  #               "End": true
+  #             }
+  #           }
+  #         }
+  #       - PdfGenerationFuncArn: !ImportValue Workers-PdfGenerationFuncArn
+  #         QueueUrl: !ImportValue PdfGenerationQueue
+# Outputs:
+#   PdfGenConductorArn:
+#     Description: ARN of the PdfGenConductor Step Function State Machine
+#     Value: !Ref PdfGenConductor
+#   QueueUrl:
+#     Description: URL of the SQS Queue
+#     Value: !Ref SimpleQueue
+#   LambdaFunctionArn:
+#     Description: ARN of the Lambda Function
+#     Value: !GetAtt ProcessorFunc.Arn

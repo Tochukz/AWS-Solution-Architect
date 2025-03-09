@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Solution to process long running jobs using Queues, Step Function, and Lambdas.
+
+Parameters:
+  SourceCodeBucket:
+    Type: String
+    Description: The name of the S3 bucket where the source files are stored.
+    Default: chucks-workspace-storage
+  SourceCodeKey:
+    Type: String
+    Description: The key of the source code file in the S3 bucket.
+    Default: processor.zip
+  PackagesCodeKey:
+    Type: String
+    Description: The key of the layer code file in the S3 bucket.
+    Default: processor_nodejs.zip
+  CodeVersion:
+    Type: String
+    Description: The version of the source code.
+    Default: "v0.0.1"
+
+Resources:
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "job-processor-04-2025"
+
+  PdfGenerationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PdfGenerationQueue
+
+  PdfMailerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PdfMailerQueue
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: JobLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowSqsCrude
+                Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  [!GetAtt PdfGenerationQueue.Arn, !GetAtt PdfMailerQueue.Arn]
+              - Sid: AllowSendEmail
+                Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+              - Sid: AllowS3Crud
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub ${StorageBucket.Arn}/*
+
+  LambdaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: SimpleJobLayer
+      Description: A layer for Job Lambda functions
+      Content:
+        S3Bucket: !Ref SourceCodeBucket
+        S3Key: !Sub ${CodeVersion}/${PackagesCodeKey}
+      CompatibleRuntimes:
+        - nodejs20.x
+
+  DataPreparationFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: DataPreparationFunc
+      Handler: dist/lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref SourceCodeBucket
+        S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
+      Runtime: nodejs20.x
+      Timeout: 420 # 7 minutes
+      Layers:
+        - !GetAtt LambdaLayer.LayerVersionArn
+      Environment:
+        Variables:
+          PDF_GEN_QUEUE_URL: !Ref PdfGenerationQueue
+
+  PdfGenerationFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: PdfGenerationFunc
+      Handler: dist/lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref SourceCodeBucket
+        S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
+      Runtime: nodejs18.x
+      Timeout: 420 # 7 minutes
+      Environment:
+        Variables:
+          PDF_GEN_QUEUE_URL: !Ref PdfGenerationQueue
+          PDF_MAILER_QUEUE_URL: !Ref PdfMailerQueue
+          STORAGE_BUCKET: !Ref StorageBucket
+
+  PdfMailerFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: PdfMailerFunc
+      Handler: dist/lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref SourceCodeBucket
+        S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
+      Runtime: nodejs18.x
+      Timeout: 420 # 7 minutes
+      Environment:
+        Variables:
+          PDF_MAILER_QUEUE_URL: !Ref PdfMailerQueue
+
+Outputs:
+  DataPreparationFuncName:
+    Description: Name of the Data Preparation Lambda Function
+    Value: !Ref DataPreparationFunc
+    Export:
+      Name: Workers-DataPreparationFuncName
+  DataPreparationFuncArn:
+    Description: ARN of the Data Preparation Lambda Function
+    Value: !GetAtt DataPreparationFunc.Arn
+    Export:
+      Name: Workers-DataPreparationFuncArn
+  PdfGenerationFuncArn:
+    Description: ARN of the PDF Generation Lambda Function
+    Value: !GetAtt PdfGenerationFunc.Arn
+    Export:
+      Name: Workers-PdfGenerationFuncArn
+  PdfMailerFuncArn:
+    Description: ARN of the PDF Mailer Lambda Function
+    Value: !GetAtt PdfMailerFunc.Arn
+    Export:
+      Name: Workers-PdfMailerFuncArn

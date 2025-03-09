@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Resources for local testing
+
+Resources:
+  LocalStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "local-job-processor-04-2025"
+
+  LocalPdfGenerationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: LocalPdfGenerationQueue
+
+  LocalPdfMailerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: LocalPdfMailerQueue
+
+Outputs:
+  LocalPdfGenerationQueueUrl:
+    Description: URL of the PDF generation SQS Queue
+    Value: !Ref LocalPdfGenerationQueue
+  LocalLocalPdfMailerQueueUrl:
+    Description: URL of the PDF Mailer SQS Queue
+    Value: !Ref LocalPdfMailerQueue
+  LocalStorageBucket:
+    Description: URL of the S3 Bucket
+    Value: !Ref LocalStorageBucket

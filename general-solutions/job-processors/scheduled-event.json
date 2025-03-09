@@ -1,0 +1,10 @@
+[
+  {
+    "Source": "manual.trigger",
+    "DetailType": "Scheduled Event Test",
+    "Detail": "{\"message\": \"Manually triggered scheduled event\"}",
+    "Resources": [
+      "arn:aws:lambda:eu-west-2:314146339647:function:DataPreparationFunc"
+    ]
+  }
+]
