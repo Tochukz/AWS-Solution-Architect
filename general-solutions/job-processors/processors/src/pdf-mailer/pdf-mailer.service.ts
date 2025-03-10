@@ -3,6 +3,7 @@ import {
   SQSClient,
   ReceiveMessageCommand,
   DeleteMessageCommand,
+  GetQueueAttributesCommand,
 } from '@aws-sdk/client-sqs';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
@@ -37,7 +38,16 @@ export class PdfMailerService {
       await sqsClient.send(sqsDeleteCommand);
     }
 
-    return results;
+    const getAttrCommand = new GetQueueAttributesCommand({
+      QueueUrl: pdfMailerQueueUrl,
+      AttributeNames: ['ApproximateNumberOfMessages'],
+    });
+    const queueAttributes = await sqsClient.send(getAttrCommand);
+    const messageCount =
+      queueAttributes?.Attributes?.ApproximateNumberOfMessages ?? '0';
+    return {
+      messageCount: parseInt(messageCount),
+    };
   }
 
   async sendEmail(message) {

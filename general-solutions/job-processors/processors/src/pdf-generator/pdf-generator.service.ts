@@ -64,10 +64,7 @@ export class PdfGeneratorService {
       queueAttributes?.Attributes?.ApproximateNumberOfMessages ?? '0';
 
     return {
-      messageCount,
-      result: {
-        messageCount: parseInt(messageCount),
-      },
+      messageCount: parseInt(messageCount),
     };
   }
 }

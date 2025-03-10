@@ -7,9 +7,8 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: Daily1AmTrigger
-      Description: Invoke the DataPreparationFunc at 7am daily
-      ScheduleExpression: "cron(0 1 * * ? *)"
-      # ScheduleExpression: "cron(*/5 * * * *)"
+      Description: Invoke the DataPreparationFunc at 1am daily
+      ScheduleExpression: "cron(35 12 * * ? *)" # 12:15 every day London time
       State: ENABLED
       Targets:
         - Arn: !ImportValue Workers-DataPreparationFuncArn
@@ -55,7 +54,7 @@ Resources:
                   - !ImportValue Workers-PdfGenerationFuncArn
                   - !ImportValue Workers-PdfMailerFuncArn
 
-  PdfGenConductor:
+  PdfGenStepFunc:
     Type: AWS::StepFunctions::StateMachine
     Properties:
       RoleArn: !GetAtt StepFunctionRole.Arn
@@ -71,14 +70,13 @@ Resources:
                 "Parameters": {
                   "queueUrl": "${QueueUrl}"
                 },
-                "ResultPath": "$.result",
                 "Next": "IsQueueEmpty"
               },
               "IsQueueEmpty": {
                 "Type": "Choice",
                 "Choices": [
                   {
-                    "Variable": "$.result.messageCount",
+                    "Variable": "$.messageCount",
                     "NumericEquals": 0,
                     "Next": "QueueEmpty"
                   }
@@ -99,39 +97,45 @@ Resources:
         - PdfGenerationFuncArn: !ImportValue Workers-PdfGenerationFuncArn
           QueueUrl: "empty"
 
-  PdfGenConductorEvent:
-    Type: AWS::Events::Rule
+  PdfMailerStepFunc:
+    Type: AWS::StepFunctions::StateMachine
     Properties:
-      Name: PdfGenConductorEvent
-      Description: Trigger the PdfGenConductor at when new message is sent to PdfGenerationQueue
-      EventPattern:
-        source:
-          - "aws.sqs"
-        detail-type:
-          - "AWS API Call via CloudTrail"
-        detail:
-          eventSource:
-            - "sqs.amazonaws.com"
-          eventName:
-            - SendMessage
-            - SendMessageBatch
-          # requestParameters:
-          #   queueURL:
-          #     - !ImportValue Workers-PdfGenerationQueueUrl
-        resources:
-          - !ImportValue Workers-PdfGenerationQueueArn
-      State: ENABLED
-      Targets:
-        - Arn: !Ref PdfGenConductor
-          Id: PdfGenConductorTarget
-          RoleArn: !GetAtt StepFunctionRole.Arn
-# Outputs:
-#   PdfGenConductorArn:
-#     Description: ARN of the PdfGenConductor Step Function State Machine
-#     Value: !Ref PdfGenConductor
-#   QueueUrl:
-#     Description: URL of the SQS Queue
-#     Value: !Ref SimpleQueue
-#   LambdaFunctionArn:
-#     Description: ARN of the Lambda Function
-#     Value: !GetAtt ProcessorFunc.Arn
+      RoleArn: !GetAtt StepFunctionRole.Arn
+      DefinitionString: !Sub
+        - |-
+          {
+            "Comment": "Step Function to process SQS queue until empty",
+            "StartAt": "PdfMailer",
+            "States": {
+              "PdfMailer": {
+                "Type": "Task",
+                "Resource": "${PdfMailerFuncArn}",
+                "Parameters": {
+                  "queueUrl": "${QueueUrl}"
+                },
+                "Next": "IsQueueEmpty"
+              },
+              "IsQueueEmpty": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Variable": "$.messageCount",
+                    "NumericEquals": 0,
+                    "Next": "QueueEmpty"
+                  }
+                ],
+                "Default": "WaitAndRetry"
+              },
+              "WaitAndRetry": {
+                "Type": "Wait",
+                "Seconds": 120,
+                "Next": "PdfMailer"
+              },
+              "QueueEmpty": {
+                "Type": "Pass",
+                "End": true
+              }
+            }
+          }
+        - PdfMailerFuncArn: !ImportValue Workers-PdfMailerFuncArn
+          QueueUrl: "empty"

@@ -140,6 +140,11 @@ Resources:
           STORAGE_BUCKET: !Ref StorageBucket
 
 Outputs:
+  PdfGenerationQueueName:
+    Description: URL of the PDF Generation SQS Queue
+    Value: !GetAtt PdfGenerationQueue.QueueName
+    Export:
+      Name: Workers-PdfGenerationQueueName
   PdfGenerationQueueUrl:
     Description: URL of the PDF Generation SQS Queue
     Value: !Ref PdfGenerationQueue

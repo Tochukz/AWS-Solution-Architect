@@ -9,8 +9,8 @@ export class DataProcessorService {
   constructor(private configService: ConfigService) {}
 
   async processData() {
-    //const bookList = books.slice(0, 10);
-    const bookList = books.slice(11, 20);
+    const bookList = books.slice(0, 10);
+    // const bookList = books.slice(11, 20);
     const simulationTime = 10000; //10 seconds
     // const simulationTime = 30000; //30 seconds
 
