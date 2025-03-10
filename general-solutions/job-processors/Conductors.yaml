@@ -6,9 +6,10 @@ Resources:
   EventBridgeRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: Daily7AmTrigger
+      Name: Daily1AmTrigger
       Description: Invoke the DataPreparationFunc at 7am daily
-      ScheduleExpression: "cron(0 7 * * ? *)"
+      ScheduleExpression: "cron(0 1 * * ? *)"
+      # ScheduleExpression: "cron(*/5 * * * *)"
       State: ENABLED
       Targets:
         - Arn: !ImportValue Workers-DataPreparationFuncArn
@@ -54,49 +55,76 @@ Resources:
                   - !ImportValue Workers-PdfGenerationFuncArn
                   - !ImportValue Workers-PdfMailerFuncArn
 
-  # PdfGenConductor:
-  #   Type: AWS::StepFunctions::StateMachine
-  #   Properties:
-  #     RoleArn: !GetAtt StepFunctionRole.Arn
-  #     DefinitionString: !Sub
-  #       - |-
-  #         {
-  #           "Comment": "Step Function to process SQS queue until empty",
-  #           "StartAt": "PdfGeneration",
-  #           "States": {
-  #             "PdfGeneration": {
-  #               "Type": "Task",
-  #               "Resource": "${PdfGenerationFuncArn}",
-  #               "Parameters": {
-  #                 "queueUrl": "${QueueUrl}"
-  #               },
-  #               "ResultPath": "$.result",
-  #               "Next": "IsQueueEmpty"
-  #             },
-  #             "IsQueueEmpty": {
-  #               "Type": "Choice",
-  #               "Choices": [
-  #                 {
-  #                   "Variable": "$.result.messageCount",
-  #                   "NumericEquals": 0,
-  #                   "Next": "QueueEmpty"
-  #                 }
-  #               ],
-  #               "Default": "WaitAndRetry"
-  #             },
-  #             "WaitAndRetry": {
-  #               "Type": "Wait",
-  #               "Seconds": 300,
-  #               "Next": "PdfGeneration"
-  #             },
-  #             "QueueEmpty": {
-  #               "Type": "Pass",
-  #               "End": true
-  #             }
-  #           }
-  #         }
-  #       - PdfGenerationFuncArn: !ImportValue Workers-PdfGenerationFuncArn
-  #         QueueUrl: !ImportValue PdfGenerationQueue
+  PdfGenConductor:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      RoleArn: !GetAtt StepFunctionRole.Arn
+      DefinitionString: !Sub
+        - |-
+          {
+            "Comment": "Step Function to process SQS queue until empty",
+            "StartAt": "PdfGeneration",
+            "States": {
+              "PdfGeneration": {
+                "Type": "Task",
+                "Resource": "${PdfGenerationFuncArn}",
+                "Parameters": {
+                  "queueUrl": "${QueueUrl}"
+                },
+                "ResultPath": "$.result",
+                "Next": "IsQueueEmpty"
+              },
+              "IsQueueEmpty": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Variable": "$.result.messageCount",
+                    "NumericEquals": 0,
+                    "Next": "QueueEmpty"
+                  }
+                ],
+                "Default": "WaitAndRetry"
+              },
+              "WaitAndRetry": {
+                "Type": "Wait",
+                "Seconds": 120,
+                "Next": "PdfGeneration"
+              },
+              "QueueEmpty": {
+                "Type": "Pass",
+                "End": true
+              }
+            }
+          }
+        - PdfGenerationFuncArn: !ImportValue Workers-PdfGenerationFuncArn
+          QueueUrl: "empty"
+
+  PdfGenConductorEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: PdfGenConductorEvent
+      Description: Trigger the PdfGenConductor at when new message is sent to PdfGenerationQueue
+      EventPattern:
+        source:
+          - "aws.sqs"
+        detail-type:
+          - "AWS API Call via CloudTrail"
+        detail:
+          eventSource:
+            - "sqs.amazonaws.com"
+          eventName:
+            - SendMessage
+            - SendMessageBatch
+          # requestParameters:
+          #   queueURL:
+          #     - !ImportValue Workers-PdfGenerationQueueUrl
+        resources:
+          - !ImportValue Workers-PdfGenerationQueueArn
+      State: ENABLED
+      Targets:
+        - Arn: !Ref PdfGenConductor
+          Id: PdfGenConductorTarget
+          RoleArn: !GetAtt StepFunctionRole.Arn
 # Outputs:
 #   PdfGenConductorArn:
 #     Description: ARN of the PdfGenConductor Step Function State Machine

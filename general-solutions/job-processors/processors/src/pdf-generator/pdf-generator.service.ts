@@ -5,6 +5,7 @@ import {
   ReceiveMessageCommand,
   SendMessageCommand,
   DeleteMessageCommand,
+  GetQueueAttributesCommand,
 } from '@aws-sdk/client-sqs';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
@@ -15,6 +16,7 @@ export class PdfGeneratorService {
   async generatePdfs() {
     const batchCount = 2;
     const sqsClient = new SQSClient({});
+
     const s3Client = new S3Client({});
     const pdfGenQueueUrl: string =
       this.configService.get('PDF_GEN_QUEUE_URL') ?? '';
@@ -26,8 +28,6 @@ export class PdfGeneratorService {
       QueueUrl: pdfGenQueueUrl,
       MaxNumberOfMessages: batchCount,
     });
-
-    //setTimeout is used to simulate a delay in processing the data
 
     const results = await sqsClient.send(sqsRecieveCommand);
     for await (const message of results.Messages ?? []) {
@@ -45,7 +45,7 @@ export class PdfGeneratorService {
 
       const sqsSendCommand = new SendMessageCommand({
         QueueUrl: pdfMailerQueueUrl,
-        MessageBody: JSON.stringify({ bookId, bookPath }),
+        MessageBody: JSON.stringify({ bookId, bookPath, title: key }),
       });
       const sqsDeleteCommand = new DeleteMessageCommand({
         QueueUrl: pdfGenQueueUrl,
@@ -54,6 +54,20 @@ export class PdfGeneratorService {
       await sqsClient.send(sqsSendCommand);
       await sqsClient.send(sqsDeleteCommand);
     }
-    return results;
+
+    const getAttrCommand = new GetQueueAttributesCommand({
+      QueueUrl: pdfGenQueueUrl,
+      AttributeNames: ['ApproximateNumberOfMessages'],
+    });
+    const queueAttributes = await sqsClient.send(getAttrCommand);
+    const messageCount =
+      queueAttributes?.Attributes?.ApproximateNumberOfMessages ?? '0';
+
+    return {
+      messageCount,
+      result: {
+        messageCount: parseInt(messageCount),
+      },
+    };
   }
 }

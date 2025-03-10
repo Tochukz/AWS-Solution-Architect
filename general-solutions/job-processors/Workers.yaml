@@ -136,8 +136,25 @@ Resources:
       Environment:
         Variables:
           PDF_MAILER_QUEUE_URL: !Ref PdfMailerQueue
+          SOURCE_EMAIL: chucks.nwachukwu@np.ie
+          STORAGE_BUCKET: !Ref StorageBucket
 
 Outputs:
+  PdfGenerationQueueUrl:
+    Description: URL of the PDF Generation SQS Queue
+    Value: !Ref PdfGenerationQueue
+    Export:
+      Name: Workers-PdfGenerationQueueUrl
+  PdfGenerationQueueArn:
+    Description: ARN of the PDF Generation SQS Queue
+    Value: !GetAtt PdfGenerationQueue.Arn
+    Export:
+      Name: Workers-PdfGenerationQueueArn
+  PdfMailerQueueArn:
+    Description: ARN of the PDF Mailer SQS Queue
+    Value: !GetAtt PdfMailerQueue.Arn
+    Export:
+      Name: Workers-PdfMailerQueueArn
   DataPreparationFuncName:
     Description: Name of the Data Preparation Lambda Function
     Value: !Ref DataPreparationFunc

@@ -48,8 +48,6 @@ export class PdfMailerService {
 
     const source: string = this.configService.get('SOURCE_EMAIL') ?? '';
     const storage: string = this.configService.get('STORAGE_BUCKET') ?? '';
-    const pdfMailerQueueUrl: string =
-      this.configService.get('PDF_MAILER_QUEUE_URL') ?? '';
 
     const s3Command = new GetObjectCommand({
       Bucket: storage,
