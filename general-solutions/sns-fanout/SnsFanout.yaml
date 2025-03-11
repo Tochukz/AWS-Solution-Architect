@@ -1,8 +1,42 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: 2010-09-09
 
 Description: This template configures a fanout pattern using SNS and SQS, Step Function and Lambda
 
+Parameters:
+  CodeS3Bucket:
+    Type: String
+    Description: S3 Bucket for the Lambda code
+    Default: chucks-workspace-storage
+  CodeS3Key:
+    Type: String
+    Description: S3 key for the Lambda code
+    Default: v0.0.1/lambda-code.zip
 Resources:
+  StateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: StateMachineRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+
   SimpleStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -20,32 +54,7 @@ Resources:
               }
             }
           }
-      RoleArn: !GetAtt StepFuncRole.Arn
-
-  StepFuncRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: StepFuncRole
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - states.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: StepFunctionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: "arn:aws:logs:*:*:*"
+      RoleArn: !GetAtt StateMachineRole.Arn
 
   SimpleTopic:
     Type: AWS::SNS::Topic
@@ -57,7 +66,6 @@ Resources:
     Properties:
       QueueName: SimpleQueue
 
-  # Allow SNS to Send Messages to SQS
   QueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
@@ -75,7 +83,53 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !Ref SimpleTopic
 
-  # Subscribe SQS Queue to SNS Topic
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowStartExecution
+                Effect: Allow
+                Action: states:StartExecution
+                Resource: !Ref SimpleStateMachine
+
+  SimpleLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleLambda
+      Handler: lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref SimpleStateMachine
+      Code:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref CodeS3Key
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SimpleLambda.Arn
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SimpleTopic
+
   QueueSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -83,29 +137,12 @@ Resources:
       Endpoint: !GetAtt SimpleQueue.Arn
       TopicArn: !Ref SimpleTopic
 
-  # IAM Role for SNS to Start Step Function Execution
-  SnsStepFuncRole:
-    Type: AWS::IAM::Role
+  LambdaSubScription:
+    Type: AWS::SNS::Subscription
     Properties:
-      RoleName: SnsStepFuncRole
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - sns.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: SNSInvokeStepFunctionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - states:StartExecution
-                Resource: !Ref SimpleStateMachine
+      Protocol: lambda
+      TopicArn: !Ref SimpleTopic
+      Endpoint: !GetAtt SimpleLambda.Arn
 
 Outputs:
   TopicArn:
