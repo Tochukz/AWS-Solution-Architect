@@ -1,12 +1,15 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Resources for local testing
+Description: Provisions resources for local testing only. Not part of the main solution.
+# This template creates resources that can be used to isolate the testing of
+# the different lambda function code in the processor NestJS application.
+# The Queue URLs and Bucket name can be added to the local .env file for testing purposes.
 
 Resources:
   LocalStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "local-job-processor-04-2025"
+      BucketName: local-job-processor-04-2025
 
   LocalPdfGenerationQueue:
     Type: AWS::SQS::Queue

@@ -45,11 +45,13 @@ $ aws events put-events --entries file://scheduled-event.json
 **Clean up**
 Empty S3 bucket
 
-````bash
+```bash
 $ aws s3 rm  s3://job-processor-04-2025/ --recursive
+```
 
 Delete the stacks
 
 ```bash
+$ aws cloudformation delete-stack --stack-name Conductor
 $ aws cloudformation delete-stack --stack-name Workers
-````
+```
