@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This template configures a fanout pattern using SNS and SQS, Step Function and Lambda
+
+Resources:
+  SimpleStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: SimpleMachine
+      DefinitionString:
+        Fn::Sub: |
+          {
+            "Comment": "SNS triggered Step Function",
+            "StartAt": "ProcessMessage",
+            "States": {
+              "ProcessMessage": {
+                "Type": "Pass",
+                "Result": "Message processed successfully",
+                "End": true
+              }
+            }
+          }
+      RoleArn: !GetAtt StepFuncRole.Arn
+
+  StepFuncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: StepFuncRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+
+  SimpleTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: SimpleTopic
+
+  SimpleQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SimpleQueue
+
+  # Allow SNS to Send Messages to SQS
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref SimpleQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action:
+              - "sqs:SendMessage"
+            Resource: !GetAtt SimpleQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref SimpleTopic
+
+  # Subscribe SQS Queue to SNS Topic
+  QueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt SimpleQueue.Arn
+      TopicArn: !Ref SimpleTopic
+
+  # IAM Role for SNS to Start Step Function Execution
+  SnsStepFuncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SnsStepFuncRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sns.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: SNSInvokeStepFunctionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource: !Ref SimpleStateMachine
+
+Outputs:
+  TopicArn:
+    Description: ARN of the SNS Topic
+    Value: !Ref SimpleTopic
