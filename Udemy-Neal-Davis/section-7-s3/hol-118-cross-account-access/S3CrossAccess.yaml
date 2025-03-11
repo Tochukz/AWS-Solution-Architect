@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure access to an S3 bucket for users from another AWS account
+
+Parameters:
+  CrossAccountId:
+    Type: String
+    Description: The AWS account ID of the user who needs access to the bucket
+  BucketName:
+    Type: String
+    Description: The name of the S3 bucket to create
+    Default: simple-bucket-118
+  PassPhrase:
+    Type: String
+    Description: The passphrase to use for the bucket access
+
+Resources:
+  ExternalRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleExternalRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              # AWS: !Sub arn:aws:iam::${CrossAccountId}:username
+              AWS: !Ref CrossAccountId
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref PassPhrase
+      Policies:
+        - PolicyName: S3CrossAccountAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowBucketReadWrite
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:Putobject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketName}
+                  - !Sub arn:aws:s3:::${BucketName}/*
+
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+
+Outputs:
+  RoleArn:
+    Description: The ARN of the role that allows access to the bucket
+    Value: !GetAtt ExternalRole.Arn
