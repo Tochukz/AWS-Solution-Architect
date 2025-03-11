@@ -61,7 +61,7 @@ $ aws sns publish --topic-arn arn:aws:sns:eu-west-2:314146339647:SimpleTopic --m
 3. Publish a batch of messages
 
 ```bash
-$ aws sns publish-batch --topic-arn arn:aws:sns:eu-west-2:314146339647:SimpleTopic --publish-batch-request-entries
+$ aws sns publish-batch --topic-arn arn:aws:sns:eu-west-2:314146339647:SimpleTopic --publish-batch-request-entries  file://messages/book-3-4.json
 ```
 
 **Clean up**
