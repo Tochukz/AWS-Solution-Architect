@@ -43,9 +43,14 @@ There are two kinds of VPC endpoints
 * Flow logs can be created at the following levels:
   - VPC
   - Subnet
-  - Network Interface 
+  - Network Interface
 
 
 
 ### Resources
 [Subnet Calculator](https://www.site24x7.com/tools/ipv4-subnetcalculator.html)  
+
+
+### Cheat Sheets  
+[Amazon VPC Cheat Sheet](https://digitalcloud.training/amazon-vpc/)   
+[AWS Direct Connect Cheat Sheet](https://digitalcloud.training/aws-direct-connect/)  

@@ -22,7 +22,7 @@ $ cfn-lint OrdAndAccount.yaml
 $ cfn-lint SCP.yaml
 ```
 
-1. Deploy the stack OrganAndAccount stack
+1. Deploy the OrganAndAccount stack
 
 ```bash
 $ aws cloudformation deploy --template-file OrgAndAccount.yaml --stack-name OrgAndAccount --parameter-overrides file://private-parameters.json --profile sovtechchucks
@@ -40,7 +40,7 @@ $ aws organizations enable-policy-type --root-id r-xxxxxxxx --policy-type SERVIC
 
 You can get the RootId from the stack output or by running `aws organizations list-roots`.
 
-3. Deploy the Service Control Policy
+3. Deploy the Service Control Policy stack
 
 ```bash
 $  aws cloudformation deploy --template-file SCP.yaml --stack-name SCP --profile sovtechchucks

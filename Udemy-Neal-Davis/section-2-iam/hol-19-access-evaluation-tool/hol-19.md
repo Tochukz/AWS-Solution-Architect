@@ -8,8 +8,9 @@ This template creates an Analyzer thus enabling the Access Analyzer Tool.
 
 ### Operation
 
-**Deployment**
-Lint the template 
+**Deployment**  
+Lint the template
+
 ```bash
 $ cfn-lint AccessAnalyzer.yaml
 ```
@@ -29,6 +30,7 @@ $ aws cloudformation describe-stack-events --stack-name AccessAnalyzer > events.
 
 **Cleanup**  
 To delete the stack
+
 ```bash
 $ aws cloudformation delete-stack --stack-name AccessAnalyzer
 ```
