@@ -1,0 +1,127 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a VPC with network components, an EC2 instance, and a simple web page
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing Key Name for the EC2 instance
+    Default: EuWest1Key
+  RequesterCidrBlock:
+    Type: String
+    Description: Cidr block of the requster VPC
+  AccepterCidrBlock:
+    Type: String
+    Description: Cidr block of the accepter VPC
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref RequesterCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: VpcPeer1
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ]
+      MapPublicIpOnLaunch: true
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PublicSubnet
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroupPeer1
+      GroupDescription: Allow all traffic from the internet
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref AccepterCidrBlock
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref PublicSubnet
+      Tags:
+        - Key: Name
+          Value: InstancePeering1
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          service httpd start
+          chkconfig httpd on
+          echo "<html><head><title>Successful connection to Vpc1 Ec2 Instance!</title></head><body><h1 style='color: blue;'>Successful connection!</h1></body></html>" > /var/www/html/index.html
+
+Outputs:
+  RequesterVpcId:
+    Description: The VPC Id for the Requester VPC
+    Value: !Ref VPC
+  RequesterRouteTableId:
+    Description: The Route Table Id for the Requester Route Table
+    Value: !Ref RouteTable
+  Vpc1Ec2PublicIp:
+    Description: The public IP address of the Vpc1 EC2 instance
+    Value: !GetAtt EC2Instance.PublicIp
+  Vpc1Ec2PrivateIp:
+    Description: The private IP address of the Vpc2 EC2 instance
+    Value: !GetAtt EC2Instance.PrivateIp

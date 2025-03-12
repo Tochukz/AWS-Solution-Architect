@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Adds a route to direct traffic to the peering VPC
+
+Parameters:
+  AccepterRouteTableId:
+    Type: String
+    Description: Route table Id of Accepter VPC
+  VpcPeeringConnectionId:
+    Type: String
+    Description: VPC peering connection Id
+  RequesterCidrBlock:
+    Type: String
+    Description: Cidr block of the requester VPC
+
+Resources:
+  PeeringRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AccepterRouteTableId
+      DestinationCidrBlock: !Ref RequesterCidrBlock
+      VpcPeeringConnectionId: !Ref VpcPeeringConnectionId

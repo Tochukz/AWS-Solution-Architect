@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey": "RequesterVpcId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "RequesterRouteTableId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "RequesterCidrBlock",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "AccepterVpcId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "AccepterRouteTableId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "AccepterCidrBlock",
+    "ParameterValue": "10.1.0.0/16"
+  },
+  {
+    "ParameterKey": "AccepterRegion",
+    "ParameterValue": "eu-west-2"
+  },
+  {
+    "ParameterKey": "VpcPeeringConnectionId",
+    "ParameterValue": ""
+  }
+]

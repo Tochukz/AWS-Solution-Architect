@@ -1,0 +1,30 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a VPC peering request from one VPC to another VPC in a different region
+
+Parameters:
+  RequesterVpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id for the requester VPC
+  AccepterVpcId:
+    Type: String
+    Description: VPC Id for the accepter VPC
+  AccepterRegion:
+    Type: String
+    Description: Accepter VPC region
+
+Resources:
+  VpcPeering:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      VpcId: !Ref RequesterVpcId
+      PeerVpcId: !Ref AccepterVpcId
+      PeerRegion: !Ref AccepterRegion
+      # PeerOwnerId: !Ref AccepterAccountId # for cross account VPC peering
+      # PeerRoleArn: !Ref AccepterRoleArn # for cross account VPC peering
+
+Outputs:
+  VpcPeeringConnectionId:
+    Description: THe VPC peering connection ID
+    Value: !Ref VpcPeering
