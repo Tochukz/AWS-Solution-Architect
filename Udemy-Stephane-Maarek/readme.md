@@ -33,108 +33,109 @@ Section    | Title
 
 ### Hands On
 __Section 6: EC2 - Solution Architect Level__  
-51. Placement group
-52. Elastic Network Interface
-55. EC2 Instance Hibernation
+51 - Placement group  
+52 - Elastic Network Interface  
+55 - EC2 Instance Hibernation  
 
 __Section 7: EC2 Instance Storage__   
-60. EBS Snapshots
-62. Amazon Machine Image (AMI)
-67. Elastic File System (EFS)
+60 - EBS Snapshots  
+62 - Amazon Machine Image (AMI)  
+67 - Elastic File System (EFS)  
 
 __Section 8: High Availability and Scalability - ELB & ASG__  
-74. Application Load Balancer (ALB)
-75. ALB with path bases routing
-77. Network Load Balancer (NLB)
-79. ALB Target Group with sticky session enabled
-82. ALB with SSL certificate (HTTPS listener), ACM Certificate
-85. Auto Scaling Group (ASG), manual scaling
-87. ASG with scaling policy, target scaling
+74 - Application Load Balancer (ALB)  
+75 - ALB with path bases routing  
+77 - Network Load Balancer (NLB)  
+79 - ALB Target Group with sticky session enabled  
+82 - ALB with SSL certificate (HTTPS listener), ACM Certificate  
+85 - Auto Scaling Group (ASG), manual scaling  
+87 - ASG with scaling policy, target scaling  
 
 __Section 9: AWS Fundamentals - RDS + Aurora + ElastiCache__  
-90. Relational Database Service (RDS), regional and cross-region replication
-93. Aurora MySQL database cluster
-99. ElastiCache instance with Redis
+90 - Relational Database Service (RDS), regional and cross-region replication  
+93 - Aurora MySQL database cluster  
+99 - ElastiCache instance with Redis  
 
 __Section 10: Route 53__  
-107. A-Type Record
-108. Alias Record
-110. Routing Policy - Weighted Route
-111. Latency Based Routing Policy
-113. Calculated health check
-114. FailOver Routing policy
-115. Geolocation Routing policy
-118. Multi-Value Routing policy
-119. Routing 53 Hosted Zone using 3rd Party Domains Registrar
+107 - A-Type Record  
+108 - Alias Record  
+110 - Routing Policy - Weighted Route  
+111 - Latency Based Routing Policy  
+113 - Calculated health check  
+114 - FailOver Routing policy  
+115 - Geolocation Routing policy  
+118 - Multi-Value Routing policy  
+119 - Routing 53 Hosted Zone using 3rd Party Domains Registrar  
 
 __Section 11: Classic Solution Architect__  
-122. WhatsTheTime.com
-123. MyClothes.com
-124. MyWordPress.com
-127. Beanstalk Hands On
-127b. Beanstalk Hands On with Variation
+122 - WhatsTheTime.com  
+123 - MyClothes.com  
+124 - MyWordPress.com  
+127a - Beanstalk Hands On    
+127b - Beanstalk Hands On with Variation
 
 __Section 12: Amazon S3 Introduction__  
-130. S3 Hands on
-132. S3 Security, Bucket Policy
-134. S3 Website Hands On
-136. S3 Versioning
-139. S3 Replication
-141. S3 Storage Class
+130 - S3 Hands on  
+132 - S3 Security, Bucket Policy  
+134 - S3 Website Hands On  
+136 - S3 Versioning  
+139 - S3 Replication  
+141 - S3 Storage Class  
 
 __Section 13: Advanced Amazon S3__  
-143. S3 Life Cycle Rule
-146. S3 Event Notifications
+143 - S3 Life Cycle Rule
+146 - S3 Event Notifications
 
 __Section 14: Amazon S3 Security__  
-152. S3 Encryption
-155. S3 CORS
-157. S3 MFA Delete
-159. S3 Access Logs
-161. S3 Presigned URLs
-163. S3 Access Points
-164. S3 Object Lambda
+152 - S3 Encryption  
+155 - S3 CORS  
+157 - S3 MFA Delete  
+159 - S3 Access Logs  
+161 - S3 Presigned URLs  
+163 - S3 Access Points  
+164 - S3 Object Lambda  
 
 __Section 15: CloudFront and AWS Global Accelerator__  
-166. CloudFront with S3
-170. CloudFront - Cache Invalidation
-172. AWS Global Accelerator
+166 - CloudFront with S3  
+170 - CloudFront - Cache Invalidation  
+172 - AWS Global Accelerator  
 
 __Section 16: AWS Storage Extras__  
 
 __Section 17: Decoupling applications: SQS, SNS, Kinesis, Active MQ__  
-185. SQS - Standard Queue
-188. SQS - Fifo Queue
-192. SNS
-194. Amazon Kinesis Data Stream
-196. Amazon Data FireHose
+185 - SQS - Standard Queue  
+188 - SQS - Fifo Queue  
+192 - SNS  
+194 - Amazon Kinesis Data Stream  
+196 - Amazon Data FireHose  
 
 __Section 18: Containers on AWS: ECS, Fargate, ECR & EKS__   
-202. Creating ECS Cluster
-203. Creating ECS Service
-204. Amazon ECS Auto Scaling
-209. Amazon EKS
-211. AWS App Runner
+202 - Creating ECS Cluster  
+203 - Creating ECS Service  
+204 - Amazon ECS Auto Scaling  
+209 - Amazon EKS  
+211 - AWS App Runner   
 
 __Section 19: Serverless Overview from Solution Architect Perspective__  
-216. Lambda
-225. Amazon DynamoDB
-228. API Gateway Basics -
+216 - Lambda  
+225 - Amazon DynamoDB  
+228a - API Gateway  - HTTP API  
+228b - API Gateway - Rest API  
 
 __Section 20: Serverless Solution Architect Discusion__
-231. Mobile Application: MyTodoList
-232. Serverless Website MyBlog.com
-233. Microservices Architecture
-234. Software updates distribution
+231 - Mobile Application: MyTodoList  
+232 - Serverless Website MyBlog.com  
+233 - Microservices Architecture  
+234 - Software updates distribution  
 
 __Section 22: Data Analytic__  
-247. Athena
+247 - Athena   
 
 __Section 24: AWS Monitoring and Audit: CloudWatch, CloudTrail & Config__  
-273. CloudWatch Logs
-274. CloudWatch Logs - Live Tail
-277. CloudWatchAlarm Logs
-279. Amazon Event Bridge
+273 - CloudWatch Logs  
+274 - CloudWatch Logs - Live Tail  
+277 - CloudWatchAlarm Logs  
+279 - Amazon Event Bridge  
 
 ### FAQs
 [IAM FAQs](https://aws.amazon.com/iam/faqs/)    
