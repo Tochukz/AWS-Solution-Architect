@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Testing if event bridge will retry a failed or timed out Lambda function. 
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  TestFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: TestFunc # DataPreparationFunc
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs20.x
+      Timeout: 60 # 1 minutes
+      Code:
+        ZipFile: |
+          const handler = async (event) => {
+            console.log("Runing at", new Date().toISOString());
+            return new Promise((resolve, reject) => {
+              setTimeout(() => {
+                console.log('Timeup');
+                reject(new Error('Timeup error'));
+              }, 100000); //100 seconds
+            });
+          };
+          exports.handler = handler;
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Daily1AmTrigger
+      Description: Invoke the TestFunc at 1am daily
+      ScheduleExpression: "cron(35 8 * * ? *)" # 8:35 every day Ireland time
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt  TestFunc.Arn
+          Id: TestFunc
+    
+  TestFuncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TestFunc
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventBridgeRule.Arn
