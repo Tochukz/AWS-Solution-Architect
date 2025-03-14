@@ -17,3 +17,5 @@ nodejs
 python
 *-func.json
 .env
+output*.json
+*-logs.json

@@ -1,4 +1,4 @@
-# Configure VPC Peering - HOL-86
+# Configure same region VPC Peering - HOL-86
 
 ### Description
 
