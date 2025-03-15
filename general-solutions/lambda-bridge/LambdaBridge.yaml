@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Lambda to Lambda communication using Event Bridge
+
+Parameters:
+  CodeS3Bucket:
+    Type: String
+    Description: S3 bucket where the code is placed
+    Default: chucks-workspace-storage
+  CodeS3Key:
+    Type: String
+    Description: S3 Key to code
+    Default: "v0.0.1/lambda-bridge.zip"
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DemoLambdaRole
+      Description: Role for Lambda function
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaEventBridgePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowPublishEvent
+                Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: "*"
+  LambdaA:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleFuncA
+      Handler: lambda_a.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.9
+      Architectures:
+        - x86_64 # or arm64
+      Code:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref CodeS3Key
+
+  LambdaB:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleFuncB
+      Handler: lambda_b.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.9
+      Architectures:
+        - x86_64 # or arm64
+      Code:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref CodeS3Key
+
+  CustomEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SimpleEvent
+      EventPattern:
+        source:
+          - demo.simple_evt
+        detail-type:
+          - CustomEvent
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaB.Arn
+          Id: TargetLambdaB
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaB
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CustomEventRule.Arn
