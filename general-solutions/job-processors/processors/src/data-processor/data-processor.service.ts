@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+  PutEventsCommandInput,
+} from '@aws-sdk/client-eventbridge';
 
 import { books } from './data-store';
 import { ConfigService } from '@nestjs/config';
@@ -10,7 +15,6 @@ export class DataProcessorService {
 
   async processData() {
     const bookList = books.slice(0, 10);
-    // const bookList = books.slice(11, 20);
     const simulationTime = 10000; //10 seconds
     // const simulationTime = 30000; //30 seconds
 
@@ -18,7 +22,7 @@ export class DataProcessorService {
     const pdfGenQueueUrl: string =
       this.configService.get('PDF_GEN_QUEUE_URL') ?? '';
 
-    return new Promise((resolve, reject) => {
+    const result = await new Promise((resolve, reject) => {
       //setTimeout is used to simulate a delay in processing the data
       setTimeout(() => {
         const updatedBooks = bookList.map((book) => {
@@ -43,5 +47,24 @@ export class DataProcessorService {
           });
       }, simulationTime);
     });
+    const res = await this.startPdfGeneration();
+    console.log('startPdfGeneration', res);
+    return result;
+  }
+
+  async startPdfGeneration() {
+    const region: string = this.configService.get('REGION_AWS') ?? 'eu-west-2';
+    const input: PutEventsCommandInput = {
+      Entries: [
+        {
+          Source: 'job.processor',
+          DetailType: 'PdfGenEvent',
+          Detail: JSON.stringify({}),
+        },
+      ],
+    };
+    const command = new PutEventsCommand(input);
+    const client = new EventBridgeClient({ region });
+    return client.send(command);
   }
 }

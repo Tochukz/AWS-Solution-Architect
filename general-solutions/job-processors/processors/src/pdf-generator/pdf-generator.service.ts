@@ -7,6 +7,11 @@ import {
   DeleteMessageCommand,
   GetQueueAttributesCommand,
 } from '@aws-sdk/client-sqs';
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+  PutEventsCommandInput,
+} from '@aws-sdk/client-eventbridge';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
@@ -60,11 +65,31 @@ export class PdfGeneratorService {
       AttributeNames: ['ApproximateNumberOfMessages'],
     });
     const queueAttributes = await sqsClient.send(getAttrCommand);
-    const messageCount =
+    const messageCountStr =
       queueAttributes?.Attributes?.ApproximateNumberOfMessages ?? '0';
-
+    const messageCount = parseInt(messageCountStr);
+    if (messageCount == 0) {
+      const result = await this.startSendingEmails();
+      console.log('startSendingEmails:', result);
+    }
     return {
-      messageCount: parseInt(messageCount),
+      messageCount,
     };
+  }
+
+  async startSendingEmails() {
+    const region: string = this.configService.get('REGION_AWS') ?? 'eu-west-2';
+    const input: PutEventsCommandInput = {
+      Entries: [
+        {
+          Source: 'job.processor',
+          DetailType: 'PdfMailerEvent',
+          Detail: JSON.stringify({}),
+        },
+      ],
+    };
+    const command = new PutEventsCommand(input);
+    const client = new EventBridgeClient({ region });
+    return client.send(command);
   }
 }

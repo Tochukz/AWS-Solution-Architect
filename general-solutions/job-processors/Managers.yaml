@@ -3,12 +3,12 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Solution to process long running jobs using Queues, Step Function, and Lambdas.
 
 Resources:
-  EventBridgeRule:
+  ScheduledEventRule:
     Type: AWS::Events::Rule
     Properties:
       Name: Daily1AmTrigger
       Description: Invoke the DataPreparationFunc at 1am daily
-      ScheduleExpression: "cron(35 12 * * ? *)" # 12:15 every day London time
+      ScheduleExpression: "cron(20 21 * * ? *)" # 21:20 every day London time
       State: ENABLED
       Targets:
         - Arn: !ImportValue Workers-DataPreparationFuncArn
@@ -18,9 +18,9 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !ImportValue Workers-DataPreparationFuncName
-      Action: "lambda:InvokeFunction"
-      Principal: "events.amazonaws.com"
-      SourceArn: !GetAtt EventBridgeRule.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ScheduledEventRule.Arn
 
   StepFunctionRole:
     Type: AWS::IAM::Role
@@ -34,18 +34,13 @@ Resources:
                 - states.amazonaws.com
             Action:
               - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: StepFunctionExecutionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: AllowLogs
-                Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: "*"
               - Sid: AllowFuncInvoke
                 Effect: Allow
                 Action:
@@ -139,3 +134,57 @@ Resources:
           }
         - PdfMailerFuncArn: !ImportValue Workers-PdfMailerFuncArn
           QueueUrl: "empty"
+
+  EventBridgeStepFuncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EventBrigeStepFuncRole
+      Description: Allow event bridge to start execution of state machine
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EventBrigeStepFuncPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowBrigeStartExecution
+                Effect: Allow
+                Action: states:StartExecution
+                Resource:
+                  - !Ref PdfGenStepFunc
+                  - !Ref PdfMailerStepFunc
+
+  PdfGenEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: PdfGenerationEventRule
+      EventPattern:
+        source:
+          - job.processor
+        detail-type:
+          - PdfGenEvent
+      State: ENABLED
+      Targets:
+        - Arn: !Ref PdfGenStepFunc
+          Id: PdfGenTarget
+          RoleArn: !GetAtt EventBridgeStepFuncRole.Arn
+
+  PdfMailerEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: PdfMailerEventRule
+      EventPattern:
+        source:
+          - job.processor
+        detail-type:
+          - PdfMailerEvent
+      State: ENABLED
+      Targets:
+        - Arn: !Ref PdfMailerStepFunc
+          Id: PdfMailerTarget
+          RoleArn: !GetAtt EventBridgeStepFuncRole.Arn

@@ -88,7 +88,7 @@ export class PdfMailerService {
 
     const sesClient = new SESClient({});
     const emailResult = await sesClient.send(emailCommand);
-    console.log('emailResult', emailResult);
+    console.log('EmailResult MessageId', emailResult.MessageId);
     return emailResult;
   }
 }

@@ -15,7 +15,7 @@ Lint the templates
 
 ```bash
 $ cfn-lint Workers.yaml
-
+$ cfn-lint Managers.yaml
 ```
 
 1. Deploy the Workers stack.
@@ -24,10 +24,10 @@ $ cfn-lint Workers.yaml
 $ aws cloudformation deploy --template-file Workers.yaml --stack-name Workers --capabilities CAPABILITY_NAMED_IAM
 ```
 
-2. Deploy the Conductors stack
+2. Deploy the Managers stack
 
 ```bash
-$ aws cloudformation deploy --template-file Conductors.yaml --stack-name Conductors --capabilities CAPABILITY_NAMED_IAM
+$ aws cloudformation deploy --template-file Managers.yaml --stack-name Managers --capabilities CAPABILITY_NAMED_IAM
 ```
 
 **After Deployment**

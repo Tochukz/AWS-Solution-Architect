@@ -19,6 +19,13 @@ Parameters:
     Type: String
     Description: The version of the source code.
     Default: "v0.0.1"
+  Architecture:
+    Type: String
+    Description: Architecture for the Lambda Function code build
+    Default: x86_64
+    AllowedValues:
+      - x86_64
+      - arm64
 
 Resources:
   StorageBucket:
@@ -62,7 +69,8 @@ Resources:
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                 Resource:
-                  [!GetAtt PdfGenerationQueue.Arn, !GetAtt PdfMailerQueue.Arn]
+                  - !GetAtt PdfGenerationQueue.Arn
+                  - !GetAtt PdfMailerQueue.Arn
               - Sid: AllowSendEmail
                 Effect: Allow
                 Action:
@@ -76,6 +84,11 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource: !Sub ${StorageBucket.Arn}/*
+              - Sid: AllowPutEvent
+                Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: "*"
 
   LambdaLayer:
     Type: AWS::Lambda::LayerVersion
@@ -85,15 +98,19 @@ Resources:
       Content:
         S3Bucket: !Ref SourceCodeBucket
         S3Key: !Sub ${CodeVersion}/${PackagesCodeKey}
+      CompatibleArchitectures:
+        - !Ref Architecture
       CompatibleRuntimes:
         - nodejs20.x
 
   DataPreparationFunc:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: DataPreparationFunc
+      FunctionName: DataPreparationFunc # Code reference must change if FunctionName changes
       Handler: dist/lambda.handler
       Role: !GetAtt LambdaRole.Arn
+      Architectures:
+        - !Ref Architecture
       Code:
         S3Bucket: !Ref SourceCodeBucket
         S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
@@ -104,13 +121,16 @@ Resources:
       Environment:
         Variables:
           PDF_GEN_QUEUE_URL: !Ref PdfGenerationQueue
+          REGION_AWS: !Ref AWS::Region
 
   PdfGenerationFunc:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: PdfGenerationFunc
+      FunctionName: PdfGenerationFunc # Code reference must change if FunctionName changes
       Handler: dist/lambda.handler
       Role: !GetAtt LambdaRole.Arn
+      Architectures:
+        - !Ref Architecture
       Code:
         S3Bucket: !Ref SourceCodeBucket
         S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
@@ -121,13 +141,16 @@ Resources:
           PDF_GEN_QUEUE_URL: !Ref PdfGenerationQueue
           PDF_MAILER_QUEUE_URL: !Ref PdfMailerQueue
           STORAGE_BUCKET: !Ref StorageBucket
+          REGION_AWS: !Ref AWS::Region
 
   PdfMailerFunc:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: PdfMailerFunc
+      FunctionName: PdfMailerFunc # Code reference must change if FunctionName changes
       Handler: dist/lambda.handler
       Role: !GetAtt LambdaRole.Arn
+      Architectures:
+        - !Ref Architecture
       Code:
         S3Bucket: !Ref SourceCodeBucket
         S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
@@ -138,6 +161,7 @@ Resources:
           PDF_MAILER_QUEUE_URL: !Ref PdfMailerQueue
           SOURCE_EMAIL: chucks.nwachukwu@np.ie
           STORAGE_BUCKET: !Ref StorageBucket
+          REGION_AWS: !Ref AWS::Region
 
 Outputs:
   PdfGenerationQueueName:

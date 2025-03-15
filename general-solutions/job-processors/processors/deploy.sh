@@ -57,9 +57,9 @@ fi
 if [ -z "$nofunc" ] 
 then
   echo "Updating lambda function..."
-  aws lambda update-function-code --function-name DataPreparationFunc --s3-key $version/$code_dir.zip --s3-bucket chucks-workspace-storage > /dev/null
-  aws lambda update-function-code --function-name PdfGenerationFunc --s3-key $version/$code_dir.zip --s3-bucket chucks-workspace-storage > /dev/null
-  aws lambda update-function-code --function-name PdfMailerFunc --s3-key $version/$code_dir.zip --s3-bucket chucks-workspace-storage > /dev/null  
+  # aws lambda update-function-code --function-name DataPreparationFunc --s3-key $version/$code_dir.zip --s3-bucket chucks-workspace-storage > /dev/null
+  # aws lambda update-function-code --function-name PdfGenerationFunc --s3-key $version/$code_dir.zip --s3-bucket chucks-workspace-storage > /dev/null
+  # aws lambda update-function-code --function-name PdfMailerFunc --s3-key $version/$code_dir.zip --s3-bucket chucks-workspace-storage > /dev/null  
 else
   echo "S3 copying completed!"
   echo "No updating of lambda functions!"
@@ -77,9 +77,9 @@ if [ -z "$nolayer" ]; then
   rm ${code_dir}_nodejs.zip
 
   echo "Updating lambda configuration..."
-  aws lambda update-function-configuration --function-name DataPreparationFunc  --layers $LayerVersionArn > /dev/null  
-  aws lambda update-function-configuration --function-name PdfGenerationFunc  --layers $LayerVersionArn > /dev/null  
-  aws lambda update-function-configuration --function-name PdfMailerFunc  --layers $LayerVersionArn > /dev/null  
+  # aws lambda update-function-configuration --function-name DataPreparationFunc  --layers $LayerVersionArn > /dev/null  
+  # aws lambda update-function-configuration --function-name PdfGenerationFunc  --layers $LayerVersionArn > /dev/null  
+  # aws lambda update-function-configuration --function-name PdfMailerFunc  --layers $LayerVersionArn > /dev/null  
 else 
   echo "No updating of lambda layer"
 fi
