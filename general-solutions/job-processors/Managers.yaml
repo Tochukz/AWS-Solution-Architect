@@ -8,7 +8,7 @@ Resources:
     Properties:
       Name: Daily1AmTrigger
       Description: Invoke the DataPreparationFunc at 1am daily
-      ScheduleExpression: "cron(20 21 * * ? *)" # 21:20 every day London time
+      ScheduleExpression: "cron(30 21 * * ? *)" # 21:30 every day London time
       State: ENABLED
       Targets:
         - Arn: !ImportValue Workers-DataPreparationFuncArn
@@ -80,7 +80,7 @@ Resources:
               },
               "WaitAndRetry": {
                 "Type": "Wait",
-                "Seconds": 120,
+                "Seconds": 60,
                 "Next": "PdfGeneration"
               },
               "QueueEmpty": {
@@ -123,7 +123,7 @@ Resources:
               },
               "WaitAndRetry": {
                 "Type": "Wait",
-                "Seconds": 120,
+                "Seconds": 60,
                 "Next": "PdfMailer"
               },
               "QueueEmpty": {

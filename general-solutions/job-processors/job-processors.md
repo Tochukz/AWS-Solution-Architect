@@ -52,6 +52,6 @@ $ aws s3 rm  s3://job-processor-04-2025/ --recursive
 Delete the stacks
 
 ```bash
-$ aws cloudformation delete-stack --stack-name Conductor
+$ aws cloudformation delete-stack --stack-name Managers
 $ aws cloudformation delete-stack --stack-name Workers
 ```

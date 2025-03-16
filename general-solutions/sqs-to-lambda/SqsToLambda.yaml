@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Lambda function subscribing to an SQS queue
+
+Resources:
+  SimpleQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: DemoQueue
+      VisibilityTimeout: 60 # Should be >= Lambda timeout
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaSQSPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt SimpleQueue.Arn
+
+  SimpleFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ProcessorFunc
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            const records = JSON.stringify(event.Records);
+            const time = new Date().toTimeString();
+            console.log("Received SQS messages:", { records, time });
+            return {
+              statusCode: 200,
+              body: "Processed successfully",
+            };
+          };
+
+  LambdaSQSMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt SimpleQueue.Arn
+      FunctionName: !Ref SimpleFunc
+      Enabled: true
+      BatchSize: 10 # Number of messages to process per invocation (max 10 for standard queues)
+      MaximumBatchingWindowInSeconds: 5 # Optional: Time to buffer messages before invoking Lambda
+      ScalingConfig:
+        MaximumConcurrency: 10 # min 2, max 1000
+
+Outputs:
+  QueueUrl:
+    Description: URL of the SQS Queue
+    Value: !Ref SimpleQueue
+  LambdaFunctionArn:
+    Description: ARN of the Lambda Function
+    Value: !GetAtt SimpleFunc.Arn

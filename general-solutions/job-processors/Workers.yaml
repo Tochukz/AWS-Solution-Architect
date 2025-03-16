@@ -18,7 +18,7 @@ Parameters:
   CodeVersion:
     Type: String
     Description: The version of the source code.
-    Default: "v0.0.1"
+    Default: v0.0.1
   Architecture:
     Type: String
     Description: Architecture for the Lambda Function code build
@@ -31,7 +31,7 @@ Resources:
   StorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: "job-processor-04-2025"
+      BucketName: job-processor-04-2025
 
   PdfGenerationQueue:
     Type: AWS::SQS::Queue
@@ -48,7 +48,7 @@ Resources:
     Properties:
       RoleName: LambdaRole
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
@@ -136,6 +136,8 @@ Resources:
         S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
       Runtime: nodejs18.x
       Timeout: 420 # 7 minutes
+      Layers:
+        - !GetAtt LambdaLayer.LayerVersionArn
       Environment:
         Variables:
           PDF_GEN_QUEUE_URL: !Ref PdfGenerationQueue
@@ -156,6 +158,8 @@ Resources:
         S3Key: !Sub ${CodeVersion}/${SourceCodeKey}
       Runtime: nodejs18.x
       Timeout: 420 # 7 minutes
+      Layers:
+        - !GetAtt LambdaLayer.LayerVersionArn
       Environment:
         Variables:
           PDF_MAILER_QUEUE_URL: !Ref PdfMailerQueue
