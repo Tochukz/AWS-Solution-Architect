@@ -6,11 +6,11 @@ __Introduction__
 * Uses standard SQL language to query files (built on Presto)
 * It supports CSV, JSON, ORC, Avro and Parquet
 * Pricing: $5 per TB of data scanned
-* Commonly used with _Amazon Quciksight_ for reporting/dashboards
+* Commonly used with _Amazon QuickSight_ for reporting/dashboards
 
 __Use cases__
 * Business intelligence/analytics/reporting,
-* Analyze & query VPC Flow Logs, ELB Logs, CloudTrail trails, etc
+* Analyse & query VPC Flow Logs, ELB Logs, CloudTrail trails, etc
 
 __Exam Tip__
 Anytime you need to analyze data in S3 using Serverless SQL, use Athena.  
@@ -168,6 +168,97 @@ To share a dashboard, you must first publish it after which users who you share 
 
 ## AWS Glue
 __Introduction__  
+AWS Glue is a managed Extract Transform and Load (ETL) service.  
+It is used to prepare and transform data for analysis.  
+It is full serverless service.  
 
+__Use Cases__  
+* You can use Glue to extract and transform data from a S3 bucket
+or RDS database and the load it on a RedShift data warehouse.   
+* Another use case is to transform CSV files form S3 bucket into
+the _Parquet_ format for analysis using Athena.  
+
+__Glue Data Catalog: catalog of datasets__  
+The _Glue Data Catalog_ runs the _Glue Data Crawler_ which can be connected to various data sources.  
+Some supported data sources are _S3_, _RDS_, _DynamoDB_ and on-Premise _JDBC_ compatible databases.   
+Glue Data Crawler writes Metadata to the Glue Data Catalog which contains Databases and Tables.
+The Glue Data Catalog is very import for other services that relies on it such as
+- Athena
+- RedShift Spectrum
+- Amazon EMR
+
+__Glue - other things to know at a high level__  
+* __Glue Job Bookmarks__: prevents reprocessing of old data when you run a new ETL job.  
+* __Glue Elastic Views__:
+  - Combine and replicate data across multiple data stores using SQL
+  - No custom code, Glue monitors for changes in the source data, it is serverless
+  - Leverages a "virtual table" (materialized view)
+* __Glue DataBrew__: clean and normalize data using pre-built transformation
+* __Glue Studio__: new GUI to create, run and monitor ETL jobs in Glue
+* __Glue Streaming ETL__ (built on Apache Spark Structured Streaming): compatible with Kinesis Data Streaming,
+Kafka, MSK (managed Kafka).  
+
+## AWS Lake Formation  
+__Introduction__  
+* A Data Lake is a central place to have all you data for analytics purposes.  
+* Lake formation is a fully managed service that make it easy to setup a data lake in a few days instead of months.   
+* Lake formation will help you discover, cleanse, transform, and ingest data into you Data lake.  
+* It automated many complete manual steps (collecting, cleansing, moving, cataloging data, ...) and de-duplicate (using Machine Learning Transforms)
+* Lake formation combine structured and unstructured data in the data lake
+* Out-of-the-box sources blueprints: S3, RDS, Relational & NoSQL Databases
+* Lake formation offers fine-grained access control for you applications at the row and column level.
+* Lake formation is build on top of AWS Glue but you don't actually interact with Glue directly.
+
+__AWS Lake Formation Centralized Permissions Example__  
+You configure Access Control on Lake Formation that grant access to other services such as Athena and QuickSight.  
+
+## Amazon Managed Service for Apache Flink
+__Introduction__  
+* It was previously named _Kinesis Data Analytics for Apache Flink_ .  
+* _Flink_ is a Framework for processing data streams in real time, it supports three programming languages - Java, Scala or SQL
+* Run any Apache Flink application on a managed cluster on AWS
+  - Provision compute resources, parallel computation, automatic scaling
+  - Application backups (implemented as checkpoints and snapshots)
+  - Use any Apache Flink programming features to transform data
+  - __Important__: Flink does not read from Amazon Data Firehose.
+
+## Amazon Managed Streaming for Apache Kafka (Amazon MSK)  
+__Introduction__  
+* Amazon MSK is an alternative to Amazon Kinesis
+* It is a fully managed Apache Kafka on AWS
+ -  Allows you to create, update, delete clusters
+ - MSK creates and manages Kafka brokers nodes and ZooKeeper nodes for you
+ - Deploy the MSK cluster in you VPC, mulit-AZ (up to 3 high availability)  
+ - Automatic recovery from common Apache Kafka failure
+ - Data is stored on EBS volumes for as long as you want
+* MSK serverless
+  - Run Apache Kafka on MSK without managing the capacity
+  - MSK automatically provisions resources and scales compute and storage
+
+__Apache Kafka at a high level__  
+Apache Kafka is a streaming framework which collect data from a producer and
+distribute the data in real time to consumers.  
+An Apache Kafka cluster is made up of a message broker which is replicated on multiple nodes.   
+
+__Amazon MSK producers__  
+Examples of producers for Kafka stream includes Kinesis Data stream, IoT, RDS etc
+
+__Amazon MSK Consumers__  
+Examples of consumers of MSK streams includes
+- Kinesis Data Analytics for Apache Flink
+- AWS Glue Streaming ETL Jobs Powered by Apache Spark Streaming
+- Lambda
+- Applications Running on - EC2, ECS, EKS
+
+## Big Data Ingestion Pipeline  
+__Big Data Ingestion Pipeline discussion__  
+* _IoT Core_ allows you to harvest data from IoT devices
+* kinesis is great for real-time data collection  
+* Firehose helps with data delivery to S3 in near real-time (1 minute)
+* Lambda can help Firehose with data transformations
+* Amazon S3 can trigger notification to SQS  
+* Lambda can subscribe to SQS (we could have connecter S3 to Lambda)
+* Athena is a serverless SQL services and results are stored in S3
+* The reporting bucket contains analyzed data and can be used by reporting tool such as AWS QuickSight, RedShift, etc
 
 [Big Data Analytics Options on AWS](https://docs.aws.amazon.com/pdfs/whitepapers/latest/big-data-analytics-options/big-data-analytics-options.pdf)
