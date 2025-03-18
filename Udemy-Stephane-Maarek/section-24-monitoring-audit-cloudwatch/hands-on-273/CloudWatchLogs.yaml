@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures a CloudWatch LogGroup, a Metric Filter to monitor error on the LogGroup
+
+Parameters:
+  MetricName:
+    Type: String
+    Description: Name for the custom Metric
+    Default: ErrorCount
+    AllowedValues:
+      - ErrorCount
+  MetricNamespace:
+    Type: String
+    Description: Namespace for the custom Metric
+    Default: SimpleCwDemo
+    AllowedValues:
+      - SimpleCwDemo
+  SubscriptionEmail:
+    Type: String
+    Description: Email to subscribe for the Error SNS topic
+
+Resources:
+  SimpleLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/custom/SimpleLogs
+      RetentionInDays: 3
+
+  # Metric value of 1 for each error found in the log
+  SimpleMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterName: SimpleErrorFilter
+      LogGroupName: !Ref SimpleLogGroup
+      FilterPattern: "error"
+      MetricTransformations:
+        - MetricName: !Ref MetricName
+          MetricNamespace: !Ref MetricNamespace
+          MetricValue: 1
+          DefaultValue: 0
+
+  ErrorTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: ErrorTopic
+
+  #  CloudWatch Alarm that triggers when the ErrorCount metric exceeds a threshold of 5 in a 5-minute period.
+  SimpleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: AppErrorRateAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: !Ref MetricName
+      Namespace: !Ref MetricNamespace
+      Period: 300 # in seconds (i.e 5 minutes)
+      Statistic: Sum
+      Threshold: 5
+      AlarmActions:
+        - !Ref ErrorTopic
+
+  ErrorTopicSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref ErrorTopic
+      Protocol: email
+      Endpoint: !Ref SubscriptionEmail
