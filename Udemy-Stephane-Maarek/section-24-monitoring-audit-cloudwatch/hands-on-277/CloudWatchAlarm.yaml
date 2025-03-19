@@ -38,7 +38,7 @@ Resources:
       Namespace: AWS/EC2
       MetricName: CPUUtilization
       ComparisonOperator: GreaterThanOrEqualToThreshold
-      Statistic: "Average" # Statistic parameter is required
+      Statistic: Average # Statistic parameter is required
       Threshold: 90
       EvaluationPeriods: 2
       DatapointsToAlarm: 2

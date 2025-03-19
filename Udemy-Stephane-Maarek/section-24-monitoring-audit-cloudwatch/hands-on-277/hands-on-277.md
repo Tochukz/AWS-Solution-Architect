@@ -7,7 +7,7 @@ This template configures a CloudWatch Alarm that shuts down an EC2 instance when
 ### Operation
 
 **Deployment**  
-Lint the templates
+Lint the template
 
 ```bash
 $ cfn-lint CloudWatchAlarm.yaml
