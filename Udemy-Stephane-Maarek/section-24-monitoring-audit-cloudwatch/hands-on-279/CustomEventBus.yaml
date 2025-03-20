@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a Custom EventBus, enabled Event Archive for the Bus and Enable Automatic Schema Discover
+
+Parameters:
+  SubscriptionEmail:
+    Type: String
+    Description: Email to subscribe to SNS topic
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  CustomEventBridge:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: DemoEventBus
+      # Policy:
+      #   Version: 2012-10-17
+      #   Statement:
+      #     - Sid: AllowPutEvents
+      #       Effect: Allow
+      #       Principal:
+      #         Service: events.amazonaws.com
+      #       Action: events:PutEvents
+      #       Resource: "*"
+      #       Condition:
+      #         StringEquals:
+      #           aws:SourceArn: !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/default"
+
+  EventBusRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: events.amazonaws.com
+      Policies:
+        - PolicyName: EventBridgePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowPutEvent
+                Effect: Allow
+                Action: events:PutEvents
+                Resource: !GetAtt CustomEventBridge.Arn
+
+  ForwardEC2EventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: ForwardEC2EventsRule
+      EventBusName: default
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+      Targets:
+        - Id: CustomEventBusTarget
+          Arn: !GetAtt CustomEventBridge.Arn
+          RoleArn: !GetAtt EventBusRole.Arn
+
+  EventArchive:
+    Type: AWS::Events::Archive
+    Properties:
+      ArchiveName: DemoEventArchive
+      SourceArn: !GetAtt CustomEventBridge.Arn
+      Description: To store archive of events with the matching pattern
+      RetentionDays: 30
+      EventPattern:
+        source:
+          - MyApp.CustomEvents
+        detail-type:
+          - UserAction
+
+  SchemaRegistry:
+    Type: AWS::EventSchemas::Registry
+    Properties:
+      RegistryName: DemoEventRegistry
+      Description: To automatically infer schemas directly from events running on the event bus
+
+  EventDiscovery:
+    Type: AWS::EventSchemas::Discoverer
+    Properties:
+      Description: To allows the Amazon EventBridge Schema Registry to automatically generate schemas based on events on an event bus.
+      SourceArn: !GetAtt CustomEventBridge.Arn
+
+  SimpleEc2Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: SimpleEc2Topic
+
+  Ec2ActionRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Ec2StateEventChangeRule
+      EventBusName: !Ref CustomEventBridge
+      EventPattern:
+        source: ["aws.ec2"]
+        detail-type: ["EC2 Instance State-change Notification"]
+        detail:
+          state: [stopped, terminated]
+      Targets:
+        - Id: SnsTopic
+          Arn: !Ref SimpleEc2Topic
+
+  CustomActionRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: CustomActionRule
+      EventBusName: !Ref CustomEventBridge
+      EventPattern:
+        source: [MyApp.CustomEvents]
+        detail-type: [UserAction]
+      Targets:
+        - Id: SnsTopic
+          Arn: !Ref SimpleEc2Topic
+
+  SnsTopicSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SimpleEc2Topic
+      Protocol: email
+      Endpoint: !Ref SubscriptionEmail
+
+  SimpleEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance Id
+    Value: !Ref SimpleEc2

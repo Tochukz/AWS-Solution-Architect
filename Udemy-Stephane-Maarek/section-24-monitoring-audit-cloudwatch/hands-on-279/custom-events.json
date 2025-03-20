@@ -1,0 +1,8 @@
+[
+  {
+    "Source": "MyApp.CustomEvents",
+    "DetailType": "UserAction",
+    "Detail": "{\"userId\": \"12345\", \"action\": \"login\"}",
+    "EventBusName": "DemoEventBus"
+  }
+]
