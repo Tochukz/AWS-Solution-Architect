@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to create a custom EventBridge setup.
+
+Resources:
+  # 1. Custom Event Bus
+  MyCustomEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: MyCustomEventBus
+
+  # 2. SNS Topic (Target for EventBridge Rule)
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: MyCustomEventTopic
+
+  # 3. EventBridge Rule
+  MyEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: MyCustomEventRule
+      EventBusName: !Ref MyCustomEventBus
+      EventPattern:
+        source:
+          - "my.custom.application"
+        detail-type:
+          - "UserAction"
+      Targets:
+        - Id: "MySNSTarget"
+          Arn: !Ref MySNSTopic
+
+  # 4. SNS Topic Policy (Allow EventBridge to publish to the SNS topic)
+  SNSTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref MySNSTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref MySNSTopic
+
+Outputs:
+  CustomEventBusName:
+    Description: Name of the custom Event Bus
+    Value: !Ref MyCustomEventBus
+  SNSTopicArn:
+    Description: ARN of the SNS Topic
+    Value: !Ref MySNSTopic

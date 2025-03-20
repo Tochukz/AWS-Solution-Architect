@@ -21,22 +21,11 @@ Resources:
     Type: AWS::Events::EventBus
     Properties:
       Name: DemoEventBus
-      # Policy:
-      #   Version: 2012-10-17
-      #   Statement:
-      #     - Sid: AllowPutEvents
-      #       Effect: Allow
-      #       Principal:
-      #         Service: events.amazonaws.com
-      #       Action: events:PutEvents
-      #       Resource: "*"
-      #       Condition:
-      #         StringEquals:
-      #           aws:SourceArn: !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/default"
 
-  EventBusRole:
+  DefaultEventBusRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: DefaultEventBusRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -45,7 +34,7 @@ Resources:
             Principal:
               Service: events.amazonaws.com
       Policies:
-        - PolicyName: EventBridgePolicy
+        - PolicyName: DefaultEventBusPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -54,10 +43,10 @@ Resources:
                 Action: events:PutEvents
                 Resource: !GetAtt CustomEventBridge.Arn
 
-  ForwardEC2EventsRule:
+  ForwardEc2EventsRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: ForwardEC2EventsRule
+      Name: ForwardEc2EventsRule
       EventBusName: default
       EventPattern:
         source:
@@ -67,7 +56,7 @@ Resources:
       Targets:
         - Id: CustomEventBusTarget
           Arn: !GetAtt CustomEventBridge.Arn
-          RoleArn: !GetAtt EventBusRole.Arn
+          RoleArn: !GetAtt DefaultEventBusRole.Arn
 
   EventArchive:
     Type: AWS::Events::Archive
@@ -79,8 +68,10 @@ Resources:
       EventPattern:
         source:
           - MyApp.CustomEvents
+          - aws.ec2
         detail-type:
           - UserAction
+          - "EC2 Instance State-change Notification"
 
   SchemaRegistry:
     Type: AWS::EventSchemas::Registry
@@ -99,6 +90,55 @@ Resources:
     Properties:
       TopicName: SimpleEc2Topic
 
+  SnsTopicSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SimpleEc2Topic
+      Protocol: email
+      Endpoint: !Ref SubscriptionEmail
+
+  SnsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref SimpleEc2Topic
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref SimpleEc2Topic
+
+  SimpleEventLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/events/SimpleEventLogs
+      RetentionInDays: 3
+
+  LogGroupPermission:
+    Type: AWS::Logs::ResourcePolicy
+    Properties:
+      PolicyName: EventBridgeLogPolicy
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "${SimpleEventLogs.Arn}"
+            }
+          ]
+        }
+
   Ec2ActionRule:
     Type: AWS::Events::Rule
     Properties:
@@ -108,10 +148,12 @@ Resources:
         source: ["aws.ec2"]
         detail-type: ["EC2 Instance State-change Notification"]
         detail:
-          state: [stopped, terminated]
+          state: [stopped, terminated, running]
       Targets:
         - Id: SnsTopic
           Arn: !Ref SimpleEc2Topic
+        - Id: LogGroup
+          Arn: !GetAtt SimpleEventLogs.Arn
 
   CustomActionRule:
     Type: AWS::Events::Rule
@@ -124,13 +166,8 @@ Resources:
       Targets:
         - Id: SnsTopic
           Arn: !Ref SimpleEc2Topic
-
-  SnsTopicSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      TopicArn: !Ref SimpleEc2Topic
-      Protocol: email
-      Endpoint: !Ref SubscriptionEmail
+        - Id: LogGroup
+          Arn: !GetAtt SimpleEventLogs.Arn
 
   SimpleEc2:
     Type: AWS::EC2::Instance
