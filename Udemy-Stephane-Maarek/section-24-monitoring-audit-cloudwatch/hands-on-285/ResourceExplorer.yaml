@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration enables AWS Resource Explorer
+
+Resources:
+  ResourceExplorerIndex:
+    Type: AWS::ResourceExplorer2::Index
+    Properties:
+      Type: AGGREGATOR # AGGREGATOR=for all regions, LOCAL=for current region only
+
+  ResourceExplorerView:
+    Type: AWS::ResourceExplorer2::View
+    DependsOn: ResourceExplorerIndex
+    Properties:
+      ViewName: MainResourceExplorerView
+      IncludedProperties:
+        - Name: tags # Include resource tags in the view
+      Filters:
+        FilterString: "" # Empty filter to include all resources
+
+  AssociateView:
+    Type: AWS::ResourceExplorer2::DefaultViewAssociation
+    Properties:
+      ViewArn: !Ref ResourceExplorerView

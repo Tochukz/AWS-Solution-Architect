@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Enabled AWS Config to start recording and monitoring resources
+
+Parameters:
+  ApprovedAmiIds:
+    Type: CommaDelimitedList
+    Description: List of approved APIs
+    Default: "ami-0720a3ca2735bf2fa,ami-04ba8620fc44e2264,ami-0960d166ab83fd695" # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred for eu-west-x
+
+Resources:
+  ConfigBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: config-bucket-21-03-25
+      LifecycleConfiguration:
+        Rules:
+          - Id: ConfigLogsExpiration
+            Status: Enabled
+            ExpirationInDays: 365 # Retain logs for 1 year
+
+  ConfigRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ConfigRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: config.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # - arn:aws:iam::aws:policy/service-role/AWSServiceRoleForConfig
+        # arn:aws:iam::aws:policy/aws-service-role/AWSConfigServiceRolePolicy
+        - arn:aws:iam::aws:policy/service-role/AWS_ConfigRole
+      Policies:
+        - PolicyName: ConfigRolePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowS3Put
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource: !Sub ${ConfigBucket.Arn}/*
+
+  #   ConfigServiceRole:
+  #     Type: AWS::IAM::ServiceLinkedRole
+  #     Properties:
+  #       AWSServiceName: config.amazonaws.com
+  #       Description: Service linked role for the Config service
+
+  ConfigRecorder:
+    Type: AWS::Config::ConfigurationRecorder
+    # DependsOn: ConfigDeliveryChannel
+    Properties:
+      Name: default # MainConfigRecorder
+      RoleARN: !GetAtt ConfigRole.Arn
+      RecordingMode:
+        RecordingFrequency: CONTINUOUS # or DAILY
+        # RecordingModeOverrides: []
+      RecordingGroup:
+        AllSupported: false
+        IncludeGlobalResourceTypes: false
+        RecordingStrategy:
+          UseOnly: INCLUSION_BY_RESOURCE_TYPES
+        ResourceTypes: # For supported resource see https://docs.aws.amazon.com/config/latest/developerguide/resource-config-reference.html#supported-resources
+          - AWS::ApiGatewayV2::Api
+          - AWS::EC2::Instance
+          - AWS::EC2::SecurityGroup
+          - AWS::Lambda::Function
+
+  ConfigDeliveryChannel:
+    Type: AWS::Config::DeliveryChannel
+    # DependsOn: ConfigRecorder
+    Properties:
+      Name: MainDeliveryChannel
+      S3BucketName: !Ref ConfigBucket
+      S3KeyPrefix: config
+
+  RestrictedSshRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigRecorder
+    Properties:
+      ConfigRuleName: restricted-ssh
+      Source:
+        Owner: AWS
+        SourceIdentifier: INCOMING_SSH_DISABLED
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::EC2::SecurityGroup
+
+  ApprovedAmiRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigRecorder
+    Properties:
+      ConfigRuleName: approved-amis-by-id
+      Source:
+        Owner: AWS
+        SourceIdentifier: APPROVED_AMIS_BY_ID
+      InputParameters:
+        amiIds: !Ref ApprovedAmiIds
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::EC2::Instance
+
+  LambdaMultiAzRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigRecorder
+    Properties:
+      ConfigRuleName: lambda-vpc-multi-az-check
+      Source:
+        Owner: AWS
+        SourceIdentifier: LAMBDA_VPC_MULTI_AZ_CHECK
+      InputParameters:
+        availabilityZones: 3 # Optional parameter
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::Lambda::Function
+# For a list of Managed Config Rules see
+# https://docs.aws.amazon.com/config/latest/developerguide/managed-rules-by-aws-config.html

@@ -19,3 +19,5 @@ python
 .env
 output*.json
 *-logs.json
+aws-policies.json
+aws-roles.json

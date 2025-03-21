@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configures a set of non compliant resource for AWS Config evaluation
+
+Parameters:
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: EC2 instance AMI Id
+    Default: ami-0a94c8e4ca2674d5a # Ubuntu Server 24.04 LTS 64-bit (x86)
+
+Resources:
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleWebSecGp
+      GroupDescription: Security Group For Web
+      SecurityGroupIngress:
+        - Description: Allow SSH from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP from anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow SSH from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref ImageId
+      SecurityGroupIds:
+        - !GetAtt WebSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: SimpleEc2Instance

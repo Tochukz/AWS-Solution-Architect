@@ -6,3 +6,9 @@
 ### Resources
 [Knowledgehut Practice Tests](https://www.knowledgehut.com/practice-tests/aws-solutions-architect-associate)
 [AWS Study Guide Review Questions (SAA-C01)](https://quizlet.com/sg/512306255/aws-study-guide-review-questions-saa-c01-flash-cards/)
+
+### Usefull commands 
+Get all the managed policies
+```bash
+$ aws iam list-policies --scope AWS --output table > aws-policies.md
+```
