@@ -15,11 +15,6 @@ Resources:
       GroupName: SimpleWebSecGp
       GroupDescription: Security Group For Web
       SecurityGroupIngress:
-        - Description: Allow SSH from anywhere
-          IpProtocol: TCP
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
         - Description: Allow HTTP from anywhere
           IpProtocol: TCP
           FromPort: 80

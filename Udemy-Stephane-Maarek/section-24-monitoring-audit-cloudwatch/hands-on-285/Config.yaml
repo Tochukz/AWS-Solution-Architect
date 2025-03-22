@@ -4,7 +4,7 @@ Description: Enabled AWS Config to start recording and monitoring resources
 
 Parameters:
   ApprovedAmiIds:
-    Type: CommaDelimitedList
+    Type: String
     Description: List of approved APIs
     Default: "ami-0720a3ca2735bf2fa,ami-04ba8620fc44e2264,ami-0960d166ab83fd695" # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred for eu-west-x
 
@@ -31,8 +31,6 @@ Resources:
               Service: config.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        # - arn:aws:iam::aws:policy/service-role/AWSServiceRoleForConfig
-        # arn:aws:iam::aws:policy/aws-service-role/AWSConfigServiceRolePolicy
         - arn:aws:iam::aws:policy/service-role/AWS_ConfigRole
       Policies:
         - PolicyName: ConfigRolePolicy
@@ -46,15 +44,8 @@ Resources:
                   - s3:PutObjectAcl
                 Resource: !Sub ${ConfigBucket.Arn}/*
 
-  #   ConfigServiceRole:
-  #     Type: AWS::IAM::ServiceLinkedRole
-  #     Properties:
-  #       AWSServiceName: config.amazonaws.com
-  #       Description: Service linked role for the Config service
-
   ConfigRecorder:
     Type: AWS::Config::ConfigurationRecorder
-    # DependsOn: ConfigDeliveryChannel
     Properties:
       Name: default # MainConfigRecorder
       RoleARN: !GetAtt ConfigRole.Arn
@@ -74,7 +65,6 @@ Resources:
 
   ConfigDeliveryChannel:
     Type: AWS::Config::DeliveryChannel
-    # DependsOn: ConfigRecorder
     Properties:
       Name: MainDeliveryChannel
       S3BucketName: !Ref ConfigBucket

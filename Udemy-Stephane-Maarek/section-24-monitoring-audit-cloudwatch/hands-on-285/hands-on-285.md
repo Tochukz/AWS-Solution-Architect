@@ -40,7 +40,18 @@ $ aws cloudformation deploy --template-file Config.yaml  --stack-name Config --c
 
 **After Deployment**
 
-**Testing**
+**Testing**  
+Go to the AWS Config Console.  
+Select _Resources_ on the navigation bar to see all your resources.  
+Apply a filter to see only the _Noncompliant_ resources.  
+You should see the _Security Group_ and _EC2 Instanace_ in the non complaint list.  
+You can also go to _Rules_ on the navigation bar to see all Rules that you configured and which have noncompliance on your AWS account.
+
+To see all the rules we have configured
+
+```bash
+$  aws configservice describe-config-rules
+```
 
 **Debug Errors**  
  In the case of error during deployment, checkout the stack events
@@ -53,6 +64,12 @@ Search for _"Resource handler returned message"_ to see the root failure.
 
 **Cleanup**  
 To stop the recorder without deleting it, call the `StopConfigurationRecorder` action of the AWS Config API directly.
+
+Empty config bucket
+
+```bash
+$ aws s3 rm s3://config-bucket-21-03-25 --recursive
+```
 
 To delete the stacks
 
