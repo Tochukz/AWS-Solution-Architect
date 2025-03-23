@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures a Customer Managed KMS Key and an Alias for the Key
+
+Resources:
+  CustomerKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      Origin: AWS_KMS
+      EnableKeyRotation: true
+      RotationPeriodInDays: 365
+      PendingWindowInDays: 7 # Specifies the number of days in the waiting period before AWS KMS deletes a KMS key that has been removed from a CloudFormation stack
+
+  CustomerKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/DemoKeyAlias
+      TargetKeyId: !Ref CustomerKey
+
+Outputs:
+  KeyId:
+    Description: The KMS key Id
+    Value: !Ref CustomerKey
+  KeyArn:
+    Description: Tje KMS Key ARN
+    Value: !GetAtt CustomerKey.Arn
