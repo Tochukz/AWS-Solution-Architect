@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration creates three parameter in the SSM Parameter Store
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  AdminEmails:
+    Type: String
+    Description: Comma separated list of emails
+
+Resources:
+  DatabaseNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /my-app/${Environment}/database-name
+      Tier: Standard
+      Type: String
+      Value: development_db
+
+  DatabaseUserParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /my-app/${Environment}/database-user
+      Tier: Standard
+      Type: String
+      Value: db_john127usr
+
+  AdminEmailsParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /my-app/${Environment}/admin-emais
+      Tier: Standard
+      Type: StringList
+      Value: !Ref AdminEmails
