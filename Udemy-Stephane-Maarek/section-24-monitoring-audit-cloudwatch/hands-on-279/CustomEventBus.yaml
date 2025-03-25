@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Creates a Custom EventBus, enabled Event Archive for the Bus and Enable Automatic Schema Discover
-
+Description: Creates a Custom EventBus, forward events from default to custom event bus. 
 Parameters:
   SubscriptionEmail:
     Type: String

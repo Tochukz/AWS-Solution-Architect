@@ -2,7 +2,7 @@
 
 ### Description
 
-The configuration creats a Custom Event Bus and enabled Event Archive and Automatic Schema Discovery for the Event Bus.  
+The configuration creates a Custom Event Bus and enabled Event Archive and Automatic Schema Discovery for the Event Bus.  
 With _Event Archive_ enabled, we can _replay_ past event for debugging purposes.
 
 Because custom event buses do not receive events from AWS service, we created the `ForwardEc2EventsRule` event rule to forward AWS service events from the `default` event bus to our custom event bus.  

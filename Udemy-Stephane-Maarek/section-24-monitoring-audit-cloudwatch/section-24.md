@@ -141,8 +141,53 @@ __Amazon EventBridge - Resource-bases Policy__
 * Example: allow deny events from another AWS account or AWS region
 * Use case: aggregate all events from you AWS organization in a single AWS account or AWS region
 
-## CloudTrail Events  
-__Event Types__  
+__CloudWatch Container Insight__  
+* Collect, aggregate, summarize metrics and logs from containers
+* Available for containers on:
+  - Amazon Elastic Container Service (Amazon ECS)
+  - Amazon Elastic Kubernetes Services (Amazon EKS)
+  - Kubernetes platform on EC2
+  - Fargate (both for ECS and EKS)
+* In Amazon EKS and Kubernetes, CloudWatch Insight is using a containerized version of the CloudWatch Agent to discover containers
+
+__CloudWatch Lambda Insight__  
+* Monitoring and troubleshooting solution for serverless application running on AWS Lambda
+* Collects, aggregates, and summarizes system-level metrics including CPU time, memory, disk and network
+* Collects, aggregate and summarizes diagnotic information such as cold starts and Lambda worker shutdown
+* Lambda Insight is provided as a Lambda Layer
+
+__CloudWatch Contributor Insight__  
+* Analyze log data and create time series that display contributor data
+  - See metrics about the top-N contributors
+  - The total number of unique contributors and their usage
+* This helps you find top talkers and understand who or what is impacting system performance
+* Work for any AWS-generated logs (VPC, DNS etc)
+* For example, you can find bad hosts, identify the heaviest network users, or find the URLs that generate the most errors
+* You can build your rules from scratch or you can also use sample rules that AWS has created - leverages your CloudWatch Logs
+* CloudWatch also provides built-in rules that you can use to analyze metrics from other AWS service.  
+
+__CloudWatch Application Insight__  
+* Provides automated dashboards that show potential problems with monitoring applications, to help isolate ongoing issues
+* You applications run on Amazon EC2 Instances with select technologies only (Java, .NET, Microsoft IIS Web Server, databases...)
+* And you can use other AWS resources such as Amazon EBS, RDS, ELB, ASG, Lambda, SQS, DynamoDB, S3, bucket, ECS, EKS, SNS, API Gateway...
+* Powered by SageMaker
+* Enhances visibility into your application health to reduce the time it will take you to troubleshoot and repair your application
+* Finding and alerts are sent to Amazon EventBridge and SSM OpsCenter
+
+## AWS CloudTrail
+__Introduction__  
+* Provides governance, compliance and audit for your AWS account
+* CloudTrail is enabled by default!
+* Get a history of events / API calls made within your AWS Account by
+  -  Console
+  - SDK
+  - CLI
+  - AWS Services
+* Can put logs from CloudTrail into CloudWatch Logs and S3
+* A trail can be applied to All Regions (default) or a single Region
+* If a resource is deleted in AWS, investigate CloudTrail first!   
+
+__CloudTrail Events__   
 There are three types of CloudTrail events
 1. Management Events
   - Operations that are performed on resources in your AWS account
@@ -152,7 +197,6 @@ There are three types of CloudTrail events
     * Setting up logging (AWS CloudTrail CreateTrail)
   - By default, trails are configured to log management Events
   - Can separate Read Events from Write Events
-
 2. Data Events
   - By default, data events are not logged (because high volume operations)
   - Amazon S3 object-level activity (e.g GetObject, DeleteObject, PutObject): can be Read or Write Event
@@ -169,3 +213,44 @@ There are three types of CloudTrail events
 __CloudTrail Events Retention__  
 * Events are stored for 90 days in CloudTrail
 * To keep events beyond this period, log them to S3 and use Athena
+
+## AWS Config
+__Introduction__  
+* Helps with auditing and recording compliance of your AWS resources
+* Help record configurations and changes over time
+* Questions that can be solved by AWS Config:
+  - Is there unrestricted SSH access to my security groups
+  - Do my buckets have any public access
+  - How has my ALB configuration changed over time?
+* You can receive alerts (SNS notifications) for any change
+* AWS Config is a per-region service
+* Can be aggregated across regions and accounts
+* Possibility of storing the configuration data into S3 (analyzed by Athena)
+
+__Config Rules__  
+* Can use AWS managed config rules (over 75)
+* Can make custom config rules (must be defined in AWS Lambda)
+  - e.g: Evaluate if each EBS disk is of type gp2
+  - e.g: Evaluate if each EC2 instance is t2.micro
+* Rules can be evaluated/triggered
+  - For each config change
+  - And/or at regular time interval
+* AWS Config Rules _does not prevent actions from happening (no deny)_
+* Pricing: no free tier, $0.003 per configuration item recorded per region, $0.001 per config rule evaluated per region
+
+__AWS Config Resource__  
+* View compliance of a resource over time
+* View configuration of a resource over time
+* View CloudTrail API calls of a resource over time
+
+__Config Rules - Remediations__  
+* Automate remediation of non-compliant resources using SSM Automation
+* Use AWS-Managed Automation Documents or create custom Automation Documents
+  - Tip: you can create Automation Documents that invokes Lambda function
+* You can set _Remediation Retries_ if the resource is still non-compliance after auto-remediation
+
+__Config Rules - Notifications__  
+* Use EventBridge to trigger notifications when AWS resources are non-complaint
+* Ability to send configuration changes and compliance state notifications to SNS (all events - use SNS Filtering or filter at client-side)
+
+[List of AWS Config Managed Rules](https://docs.aws.amazon.com/config/latest/developerguide/managed-rules-by-aws-config.html)
