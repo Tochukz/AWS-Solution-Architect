@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures a Lambda function that fetches parameters from the parameter store.
+
+Parameters:
+  KmsKeyId:
+    Type: String
+    Description: KMS key to decrypt the /my-app/prod/database-pass parameter. Use The KMS KeyId from hands-on-299
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleSsmRole
+      Description: A simple role for Lambda
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SsmPolicyForLambda
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowSsmRead
+                Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/my-app/*
+              - Sid: AllowKmsDecrypt
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}
+
+  SimpleFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleSsmFunc
+      Handler: index.handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          ENV: dev
+          REGION: !Ref AWS::Region
+      Code:
+        ZipFile: |
+          import os
+          import boto3
+
+          env = os.environ["ENV"]
+          region = os.environ["REGION"]
+          ssm_client = boto3.client("ssm", region_name=region)
+
+          def handler(events, context): 
+            parameter_names = [
+              "/my-app/" + env + "/database-name", 
+              "/my-app/" + env  +"/database-user"
+            ]
+            parameters_result = ssm_client.get_parameters(Names=parameter_names)
+            db_name = parameters_result["Parameters"][0]["Value"]
+            db_user = parameters_result["Parameters"][1]["Value"]
+
+            staging_param_result = ssm_client.get_parameter(Name="/my-app/staging/database-pass", WithDecryption=True)
+            # The Prod database-pass was encrypted using a custom KMS key from hands-on-299. Permission to that key is required
+            prod_param_result = ssm_client.get_parameter(Name="/my-app/prod/database-pass",  WithDecryption=True)
+            staging_db_pass = staging_param_result["Parameter"]["Value"]
+            prod_db_pass = prod_param_result["Parameter"]["Value"]
+            db_creds = {  "db_name": db_name , "db_user": db_user, "staging_db_pass": staging_db_pass, "prod_db_pass": prod_db_pass}
+            print(db_creds)
+
+            return db_creds

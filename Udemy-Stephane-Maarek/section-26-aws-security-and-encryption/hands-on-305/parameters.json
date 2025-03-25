@@ -1,0 +1,6 @@
+[
+  {
+    "ParameterKey": "KmsKeyId",
+    "ParameterValue": "your-kms-key-id"
+  }
+]
