@@ -35,6 +35,10 @@ $ aws cloudformation describe-stack-events --stack-name AthenaForCloudTrail > ev
 ```
 
 **Cleanup**  
+Empty S3 bucket
+```bash
+$ aws s3 rm s3://athena-query-results-314146339647-eu-west-2/ --recursive
+```
 To delete the stack
 
 ```bash
