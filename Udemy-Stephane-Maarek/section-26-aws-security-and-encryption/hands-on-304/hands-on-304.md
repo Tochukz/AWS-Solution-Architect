@@ -27,6 +27,19 @@ Here is how to create Parameters of type `SecureString` using AWS CLI.
 $ aws ssm put-parameter --name /my-app/staging/database-pass --value <your-db-passoword> --type SecureString
 ```
 
+Use a custom key for better security
+
+```bash
+$ aws ssm put-parameter --name /my-app/prod/database-pass --value <your-db-passoword> --type SecureString --key-id <your-key-id>
+```
+
+We have used the KeyId from `hands-on-299`, _KmsKey stack_, in this command.
+
+**More on custom keys**  
+A custom KMS key provides better security than default KMS keys which are accessible to every user of your account.  
+Custom keys are only accessible to users or role that have the proper IAM permission.  
+For users/role to access any of the data encrypted by the custom key, they will need explicit IAM permission that give them access to that key.
+
 **Testing**
 
 1. Get parameters by listing their names

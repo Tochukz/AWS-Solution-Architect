@@ -2,7 +2,7 @@
 
 ### Description
 
-This configuration creates a KMS key.  
+This configuration creates a Customer Managed KMS key.  
 We then use the Key to encrypt and decrypt a file.
 
 You can use symmetric encryption KMS keys to encrypt and decrypt small amounts of data,
