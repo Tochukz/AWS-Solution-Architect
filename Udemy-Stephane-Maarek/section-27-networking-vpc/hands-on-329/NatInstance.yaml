@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures a NAT Instance
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 Key pair
+    Default: DevSimpleKey
+  SourceIp:
+    Type: String
+    Description: You IP address to allow to SSH into the Bastion host # To see your current IP visit https://checkip.amazonaws.com/
+  VpcCidrBlock:
+    Type: String
+    Description: Cidr Block for the VPC
+    Default: 10.0.0.0/16
+    AllowedValues:
+      - 10.0.0.0/16
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred and
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+      NatAmi: ami-0137cee1a6fb4f763 # amzn-ami-vpc-nat-2018.03.0.20230807.0-x86_64-ebs
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+      NatAmi: ami-007fbd798d63d6711 # amzn-ami-vpc-nat-2018.03.0.20230515.0-x86_64-ebs
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+      NatAmi: ami-015c7728d5cb3dccd # amzn-ami-vpc-nat-2018.03.0.20230628.0-x86_64-ebs
+# To get a NAT optimized AMI, check EC2 Console > Images > AMI Catalog > Community AMIs tab and type "nat" in the search bar
+# After the search result is displayes, do a browser text find for "amzn-ami-vpc-nat" to jump to the relevant result items
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: DemoVpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: DemoInternetGateway
+
+  VpcGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.0.0/24 # Small subnet size is good for public subnet
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnetA
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnetB
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.16.0/20
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PrivateSubnetA
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.32.0/20
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PrivateSubnetB
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttach
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PublicSubnetRouteTableAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetRouteTableAssocB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PrivateSubnetRouteTableAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetRouteTableAssocB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTable
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BastionSecurityGroup
+      GroupDescription: For Web access
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow SSH access from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Sub ${SourceIp}/32
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: BastionHost
+
+  PrivateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: PrivateSecurityGroup
+      GroupDescription: For Web access
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow SSH access from BastionSecurityGroup only
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSecurityGroup
+
+  PrivateInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref PrivateSecurityGroup
+      SubnetId: !Ref PrivateSubnetA
+      Tags:
+        - Key: Name
+          Value: PrivateInstance
+
+  NatSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: NatSecurityGroup
+      GroupDescription: Security group for NAT instance
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow SSH access from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access from the VPC IP range
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref VpcCidrBlock
+        - Description: Allow HTTPS access from the VPC IP range
+          IpProtocol: TCP
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref VpcCidrBlock
+        - Description: Allow ICMP access from the VPC IP range
+          IpProtocol: ICMP
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref VpcCidrBlock
+
+  NatInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, NatAmi]
+      KeyName: !Ref KeyName
+      SourceDestCheck: false # A NAT instance must be able to send and recieve traffic whe the source or destination is not itself
+      SecurityGroupIds:
+        - !Ref NatSecurityGroup
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: NatInstance
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      InstanceId: !Ref NatInstance
+      DestinationCidrBlock: 0.0.0.0/0
+
+Outputs:
+  BastonPublicIp:
+    Description: Public IP of the BastionHost EC2 instance
+    Value: !GetAtt BastionHost.PublicIp
+  PrivateInstanceIp:
+    Description: Private IP of the Private EC2 instance
+    Value: !GetAtt PrivateInstance.PrivateIp

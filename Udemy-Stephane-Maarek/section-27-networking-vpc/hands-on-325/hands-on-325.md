@@ -1,4 +1,4 @@
-# Lesson 323: Internet Gateway and Route Table - Hands On
+# Lesson 325: Internet Gateway and Route Table - Hands On
 
 ### Description
 

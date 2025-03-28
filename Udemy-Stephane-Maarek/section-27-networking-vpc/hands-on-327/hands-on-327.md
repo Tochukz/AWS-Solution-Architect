@@ -38,7 +38,7 @@ $ mkdir my-keys
 2. Open another terminal and copy your private key into the newly created directory in the Bastion Host
 
 ```bash
-$ cp -i dev-simple-key.pem dev-simple-key.pem ec2-user@18.135.27.17:~/my-keys/dev-simple-key.pem
+$ scp -i dev-simple-key.pem dev-simple-key.pem ec2-user@18.135.27.17:~/my-keys/dev-simple-key.pem
 ```
 
 3. Back to the Bastion Host terminal, use the copied private key to SSH into the private EC2 instance using the `PrivateInstanceIp`
