@@ -1,0 +1,263 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures a custom VPC and releated resources
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 Key pair
+    Default: DevSimpleKey
+  VpcCidrBlock:
+    Type: String
+    Description: Cidr Block for the VPC
+    Default: 10.0.0.0/16
+    AllowedValues:
+      - 10.0.0.0/16
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred and
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: DemoVpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: DemoInternetGateway
+
+  VpcGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.0.0/24 # Small subnet size is good for public subnet
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnetA
+
+  # PublicSubnetB:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref CustomVpc
+  #     CidrBlock: 10.0.1.0/24
+  #     AvailabilityZone: !Select [1, !GetAZs ""]
+  #     MapPublicIpOnLaunch: true
+  #     Tags:
+  #       - Key: Name
+  #         Value: PublicSubnetB
+
+  # PrivateSubnetA:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref CustomVpc
+  #     CidrBlock: 10.0.16.0/20
+  #     AvailabilityZone: !Select [0, !GetAZs ""]
+  #     MapPublicIpOnLaunch: false
+  #     Tags:
+  #       - Key: Name
+  #         Value: PrivateSubnetA
+
+  # PrivateSubnetB:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref CustomVpc
+  #     CidrBlock: 10.0.32.0/20
+  #     AvailabilityZone: !Select [1, !GetAZs ""]
+  #     MapPublicIpOnLaunch: false
+  #     Tags:
+  #       - Key: Name
+  #         Value: PrivateSubnetB
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttach
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PublicSubnetRouteTableAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  # PublicSubnetRouteTableAssocB:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     SubnetId: !Ref PublicSubnetB
+  #     RouteTableId: !Ref PublicRouteTable
+
+  # PrivateRouteTable:
+  #   Type: AWS::EC2::RouteTable
+  #   Properties:
+  #     VpcId: !Ref CustomVpc
+
+  # PrivateSubnetRouteTableAssocA:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     SubnetId: !Ref PrivateSubnetA
+  #     RouteTableId: !Ref PrivateRouteTable
+
+  # PrivateSubnetRouteTableAssocB:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     SubnetId: !Ref PrivateSubnetB
+  #     RouteTableId: !Ref PrivateRouteTable
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecurityGroup
+      GroupDescription: For Web access
+      VpcId: !Ref CustomVpc
+      SecurityGroupIngress:
+        - Description: Allow SSH access from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access form anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  SimpleEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: SimpleEc2
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          # Update the system and install necessary packages
+          yum update -y
+          yum install -y httpd
+
+          # Start the Apache server
+          systemctl start httpd
+          systemctl enable httpd
+
+          # Create the index.html file
+          cat > /var/www/html/index.html <<EOF
+          <html>
+          <head>
+            <title>Instance Availability Zone</title>
+            <style>
+              body {background: teal;}
+              h3 {margin-top: 45vh; color: white; text-align: center;}
+            </style>
+          </head>
+          <body>
+              <h3>From Custom VPC </h3>
+          </body>
+          </html>
+          EOF
+
+          # Ensure the httpd service is correctly set up to start on boot
+          chkconfig httpd on
+
+  # PrivateSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupName: PrivateSecurityGroup
+  #     GroupDescription: For Web access
+  #     VpcId: !Ref CustomVpc
+  #     SecurityGroupIngress:
+  #       - Description: Allow SSH access from BastionSecurityGroup only
+  #         IpProtocol: TCP
+  #         FromPort: 22
+  #         ToPort: 22
+  #         SourceSecurityGroupId: !Ref BastionSecurityGroup
+
+  # PrivateInstance:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     InstanceType: t2.micro
+  #     ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+  #     KeyName: !Ref KeyName
+  #     SecurityGroupIds:
+  #       - !Ref PrivateSecurityGroup
+  #     SubnetId: !Ref PrivateSubnetA
+  #     Tags:
+  #       - Key: Name
+  #         Value: PrivateInstance
+
+  # ElasticIp:
+  #   Type: AWS::EC2::EIP
+  #   Properties:
+  #     Domain: vpc
+
+  # NatGateway:
+  #   Type: AWS::EC2::NatGateway
+  #   Properties:
+  #     AllocationId: !GetAtt ElasticIp.AllocationId
+  #     ConnectivityType: public
+  #     SubnetId: !Ref PublicSubnetA
+
+  # PrivateRoute:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref PrivateRouteTable
+  #     NatGatewayId: !Ref NatGateway
+  #     DestinationCidrBlock: 0.0.0.0/0
+
+Outputs:
+  VpcId:
+    Description: VPC Id of the Custom VPC
+    Value: !Ref CustomVpc
+    Export:
+      Name: CustomVpc-VpcId
+  VpcCidrBlock:
+    Description: Custom VPC Cidr block
+    Value: !Ref VpcCidrBlock
+    Export:
+      Name: CustomVpc-VpcCidrBlock
+  PublicRouteTableId:
+    Description: Route Table Id of Public Route Table
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: CustomVpc-PublicRouteTableId
+  SimpleEc2PublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt SimpleEc2.PublicIp
+  SimpleEc2PrivateIp:
+    Description: Private IP of the EC2 instance
+    Value: !GetAtt SimpleEc2.PrivateIp

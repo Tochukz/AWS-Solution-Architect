@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates VPC peering between custom and default VPCs in same region.
+
+Resources:
+  VpcPeering:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      VpcId: !ImportValue CustomVpc-VpcId
+      PeerVpcId: !ImportValue DefaultVpc-VpcId
+      Tags:
+        - Key: Name
+          Value: DemoVpcPeering
+
+  CustomRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !ImportValue CustomVpc-PublicRouteTableId
+      DestinationCidrBlock: !ImportValue DefaultVpc-VpcCidrBlock
+      VpcPeeringConnectionId: !Ref VpcPeering
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !ImportValue DefaultVpc-PublicRouteTableId
+      DestinationCidrBlock: !ImportValue CustomVpc-VpcCidrBlock
+      VpcPeeringConnectionId: !Ref VpcPeering

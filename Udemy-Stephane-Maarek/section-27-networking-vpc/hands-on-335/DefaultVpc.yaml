@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures EC2 instance in default VPC
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 Key pair
+    Default: DevSimpleKey
+  DefaultVpcCidrBlock:
+    Type: String
+    Description: Cidr block of default VPC
+    Default: 172.31.0.0/16
+  PublicRouteTableId:
+    Type: String
+    Description: Route table Id of the public route table
+    Default: rtb-028505efbea2f37c5
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred and
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  DefaultWebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DefaultWebSecGroup
+      GroupDescription: For Web access
+      SecurityGroupIngress:
+        - Description: Allow SSH access from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access form anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  DefaultEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt DefaultWebSecGroup.GroupId
+      # SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: DefaultEc2
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          # Update the system and install necessary packages
+          yum update -y
+          yum install -y httpd
+
+          # Start the Apache server
+          systemctl start httpd
+          systemctl enable httpd
+
+          # Create the index.html file
+          cat > /var/www/html/index.html <<EOF
+          <html>
+          <head>
+            <title>Instance Availability Zone</title>
+            <style>
+              body {background: cornflowerblue;}
+              h3 {margin-top: 45vh; color: white; text-align: center;}
+            </style>
+          </head>
+          <body>
+              <h3>From Default VPC </h3>
+          </body>
+          </html>
+          EOF
+
+          # Ensure the httpd service is correctly set up to start on boot
+          chkconfig httpd on
+
+Outputs:
+  VpcId:
+    Description: Default VPC Id
+    Value: !GetAtt DefaultEc2.VpcId
+    Export:
+      Name: DefaultVpc-VpcId
+  VpcCidrBlock:
+    Description: Default VPC Id
+    Value: !Ref DefaultVpcCidrBlock
+    Export:
+      Name: DefaultVpc-VpcCidrBlock
+  PublicRouteTableId:
+    Description: Route Table Id of default route table
+    Value: !Ref PublicRouteTableId
+    Export:
+      Name: DefaultVpc-PublicRouteTableId
+  DefaultEc2PublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt DefaultEc2.PublicIp
+  DefaultEc2PrivateIp:
+    Description: Private IP of the EC2 instance
+    Value: !GetAtt DefaultEc2.PrivateIp
