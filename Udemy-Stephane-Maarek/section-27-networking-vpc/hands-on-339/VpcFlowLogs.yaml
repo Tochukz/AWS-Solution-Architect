@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures VPC Flow Logs that send logs to CloudWatch LogGroup and S3 destinations
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id of an existing VPC
+    Default: vpc-097728e00a72ac827 # My default VPC
+
+Resources:
+  LogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: vpc-logs-29-04-2024
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireFlowLogs
+            Status: Enabled
+            ExpirationInDays: 365 # Automatically delete logs after 1 year
+
+  LogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LogBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowS3Put
+            Effect: Allow
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub ${LogBucket.Arn}/*
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref AWS::AccountId
+          - Sid: AllowS3Get
+            Effect: Allow
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt LogBucket.Arn
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref AWS::AccountId
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/vpc-flow-logs/SimpleDemo
+      RetentionInDays: 3
+
+  FlowLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: FlowLogsRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: FLowLogPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowLogsCreatePut
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt LogGroup.Arn
+
+  FlowLogsToS3:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      ResourceId: !Ref VpcId
+      ResourceType: VPC
+      LogDestinationType: s3
+      LogDestination: !GetAtt LogBucket.Arn
+      MaxAggregationInterval: 60 # 60 Seconds, in production use 600 i.e 10minutes
+      TrafficType: ALL
+      Tags:
+        - Key: Name
+          Value: FlowLogsToS3
+
+  FlowLogsToCloudWatch:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      ResourceId: !Ref VpcId
+      ResourceType: VPC
+      DeliverLogsPermissionArn: !GetAtt FlowLogsRole.Arn
+      LogDestinationType: cloud-watch-logs
+      LogDestination: !GetAtt LogGroup.Arn
+      MaxAggregationInterval: 60
+      TrafficType: ALL
+      Tags:
+        - Key: Name
+          Value: FlowLogsToCloudWatch
