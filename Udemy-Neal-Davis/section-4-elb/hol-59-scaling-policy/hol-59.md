@@ -2,7 +2,7 @@
 
 ### Description
 
-This template is an extension of _hol-57-alb_ which comfigures an Application Load Balancer with an Auto Scaling Group.  
+This template is an extension of _hol-57-alb_ which configures an Application Load Balancer with an Auto Scaling Group.  
 Here we add a Scaling Policy of type _Target Tracking Scaling_ with a _Predefined Metric Type_ of _ALBRequestCountPerTarget_.  
 When the connection per target reaches a value of 50, the Auto Scaling Group will scale out.
 

@@ -4,7 +4,7 @@
 
 **Todo**
 Try ICMP protocol for security groups.
-Try security group chaining so that traffic to an instance is only allowed from securty group that is attached to another instance.
+Try security group chaining so that traffic to an instance is only allowed from security group that is attached to another instance.
 Try network access control list rule that restricts all traffic to a custom VPC.
 
 ### Operation

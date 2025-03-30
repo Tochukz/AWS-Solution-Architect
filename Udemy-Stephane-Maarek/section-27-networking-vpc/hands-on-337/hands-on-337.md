@@ -53,14 +53,13 @@ $ ssh -i my-keys/dev-simple-key.pem ec2-user@10.0.16.33
 ```bash
 $ curl google.com
 ```
+This should stall for a while and eventually fail.
 
-5. Confirm that S3 service is accessible from the private EC2 instance
+5. Confirm that S3 service, on the other hand, is actually accessible from the private EC2 instance
 
 ```bash
 $ aws s3 ls
 ```
-
-This should stall for a while and eventually fail.
 
 **Debug Errors**  
  In the case of error during deployment, checkout the stack events

@@ -1,4 +1,4 @@
-# Lesson 304: SSM Parameter Store - Hands On
+# Lesson 305: SSM Parameter Store with Lambda - Hands On
 
 ### Description
 
@@ -35,7 +35,7 @@ $ aws lambda invoke --function-name SimpleSsmFunc output.json
  In the case of error during deployment, checkout the stack events
 
 ```bash
-$ aws cloudformation describe-stack-events --stack-name Config > events.json
+$ aws cloudformation describe-stack-events --stack-name SsmLambda > events.json
 ```
 
 Search for _"Resource handler returned message"_ to see the root failure.

@@ -70,7 +70,7 @@ $ aws ssm get-parameters-by-path --path /my-app --recursive
  In the case of error during deployment, checkout the stack events
 
 ```bash
-$ aws cloudformation describe-stack-events --stack-name Config > events.json
+$ aws cloudformation describe-stack-events --stack-name SsmParameters > events.json
 ```
 
 Search for _"Resource handler returned message"_ to see the root failure.

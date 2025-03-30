@@ -39,7 +39,7 @@ Use the username and password to login to the database using a Database Client s
  In the case of error during deployment, checkout the stack events
 
 ```bash
-$ aws cloudformation describe-stack-events --stack-name Config > events.json
+$ aws cloudformation describe-stack-events --stack-name SecretsManager > events.json
 ```
 
 Search for _"Resource handler returned message"_ to see the root failure.

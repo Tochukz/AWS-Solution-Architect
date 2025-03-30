@@ -56,7 +56,7 @@ So it must be decoded to obtain the original plaintext.
  In the case of error during deployment, checkout the stack events
 
 ```bash
-$ aws cloudformation describe-stack-events --stack-name Config > events.json
+$ aws cloudformation describe-stack-events --stack-name KmsKey > events.json
 ```
 
 Search for _"Resource handler returned message"_ to see the root failure.
