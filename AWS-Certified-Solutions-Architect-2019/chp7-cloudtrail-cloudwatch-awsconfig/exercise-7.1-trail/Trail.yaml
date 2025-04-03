@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration creates a CloutTrail Trail to log Data Events to a CloudWatch LogGroup
+
+Resources:
+  LogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: trail-logs-03-04-25
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpiresIn90d
+            Status: Enabled
+            ExpirationInDays: 90
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LogBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowGetAcl
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt LogBucket.Arn
+          - Sid: AllowPutObject
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub ${LogBucket.Arn}/*
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/trail/SimpleEventLogs
+      RetentionInDays: 90
+
+  CloudTrailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleCloudTrailRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SimpleCloudTrailPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowCloudTrailLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt LogGroup.Arn
+
+  SimpleTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: DemoTrail
+      IsLogging: true
+      EnableLogFileValidation: true
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      IsOrganizationTrail: false
+      CloudWatchLogsRoleArn: !GetAtt CloudTrailRole.Arn
+      CloudWatchLogsLogGroupArn: !GetAtt LogGroup.Arn
+      S3BucketName: !Ref LogBucket
+      S3KeyPrefix: cloud-trail-logs/
+      AdvancedEventSelectors:
+        - Name: "LogMgtEvents"
+          FieldSelectors:
+            - Field: "eventCategory"
+              Equals: ["Management"]
+        - Name: "LogDataEventsExcludingLogBucket"
+          FieldSelectors:
+            - Field: "eventCategory"
+              Equals: ["Data"]
+            - Field: "resources.type"
+              Equals:
+                [AWS::S3::Object, AWS::Lambda::Function, AWS::DynamoDB::Table]
+            - Field: "resources.ARN"
+              NotStartsWith: !GetAtt LogBucket.Arn
+# By default, trails created without specific EventSelectors will be configured to log all read and write management events, and no data events.
+# You can configure up to five event selectors for a trail.
