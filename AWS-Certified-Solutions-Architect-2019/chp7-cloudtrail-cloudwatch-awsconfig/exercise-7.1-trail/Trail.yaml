@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This configuration creates a CloutTrail Trail to log Data Events to a CloudWatch LogGroup
+Description: This configuration creates a CloutTrail Trail to log Management Events and Data Events to a CloudWatch LogGroup and a S3 bucket
 
 Resources:
   LogBucket:
@@ -80,14 +80,19 @@ Resources:
           FieldSelectors:
             - Field: "eventCategory"
               Equals: ["Management"]
-        - Name: "LogDataEventsExcludingLogBucket"
+        - Name: "LogS3EventsExcludingLogBucket"
           FieldSelectors:
             - Field: "eventCategory"
               Equals: ["Data"]
             - Field: "resources.type"
-              Equals:
-                [AWS::S3::Object, AWS::Lambda::Function, AWS::DynamoDB::Table]
+              Equals: [AWS::S3::Object]
             - Field: "resources.ARN"
-              NotStartsWith: !GetAtt LogBucket.Arn
+              NotStartsWith: [!GetAtt LogBucket.Arn]
+        - Name: "LogLambdaEvents"
+          FieldSelectors:
+            - Field: "eventCategory"
+              Equals: ["Data"]
+            - Field: "resources.type"
+              Equals: [AWS::Lambda::Function]
 # By default, trails created without specific EventSelectors will be configured to log all read and write management events, and no data events.
 # You can configure up to five event selectors for a trail.
