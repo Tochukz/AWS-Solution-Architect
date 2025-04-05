@@ -1,14 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This configuration creates a CloutTrail Trail to log Management Events and Data Events to a CloudWatch LogGroup and a S3 bucket
-
-# This configuration uses AdvancedEventSelectors properties instead of EventSelectors for the Trail confoguration
+Description: Configuration creates a CloutTrail Trail to log events to an S3 bucket and CloudWatch Log
+# This configuration uses EventSelectors properties instead of AdvancedEventSelectors  for the Trail confoguration
 
 Resources:
   LogBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: trail-logs-03-04-25
+      BucketName: trail-logs-04-2
       LifecycleConfiguration:
         Rules:
           - Id: ExpiresIn90d
@@ -38,13 +37,13 @@ Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /aws/trail/SimpleEventLogs
+      LogGroupName: /aws/trail/DemoEventLogs2
       RetentionInDays: 90
 
   CloudTrailRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: SimpleCloudTrailRole
+      RoleName: CloudTrailRole2
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -53,7 +52,7 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: SimpleCloudTrailPolicy
+        - PolicyName: SimpleCloudTrailPolicy2
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -67,7 +66,7 @@ Resources:
   SimpleTrail:
     Type: AWS::CloudTrail::Trail
     Properties:
-      TrailName: DemoTrail
+      TrailName: DemoTrail2
       IsLogging: true
       EnableLogFileValidation: true
       IncludeGlobalServiceEvents: true
@@ -77,24 +76,14 @@ Resources:
       CloudWatchLogsLogGroupArn: !GetAtt LogGroup.Arn
       S3BucketName: !Ref LogBucket
       S3KeyPrefix: cloud-trail-logs/
-      AdvancedEventSelectors:
-        - Name: "LogMgtEvents"
-          FieldSelectors:
-            - Field: "eventCategory"
-              Equals: ["Management"]
-        - Name: "LogS3EventsExcludingLogBucket"
-          FieldSelectors:
-            - Field: "eventCategory"
-              Equals: ["Data"]
-            - Field: "resources.type"
-              Equals: [AWS::S3::Object]
-            - Field: "resources.ARN"
-              NotStartsWith: [!GetAtt LogBucket.Arn]
-        - Name: "LogLambdaEvents"
-          FieldSelectors:
-            - Field: "eventCategory"
-              Equals: ["Data"]
-            - Field: "resources.type"
-              Equals: [AWS::Lambda::Function]
-# By default, trails created without specific EventSelectors will be configured to log all read and write management events, and no data events.
-# You can configure up to five event selectors for a trail.
+      EventSelectors:
+        - IncludeManagementEvents: true
+          ReadWriteType: All
+          DataResources:
+            - Type: AWS::Lambda::Function
+              Values:
+                - "arn:aws:lambda" # Logs all Lambda invocations
+            - Type: AWS::DynamoDB::Table
+              Values:
+                - "arn:aws:dynamodb" # Logs DynamoDB item-level activity
+

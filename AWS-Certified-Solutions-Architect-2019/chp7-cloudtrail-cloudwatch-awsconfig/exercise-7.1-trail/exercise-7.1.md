@@ -16,7 +16,7 @@ $ cfn-lint Trail.yaml
 Deploy the stack
 
 ```bash
-$ aws cloudformation deploy --template-file Trail.yaml  --stack-name Trail --capabilities CAPABILITY_NAMED_IAM
+$ aws cloudformation deploy --template-file Trail.yaml --stack-name Trail --capabilities CAPABILITY_NAMED_IAM
 ```
 
 **After Deployment**
