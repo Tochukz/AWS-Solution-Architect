@@ -13,7 +13,7 @@ __Types of Storage Gateway__
 4. Tape Gateway
 
 __Amazon S3 File Gateway__  
-S3 File Gateway uses NTF or SMB protocol with on-premise server and then translates the request to HTTPS as it transfers data to
+S3 File Gateway uses NFS or SMB protocol with on-premise server and then translates the request to HTTPS as it transfers data to
 * S3 Standard,
 * S3 Standard-IA
 * S3 One Zone-IA
@@ -29,8 +29,9 @@ FSx File Gateway has been discontinued by Amazon.
 __Volume Gateway__  
 * Block storage using _iSCSI protocol_  backed by S3
 * Backed by EBS snapshots which can help restore on-premise volumes
-* Cached volumes: low latency access to most recent data
-* Stored volumes: entire dataset is on premise, schedules backup to S3.
+* Volume Gateway has two storage options:
+  - __Cached volumes__: stores the most commonly accessed data locally  while keeping the entire dataset in S3
+  - __Stored volumes__: entire dataset is on premise, schedules backup to S3.
 
 __Tape Gateway__  
 * Some companies have backup process using physical tapes
@@ -60,4 +61,4 @@ You can synchronize to:
 AWS DataSync replication tasks can be scheduled hourly, daily, or weekly.
 File permissions and metadata are preserved (NFS POSIX, SMB).
 
-For offline Data Sync you can use Snowcone device which can then be shipped to an AWS data center to dump the data. 
+For offline Data Sync you can use Snowcone device which can then be shipped to an AWS data center to dump the data.

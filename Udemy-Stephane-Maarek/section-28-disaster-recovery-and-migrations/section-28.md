@@ -147,12 +147,11 @@ __Introduction__
   - Gather information about your on-premise servers to plan a migration
   - Server utilization and dependency mapping
   - Tracking with AWS Migration Hub
-* AWS Datamase Migration Service (DMS)
+* AWS Database Migration Service (DMS)
   - Replicate On-premise => AWS, AWS => AWS, AWS => On-Premise
   - Works with various database technologies (Oracle, MySQL, DynamoDB, etc)
 * AWS Server Migration Service (SMS)
   - Incremental replication of on-premise live server to AWS
-
 
 ## AWS Backup
 __Introduction__  
@@ -175,9 +174,9 @@ __Introduction__
   - Transition to Cold storage (Never, Days, Weeks, Months, Years)
   - Retention Period (Always, Days, Weeks, Months, Years)
 
-  __AWS Backup Valut Lock__  
+  __AWS Backup Vault Lock__  
   * Enforce a WORM (Write Once Read Many) state for all the backups that you store in your AWS Backup Vault.
-  * Additional layer of defense to protect your backups againsts
+  * Additional layer of defense to protect your backups against
     - inadvertent or malicious delete operations
     - Updates that shorted or alter retention periods
   * Event the root user cannot delete backups when enabled
