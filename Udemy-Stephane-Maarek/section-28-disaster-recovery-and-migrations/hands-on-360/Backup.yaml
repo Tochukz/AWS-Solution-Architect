@@ -37,7 +37,7 @@ Resources:
             CompletionWindowMinutes: 120
             Lifecycle:
               MoveToColdStorageAfterDays: 30
-              DeleteAfterDays: 90
+              DeleteAfterDays: 120
             RecoveryPointTags:
               Environment: Dev
       BackupPlanTags:

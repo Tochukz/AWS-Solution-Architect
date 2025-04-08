@@ -2,7 +2,7 @@
 
 ### Description
 
-This configuration creates a backup plan for an S3 bucket using AWS Backup
+This configuration configures a backup plan.
 
 ### Operation
 
@@ -16,7 +16,7 @@ $ cfn-lint Backup.yaml
 Deploy the stack
 
 ```bash
-$ aws cloudformation deploy --template-file Backup.yaml  --stack-name Backup --parameter-overrides file://parameters.json --capabilities CAPABILITY_NAMED_IAM
+$ aws cloudformation deploy --template-file Backup.yaml  --stack-name Backup --capabilities CAPABILITY_NAMED_IAM
 ```
 
 **After Deployment**
