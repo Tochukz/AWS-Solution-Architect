@@ -1,4 +1,4 @@
-# Lesson 349: Egress only Internet Gateway- Hands On
+# Lesson 349: Egress only Internet Gateway - Hands On
 
 ### Description
 An `EgressOnlyInternetGateway` is an IPv6-only Internet Gateway.    

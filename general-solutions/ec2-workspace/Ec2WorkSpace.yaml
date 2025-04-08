@@ -41,7 +41,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: SimpleRole
-      Description: Role for Elastic Beanstalk environment
+      Description: Role for EC2 instance
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
