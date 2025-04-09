@@ -180,3 +180,21 @@ __Introduction__
     - inadvertent or malicious delete operations
     - Updates that shorted or alter retention periods
   * Event the root user cannot delete backups when enabled
+
+## Application Migration Service (MGN)
+__AWS Application Discovery Service__  
+* Plan migration projects by gathering information about on-premise data centers
+* Server utilization data and dependency mapping are important for migrations
+
+There are two types of migrations:
+* Agentless Discovery (AWS Agentless Discovery Connector)  
+  - VM inventory, configuration and performace history such as CPU, memory and disk usage
+* Agent-based Discovery (AWS Application Discovery Agent)
+  - System configuration, system performacne, running processes and details of the network connections between systems
+
+* Resulting data can be viewed within AWS Migration Hub
+
+__AWS Application Migration Service (MGN)__  
+* The "AWS evolution" of CloudEndure Migration replacing AWS Server Migration Service
+* Lift-and-shift (rehost) solution whichsimplify migrating applications to AWS
+* Converts your physical, virtual and cloud-based servers to run natively on AWS 
