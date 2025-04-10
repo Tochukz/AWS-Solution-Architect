@@ -29,7 +29,16 @@ Section    | Title
 21 | Database in AWS
 22 | Data Analytics
 23 | Machine Learning
-24 |  AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
+24 | AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
+25 | Identity and Access Management (IAM) - Advanced
+26 | AWS Security and Encryption: KMS, SSM Parameter Store, Shield, WAF
+27 | Networking - VPC  
+28 | Disaster Recovery & Migrations
+29 | More Solution Architectures
+30 | Other Services
+31 | WhitePapers and Architectures - AWS Certified Solution Architect Associate
+32 | Preparing for the Exams + Practice Exam - AWS Certified Solution Architect Associate
+33 | Congratulations - AWS Certified Solution Architect Associate
 
 ### Hands On
 __Section 6: EC2 - Solution Architect Level__  
@@ -136,6 +145,46 @@ __Section 24: AWS Monitoring and Audit: CloudWatch, CloudTrail & Config__
 274 - CloudWatch Logs - Live Tail  
 277 - CloudWatchAlarm Logs  
 279 - Amazon Event Bridge  
+285 - Amazon Config and Resource Explorer
+
+__Section 25: Identity and Access Management (IAM) - Advanced__  
+292 - IAM Identity Center
+
+__Section 26: AWS Security and Encryption__  
+299 - KMS
+304 - SSM Parameter Store
+305 - SSM Parameter Store and Lambda
+307 - Secrets Manager
+312 - WAF, ACL and Shield
+
+__Section 27: Networking - VPC__  
+321 - VPC
+323 - Subnets
+325 - Internet Gatewate and Route Table
+327 - Bastion Host
+329 - NAT Instance
+331 - NAT Gateway
+333 - NACL and Security Group
+335 - VPC Peering
+337 - VPC Endpoint
+339 - VPC Flow Logs
+347 - IPv6 for VPC
+349 - Egress only Internet Gateway
+
+__Section 28: Disaster Recovery and Migrations__  
+360 - AWS Backup
+
+__Section 29: More Solution Architecture__  
+368 - EC2 Instance High Availability
+
+__Section 30: Other AWS Services__  
+375 - SSM Session Manager
+
+__Section 31: White Papers and Architectures__  
+
+__Section 32: Prepare for the Exam + Practice Exam__  
+
+__Section 33: AWS Certification Journey__  
 
 ### FAQs
 [IAM FAQs](https://aws.amazon.com/iam/faqs/)    
