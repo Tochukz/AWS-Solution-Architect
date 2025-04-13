@@ -1,7 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: Configuration creates a CloutTrail Trail to log events to an S3 bucket and CloudWatch Log
-# This configuration uses EventSelectors properties instead of AdvancedEventSelectors  for the Trail confoguration
+# This configuration uses EventSelectors properties instead of AdvancedEventSelectors to specify the Managment and Data events
+# EventSelectors is limited and can only support three types of DataResources: AWS::Lambda::Function, AWS::DynamoDB::Table, and AWS::S3::Object
+# Use AdvancedEventSelectors if you need to log other types of DataResources
 
 Resources:
   LogBucket:
@@ -86,4 +88,4 @@ Resources:
             - Type: AWS::DynamoDB::Table
               Values:
                 - "arn:aws:dynamodb" # Logs DynamoDB item-level activity
-
+          # I have left out AWS::S3::Object type to avoid possible infinite loops.
