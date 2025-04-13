@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "PrimaryAlbCanonicalHostedZoneId",
+    "ParameterValue": "Z32O12XQLNTSW2"
+  },
+  {
+    "ParameterKey": "PrimaryAlbDnsName",
+    "ParameterValue": "AppLoadBalancer-1212662957.eu-west-1.elb.amazonaws.com"
+  },
+  {
+    "ParameterKey": "SecondaryAlbCanonicalHostedZoneId",
+    "ParameterValue": "ZHURV8PSTC4K8"
+  },
+  {
+    "ParameterKey": "SecondaryAlbDnsName",
+    "ParameterValue": "AppLoadBalancer-1760155866.eu-west-2.elb.amazonaws.com"
+  }
+]

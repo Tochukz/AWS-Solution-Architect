@@ -119,9 +119,6 @@ Resources:
             systemctl start httpd
             systemctl enable httpd
 
-            # Get the current AWS Region
-            AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
-
             # Create the index.html file
             cat > /var/www/html/index.html <<EOF
             <html>
@@ -133,7 +130,7 @@ Resources:
               </style>
             </head>
             <body>
-                <h3>This instance is located in  <b> $AWS_REGION </b> region</h3>
+                <h3>This instance is located in Region: ${AWS::Region}</h3>
             </body>
             </html>
             EOF
@@ -159,12 +156,12 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: SimpleAutoScaling
-      DesiredCapacity: 2
-      MinSize: 1
-      MaxSize: 3
+      DesiredCapacity: 1 # 0 or 1
+      MinSize: 0
+      MaxSize: 1
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
-        Version: 1 #  Either '$Default', '$Latest', or a numeric version are allowed
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
@@ -196,6 +193,9 @@ Resources:
           TargetGroupArn: !Ref TargetGroup
 
 Outputs:
-  DnsName:
+  AlbDnsName:
     Description: DNS Name of the application load balancer
     Value: !GetAtt AppLoadBalancer.DNSName
+  AlbCanonicalHostedZoneId:
+    Description: Canonical Hosted Zone ID of the application load balancer
+    Value: !GetAtt AppLoadBalancer.CanonicalHostedZoneID

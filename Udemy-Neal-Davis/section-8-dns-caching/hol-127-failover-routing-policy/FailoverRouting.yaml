@@ -1,1 +1,80 @@
-Fa
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: The template deploys an Route 53 RecordSet with Failover Routing Policy
+
+Parameters:
+  HostedZoneName:
+    Type: String
+    Description: The name of the hosted zone (e.g., example.com.)
+    Default: goodguys.click.
+  RecordName:
+    Type: String
+    Description: The name of the record set (e.g., www.example.com)
+    Default: failover.goodguys.click
+  PrimaryAlbDnsName:
+    Type: String
+    Description: The DNS name of the primary load balancer
+  SecondaryAlbDnsName:
+    Type: String
+    Description: The DNS name of the secondary load balancer
+  PrimaryAlbCanonicalHostedZoneId:
+    Type: String
+    Description: The canonical hosted zone ID for the primary load balancer
+  SecondaryAlbCanonicalHostedZoneId:
+    Type: String
+    Description: The canonical hosted zone ID for the secondary load balancer
+
+Resources:
+  PrimaryHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        FullyQualifiedDomainName: !Ref PrimaryAlbDnsName
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: ParimaryHealthCheck
+
+  SecondaryHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: HTTP
+        FullyQualifiedDomainName: !Ref SecondaryAlbDnsName
+        Port: 80
+        ResourcePath: /
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - Key: Name
+          Value: SecondaryHealthCheck
+
+  FailoverRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Ref HostedZoneName
+      Name: !Ref RecordName
+      Type: A
+      SetIdentifier: PrimaryFailoverId
+      Failover: PRIMARY
+      AliasTarget:
+        DNSName: !Ref PrimaryAlbDnsName
+        HostedZoneId: !Ref PrimaryAlbCanonicalHostedZoneId
+      HealthCheckId: !Ref PrimaryHealthCheck
+
+  SecondaryRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Ref HostedZoneName
+      Name: !Ref RecordName
+      Type: A
+      SetIdentifier: SecondaryFailoverId
+      Failover: SECONDARY
+      AliasTarget:
+        DNSName: !Ref SecondaryAlbDnsName
+        HostedZoneId: !Ref SecondaryAlbCanonicalHostedZoneId
+      HealthCheckId: !Ref SecondaryHealthCheck
