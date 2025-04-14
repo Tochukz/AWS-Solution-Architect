@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template creates S3 Access Points for 3 IAM group to object with particular prefixes.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Bucket name for the S3 bucket
+    Default: simple-access-demo-13-04
+  ExternalUserArn:
+    Type: String
+    Description: ARN of an external user
+  SalesUserArn:
+    Type: String
+    Description: ARN of a user in Sales department
+  FinanceUserArn:
+    Type: String
+    Description: ARN of a user in Finance department
+
+Resources:
+  DemoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DemoBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:ListBucket
+              s3:GetObject
+              s3:PutObject
+            Resource:
+              - !GetAtt DemoBucket.Arn
+              - !Sub ${DemoBucket.Arn}/*
+            Condition:
+              StringEquals:
+                - s3:DataAccessPointAccount: !Ref AWS::AccountId
+                - s3:DataAccessPointAccount: !Ref DemoBucket
+
+  ExternalRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ExternalRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref ExternalUserArn
+            Action: sts:AssumeRole
+
+  SalesAccessPoint:
+    Type: AWS::S3::AccessPoint
+    Properties:
+      Name: sales-access
+      Bucket: !Ref DemoBucket
+      Policy:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ReadOnlyForSales
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Ref SalesUserArn
+            Resource: !Sub arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/sales-access/object/*
+            Action:
+              - s3:GetObject
+
+  FinanceAccessPoint:
+    Type: AWS::S3::AccessPoint
+    Properties:
+      Name: finance-access
+      Bucket: !Ref DemoBucket
+      Policy:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ReadWriteForFinance
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Ref FinanceUserArn
+            Resource: !Sub arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/finance-access/object/*
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+
+  CrossAccountAccessPoint:
+    Type: AWS::S3::AccessPoint
+    Properties:
+      Name: external-access
+      Bucket: !Ref DemoBucket
+      Policy:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ReadWriteForExternal
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt ExternalRole.Arn
+            Resource: !Sub arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/external-access/object/*
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+          - Sid: ReadOnlyForExternal
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt ExternalRole.Arn
+            Resource: !Sub arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/external-access/object/*
+            Action:
+              - s3:GetObject
+
+Outputs:
+  SalesAccessArn:
+    Description: Access point ARN for Sales
+    Value: !GetAtt SalesAccessPoint.Arn
+  SalesAccessAlias:
+    Description: Access point alias for Sales
+    Value: !GetAtt SalesAccessPoint.Alias
+  FinanceAccessArn:
+    Description: Access point ARN for Finance
+    Value: !GetAtt FinanceAccessPoint.Arn
+  FinanceAccessAlias:
+    Description: Access point alias for Finance
+    Value: !GetAtt FinanceAccessPoint.Alias
+  CrossAccountAccessPointArn:
+    Description: Access point ARN for External User
+    Value: !GetAtt CrossAccountAccessPoint.Arn
+  CrossAccountAccessPointAlias:
+    Description: Access point alias for External User
+    Value: !GetAtt CrossAccountAccessPoint.Alias
