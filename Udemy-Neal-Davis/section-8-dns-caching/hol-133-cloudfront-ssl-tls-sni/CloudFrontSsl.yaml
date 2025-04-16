@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  CertificateArn:
+    Type: String
+    Description: The ARN of the ACM certificate for the CloudFront distribution.
+  DomainNames:
+    Type: CommaDelimitedList
+    Description: A list of domain names to associate with the CloudFront distribution.
+Mappings:
+  Dev:
+    Constants:
+      OriginId: SimpleS3Bucket
+    Policies: # To see other manages cache policies, go to CloudFront console > Policies > Cache
+      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+Resources:
+  OriginBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: source-bucket-16-04
+
+  S3BucketAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: S3BucketAccessControl
+        Description: Access control for PDF bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Aliases: !Ref DomainNames
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: OriginBucketTarget
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+        Origins:
+          - Id: OriginBucketTarget
+            DomainName: !GetAtt OriginBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref S3BucketAccessControl
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+
+  OriginBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref OriginBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${OriginBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+Outputs:
+  DistDomainName:
+    Description: CloudFront Distribution Domain Name
+    Value: !GetAtt Distribution.DomainName
