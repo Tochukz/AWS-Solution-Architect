@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Mappings:
+  Dev:
+    Constants:
+      OriginId: SimpleS3Bucket
+    Policies: # To see other manages cache policies, go to CloudFront console > Policies > Cache
+      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+Resources:
+  PdfBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: pdf-bucket-14-04
+
+  ImageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: image-bucket-14-04
+
+  StaticWebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: static-website-bucket-14-04
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticWebsiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub ${StaticWebsiteBucket.Arn}/*
+
+  S3BucketAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: S3BucketAccessControl
+        Description: Access control for PDF bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultCacheBehavior:
+          TargetOriginId: StaticWebsiteOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+        CacheBehaviors:
+          - TargetOriginId: PdfBucketOrigin
+            PathPattern: /*.pdf
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+          - TargetOriginId: ImageBucketOrigin
+            PathPattern: /*.jpg
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+        Origins:
+          - Id: StaticWebsiteOrigin
+            DomainName: !Sub ${StaticWebsiteBucket}.s3-website.${AWS::Region}.amazonaws.com
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols:
+                - TLSv1.2
+          - Id: PdfBucketOrigin
+            DomainName: !GetAtt PdfBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref S3BucketAccessControl
+          - Id: ImageBucketOrigin
+            DomainName: !GetAtt ImageBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref S3BucketAccessControl
+
+  PdfBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PdfBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${PdfBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+  ImageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImageBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${ImageBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+Outputs:
+  StaticWebsiteUrl:
+    Description: URL of the static website
+    Value: !GetAtt StaticWebsiteBucket.WebsiteURL
+  DistDomainName:
+    Description: CloudFront Distribution Domain Name
+    Value: !GetAtt Distribution.DomainName
