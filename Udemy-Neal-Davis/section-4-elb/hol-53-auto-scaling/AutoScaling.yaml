@@ -87,7 +87,7 @@ Resources:
       MaxSize: 3
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
-        Version: 1 #  Either '$Default', '$Latest', or a numeric version are allowed
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
       AvailabilityZones:
         - !Select [0, !GetAZs ""]
         - !Select [1, !GetAZs ""]

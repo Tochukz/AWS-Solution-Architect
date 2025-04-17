@@ -182,7 +182,7 @@ Resources:
       MaxSize: 3
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
-        Version: 1 #  Either '$Default', '$Latest', or a numeric version are allowed
+        Version: !GettAtt LaunchTemplate.LatestVersionNumber  
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
