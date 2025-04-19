@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  AcceleratedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: simple-bucket-19-04
+      AccelerateConfiguration:
+        AccelerationStatus: Enabled
+
+
+Outputs:
+  TransferAccelerationEndpoint:
+    Description: Transfer Acceleration Endpoint for the Bucket
+    Value: !Sub ${AcceleratedBucket}.s3-accelerate.amazonaws.com
