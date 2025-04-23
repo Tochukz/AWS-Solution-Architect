@@ -32,3 +32,7 @@ __Split the video if large__
 ```
 $ ffmpeg -i input.mp4 -c copy -map 0 -segment_time 05:02:00 -f segment CSA_%03d.mp4
 ```
+
+### Useful Tools
+[AWS Policy Generator](https://awspolicygen.s3.amazonaws.com/policygen.html)  
+[IAM Policy Simulator](https://policysim.aws.amazon.com)  

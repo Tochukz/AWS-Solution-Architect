@@ -7,9 +7,28 @@ Resources:
       BucketName: simple-bucket-19-04
       AccelerateConfiguration:
         AccelerationStatus: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
 
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AcceleratedBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub ${AcceleratedBucket.Arn}/*
 
 Outputs:
   TransferAccelerationEndpoint:
     Description: Transfer Acceleration Endpoint for the Bucket
-    Value: !Sub ${AcceleratedBucket}.s3-accelerate.amazonaws.com
+    Value: !Sub https://${AcceleratedBucket}.s3-accelerate.amazonaws.com
+  RegionalEndpoint:
+    Description: Regional Domain Name for the Bucket
+    Value: !Sub https://${AcceleratedBucket.RegionalDomainName}
