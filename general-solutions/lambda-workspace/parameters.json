@@ -1,0 +1,6 @@
+[
+  {
+    "ParameterKey": "CodeS3Bucket",
+    "ParameterValue": "your-s3-bucket-name"
+  }
+]

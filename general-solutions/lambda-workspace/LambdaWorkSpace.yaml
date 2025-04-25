@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration setups a Single Lambda Function, LayerVersion and LambdaUrl for testing purposes
+
+Parameters:
+  SupportedArchitecture:
+    Type: String
+    Description: The architecture supported by the Lambda function
+    AllowedValues:
+      - x86_64
+      - arm64
+    Default: x86_64
+  CodeS3Bucket:
+    Type: String
+    Description: The S3 bucket where the code is stored
+  CodeS3Key:
+    Type: String
+    Description: The S3 key for the code is stored
+    Default: "v1.0.0/single-lambda.zip"
+  LayerS3Key:
+    Type: String
+    Description: The S3 key for the layer is code
+    Default: "v1.0.0/single-lambda-layer.zip"
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleLambdaRole
+      Description: A role for a Lambda function
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName:
+          PolicyDocument:
+            Version: 2010-10-17
+            Statement:
+              - Sid: AllowS3Get
+                Effect: Allow
+                Action:
+                  - S3:GetObject
+                Resource: !Sub ${CodeS3Bucket}/*
+
+  MainLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: SimpleLambdaLayer
+      Description: A layer for a Lambda function
+      Content:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref LayerS3Key
+      CompatibleArchitectures:
+        - !Ref SupportedArchitecture
+      CompatibleRuntimes:
+        - nodejs20.x
+
+  MainFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleLambdaFunc
+      Handler: lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref CodeS3Key
+      Runtime: nodejs20.x
+      Timeout: 15
+      Architectures:
+        - !Ref SupportedArchitecture
+      Layers:
+        - !Ref MainLayer
+
+  LambdaUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt MainFunc.Arn
+
+Outputs:
+  FunctionUrl:
+    Description: The URL for the Lambda function
+    Value: !GetAtt LambdaUrl.FunctionUrl
