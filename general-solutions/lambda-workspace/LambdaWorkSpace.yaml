@@ -16,17 +16,29 @@ Parameters:
   CodeS3Key:
     Type: String
     Description: The S3 key for the code is stored
-    Default: "v1.0.0/single-lambda.zip"
+    Default: "v0.0.1/single-lambda.zip"
   LayerS3Key:
     Type: String
     Description: The S3 key for the layer is code
-    Default: "v1.0.0/single-lambda-layer.zip"
+    Default: "v0.0.1/single-lambda-layer.zip"
+  FuncName:
+    Type: String
+    Description: The name of the Lambda function
+    Default: SimpleLambdaFunc
+  LayerName:
+    Type: String
+    Description: The name of the Lambda layer
+    Default: SimpleLambdaLayer
+  RoleName:
+    Type: String
+    Description: The name of the Lambda role
+    Default: SimpleLambdaRole
 
 Resources:
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: SimpleLambdaRole
+      RoleName: !Ref RoleName
       Description: A role for a Lambda function
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -38,20 +50,20 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName:
+        - PolicyName: !Sub ${RoleName}Policy
           PolicyDocument:
-            Version: 2010-10-17
+            Version: 2012-10-17
             Statement:
               - Sid: AllowS3Get
                 Effect: Allow
                 Action:
                   - S3:GetObject
-                Resource: !Sub ${CodeS3Bucket}/*
+                Resource: !Sub arn:aws:s3:::${CodeS3Bucket}/*
 
   MainLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: SimpleLambdaLayer
+      LayerName: !Ref LayerName
       Description: A layer for a Lambda function
       Content:
         S3Bucket: !Ref CodeS3Bucket
@@ -64,7 +76,7 @@ Resources:
   MainFunc:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: SimpleLambdaFunc
+      FunctionName: !Ref FuncName
       Handler: lambda.handler
       Role: !GetAtt LambdaRole.Arn
       Code:
