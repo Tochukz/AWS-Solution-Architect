@@ -88,12 +88,25 @@ Resources:
         - !Ref SupportedArchitecture
       Layers:
         - !Ref MainLayer
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref CodeS3Bucket
+          REGION: !Ref AWS::Region
 
   LambdaUrl:
     Type: AWS::Lambda::Url
     Properties:
       AuthType: NONE
       TargetFunctionArn: !GetAtt MainFunc.Arn
+
+  # Allow public access to the URL
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MainFunc
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
 
 Outputs:
   FunctionUrl:

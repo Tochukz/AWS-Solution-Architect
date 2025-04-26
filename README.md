@@ -36,3 +36,6 @@ $ ffmpeg -i input.mp4 -c copy -map 0 -segment_time 05:02:00 -f segment CSA_%03d.
 ### Useful Tools
 [AWS Policy Generator](https://awspolicygen.s3.amazonaws.com/policygen.html)  
 [IAM Policy Simulator](https://policysim.aws.amazon.com)  
+[ExamPro SAA-C03](https://www.exampro.co/saa-c03)  
+
+[GitPod](gitpod.io/#https://github.com/tochukz)  
