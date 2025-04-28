@@ -13,6 +13,17 @@ var app = express();
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
+// URI rewrite middleware
+app.use((req, res, next) => {
+  const url = req.url.toLowerCase();
+  if (url == "/product-service") {
+    req.url = "/";
+  } else if (url.startsWith("/product-service")) {
+    req.url = req.url.replace("/product-service", "");
+  }
+  next();
+});
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -20,7 +31,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter); // For the index page
-app.use("/product/categories", categoryRouter);
+app.use("/categories", categoryRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -33,7 +44,7 @@ app.use(function (err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
   res.locals.path = req.path;
-  
+
   // render the error page
   res.status(err.status || 500);
   res.render("error");
