@@ -13,15 +13,26 @@ var app = express();
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
+// URI rewrite middleware
+app.use((req, res, next) => {
+  const url = req.url.toLowerCase();
+  console.log("url", url);
+  if (url == "/user-service") {
+    req.url = "/";
+  } else if (url.startsWith("/user-service")) {
+    req.url = req.url.replace("/user-service", "");
+  }
+  next();
+});
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-
 app.use("/", indexRouter); // For the index page
-app.use("/user/users", usersRouter);
+app.use("/users", usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

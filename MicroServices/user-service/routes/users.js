@@ -14,7 +14,7 @@ const users = [
 
 /* GET users listing. */
 router.get("/", function (req, res, next) {
-  res.json(users);
+  return res.json(users);
 });
 
 router.post("/create", function (req, res, next) {
