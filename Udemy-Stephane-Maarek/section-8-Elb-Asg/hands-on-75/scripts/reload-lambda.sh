@@ -7,22 +7,22 @@ app_name=$1
 version=$2
 if test -z "$app_name"
 then
-  echo "Please supply a app_name as the first argument for the script e.g ./reload-lambda.sh user-management 0.0.1"
+  echo "Please supply a app_name as the first argument for the script e.g ./reload-lambda.sh user-service 0.0.1"
   exit
 fi
 
 if test -z "$version"
 then
-  echo "Please supply a version number as the second argument for the script e.g  ./reload-lambda.sh  user-management 0.0.1"
+  echo "Please supply a version number as the second argument for the script e.g  ./reload-lambda.sh  user-service 0.0.1"
   exit
 fi
 
 
 case $app_name in
-  'user-management')
+  'user-service')
     functName=UserFunc
     ;;
-  'catalog-management')
+  'product-service')
     functName=CatalogFunc
     ;;
   *)

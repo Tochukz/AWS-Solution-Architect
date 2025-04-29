@@ -5,16 +5,13 @@ Description: This template configures an Application Load Balancer that distribu
 Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
-    Description: Vpc Id
-    Default: vpc-097728e00a72ac827 # Default VPC
+    Description: Vpc Id # e.g Default VPC
   SubnetId1:
     Type: AWS::EC2::Subnet::Id
-    Description: First subnet Id in the Vpc provided
-    Default: subnet-01e6764eb590a6eb3 # Default Subnet 1
+    Description: First subnet Id in the Vpc provided # e.g Default Subnet 1
   SubnetId2:
     Type: AWS::EC2::Subnet::Id
-    Description: Second subnet Id in the Vpc provided
-    Default: subnet-08e8eaec953c85086 # Default Subnet 2
+    Description: Second subnet Id in the Vpc provided # e.g Default Subnet 2
   InstanceType:
     Type: String
     Description: EC2 instance type
@@ -33,21 +30,19 @@ Parameters:
   TemplateBucket:
     Type: String
     Description: S3 bucket where child templates are stored
-    Default: chucks-workspace-storage
   ArtifactBucket:
     Type: String
     Description: S3 bucket for code artifacts
-    Default: chucks-workspace-storage
   LayerArtifactVersion:
     Type: String
     Description: The version of the layer artifact e.g 1.0.0
     Default: "0.0.1"
-  CatalogTarget:
+  ProductTarget:
     Type: String
     Description: Constant to be used for target group name
     AllowedValues:
-      - CatalogTarget
-    Default: CatalogTarget
+      - ProductTarget
+    Default: ProductTarget
   UserTarget:
     Type: String
     Description: Constant to be used for target group name
@@ -113,9 +108,10 @@ Resources:
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: SimpleLambdaRole
+      RoleName: AlbDemoLambdaRole
+      Description: Role for Lambda functions in Alb Demo
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
@@ -126,17 +122,17 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-  CatalogLambda:
+  ProductLambda:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbLambdaChild.yaml
       Parameters:
-        FunctionName: CatalogFunc
+        FunctionName: ProductFunc
         LambdaRoleArn: !GetAtt LambdaRole.Arn
         LayerVersionArn: !GetAtt ExpressLayer.LayerVersionArn
         ArtifactBucket: !Ref ArtifactBucket
         CodeVersion: "0.0.1"
-        PackageName: catalog-management.zip
+        PackageName: product-service.zip
 
   UserLambda:
     Type: AWS::CloudFormation::Stack
@@ -148,15 +144,15 @@ Resources:
         LayerVersionArn: !GetAtt ExpressLayer.LayerVersionArn
         ArtifactBucket: !Ref ArtifactBucket
         CodeVersion: "0.0.1"
-        PackageName: user-management.zip
+        PackageName: user-service.zip
 
-  CatalogFuncPermission:
+  ProductFuncPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt CatalogLambda.Outputs.FunctionName
+      FunctionName: !GetAtt ProductLambda.Outputs.FunctionName
       Action: lambda:InvokeFunction
       Principal: elasticloadbalancing.amazonaws.com
-      SourceArn: !Sub arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${CatalogTarget}/*
+      SourceArn: !Sub arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${ProductTarget}/*
 
   UserFuncPermission:
     Type: AWS::Lambda::Permission
@@ -180,25 +176,25 @@ Resources:
       Targets:
         - Id: !GetAtt Ec2Instance1.Outputs.InstanceId
 
-  CatalogTargetGroup:
+  ProductTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: ProductFuncPermission
     Properties:
-      Name: !Ref CatalogTarget
+      Name: !Ref ProductTarget
       HealthCheckEnabled: false
       TargetType: lambda
       Targets:
-        - Id: !GetAtt CatalogLambda.Outputs.LambdaArn
-    DependsOn: CatalogFuncPermission
+        - Id: !GetAtt ProductLambda.Outputs.LambdaArn
 
   UserTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: UserFuncPermission
     Properties:
       Name: !Ref UserTarget
       HealthCheckEnabled: false
       TargetType: lambda
       Targets:
         - Id: !GetAtt UserLambda.Outputs.LambdaArn
-    DependsOn: UserFuncPermission
 
   AlbBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -221,20 +217,22 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref MainTargetGroup
 
-  CatalogListenerRule:
+  ProductListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !Ref AlbListener
       Priority: 1
       Actions:
         - Type: forward
-          TargetGroupArn: !Ref CatalogTargetGroup
+          TargetGroupArn: !Ref ProductTargetGroup
       Conditions:
         - Field: path-pattern
-          Values:
-            - "/product/*"
+          PathPatternConfig:
+            Values:
+              - "/product-service"
+              - "/product-service/*"
 
-  UderListenerRule:
+  UserListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !Ref AlbListener
@@ -244,8 +242,10 @@ Resources:
           TargetGroupArn: !Ref UserTargetGroup
       Conditions:
         - Field: path-pattern
-          Values:
-            - "/user/*"
+          PathPatternConfig:
+            Values:
+              - "/user-service"
+              - "/user-service/*"
 
 Outputs:
   LoadBalancerDns:
@@ -258,9 +258,20 @@ Outputs:
     Value: !GetAtt Ec2Instance1.Outputs.InstanceId
     Export:
       Name: InstanceId1
-  FunctionName1:
-    Description: Cataglog lambda name
-    Value: !GetAtt CatalogLambda.Outputs.FunctionName
-  FunctionName2:
-    Description: User lambda name
+  PublicIp1:
+    Description: First EC2 instance public IP
+    Value: !GetAtt Ec2Instance1.Outputs.PublicIp
+    Export:
+      Name: PublicIp1
+  ProductFuncName:
+    Description: Product lambda function name
+    Value: !GetAtt ProductLambda.Outputs.FunctionName
+  ProductLambdaUrl:
+    Description: The URL for the Product Lambda function
+    Value: !GetAtt ProductLambda.Outputs.FunctionUrl
+  UserFuncName:
+    Description: User lambda function name
     Value: !GetAtt UserLambda.Outputs.FunctionName
+  UserLambdaUrl:
+    Description: The URL for the User Lambda function
+    Value: !GetAtt UserLambda.Outputs.FunctionUrl

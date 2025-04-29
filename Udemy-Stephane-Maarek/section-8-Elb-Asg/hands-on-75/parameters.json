@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-id"
+  },
+  {
+    "ParameterKey": "SubnetId1",
+    "ParameterValue": "subnet-1-id"
+  },
+  {
+    "ParameterKey": "SubnetId2",
+    "ParameterValue": "subnet-2-id"
+  },
+  {
+    "ParameterKey": "TemplateBucket",
+    "ParameterValue": "your-template-bucket"
+  },
+  {
+    "ParameterKey": "ArtifactBucket",
+    "ParameterValue": ""
+  }
+]

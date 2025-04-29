@@ -15,10 +15,10 @@ This configuration required NodeJS code packages to be deployed to S3 bucket for
 Deploy the code and shared layer.
 
 ```bash
-# Deploy the catalog microservice
-$ ./deploy-express.sh catalog-management 0.0.1
+# Deploy the product microservice
+$ ./deploy-express.sh product-service 0.0.1
 # Deploy the user microservice
-$ ./deploy-express.sh user-management 0.0.1
+$ ./deploy-express.sh user-service 0.0.1
 ```
 
 If you make changes to the code after the Lambda infrastructure has been deployed, do a reload, run the deploy above again, and then do a reload as shown below
@@ -31,29 +31,30 @@ $ ./reload-lambda.sh user-management
 This reloads the update code into the lambda functions.
 
 **Deployment**  
+Lint the templates
+
+```bash
+$ cfn-lint AlbLambdaChild.yaml
+$ cfn-lint AlbEc2Child.yaml
+$ cfn-lint AlbDemo.yaml
+```
+
 Upload the child templates to S3
 
-```
+```bash
 $ aws s3 cp AlbEc2Child.yaml s3://chucks-workspace-storage/templates/AlbEc2Child.yaml
 $ aws s3 cp AlbLambdaChild.yaml s3://chucks-workspace-storage/templates/AlbLambdaChild.yaml
 ```
 
-Lint the template
-
-```
-$ cfn-lint AlbDemo.yaml
-```
-
 Deploy a stack using the _AlbDemo_ template
 
-```
-
-$ aws cloudformation deploy --template-file AlbDemo.yaml  --stack-name AlbDemo
+```bash
+$ aws cloudformation deploy --template-file AlbDemo.yaml  --stack-name AlbDemo --parameter-overrides file://private-parameters.json --capabilities CAPABILITY_NAMED_IAM
 ```
 
 Get the load balancer Dns name and instance Ids from the stack outputs
 
-```
+```bash
 $ aws cloudformation describe-stacks --stack-name AlbDemo  --query "Stacks[0].Outputs" --no-cli-pager
 ```
 
@@ -71,33 +72,36 @@ $ aws cloudformation execute-change-set --stack-name AlbDemo --change-set-name A
 $ aws cloudformation delete-change-set --stack-name AlbDemo --change-set-name AlbDemoChange
 ```
 
+**After deployment**  
+Get the `LoadBalancerDns`, `ProductLambdaUrl` and `UserLambdaUrl` from the Stack outputs
+
+```bash
+$ aws cloudformation describe-stacks --stack-name AlbDemo --query "Stacks[0].Outputs" --no-cli-pager
+```
+
 **Testing**
 Use the Load balancer DNS name to access the web server on a web browser.
 
 The root path `/` routes to the EC2 instance which is the default action for the Application Load Balancer.  
-The table below show the endpoint available for the microservices via the Application Load Balancer.
+The table below showS the endpoint available for the microservices via the Application Load Balancer.
 
-| Path                       | Method | Microservice     |
-| -------------------------- | ------ | ---------------- |
-| /user/users                | GET    | User Service     |
-| /user/users/create         | POST   | User Service     |
-| /product/categories        | GET    | Category Service |
-| /product/categories/create | POST   | Category Service |
+| Path                               | Method | Microservice    |
+| ---------------------------------- | ------ | --------------- |
+| /user-service/users/               | GET    | User Service    |
+| /user-service/users/create         | POST   | User Service    |
+| /product-service/categories/       | GET    | Product Service |
+| /product-service/categories/create | POST   | Product Service |
 
 **Debug Errors**
 In the case of error during deployment, checkout the stack events
 
-```
-
+```bash
 $ aws cloudformation describe-stack-events --stack-name AlbDemo
-
 ```
 
 **Cleanup**
 To delete the stacks
 
-```
-
+```bash
 $ aws cloudformation delete-stack --stack-name AlbDemo
-
 ```

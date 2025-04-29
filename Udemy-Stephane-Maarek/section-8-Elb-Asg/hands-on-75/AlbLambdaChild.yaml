@@ -38,10 +38,28 @@ Resources:
       Layers:
         - !Ref LayerVersionArn
 
+  LambdaUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt SimpleFunc.Arn
+
+  # Allow public access to the URL
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SimpleFunc
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
 Outputs:
   FunctionName:
     Description: Lambda function name
     Value: !Ref SimpleFunc
+  FunctionUrl:
+    Description: The URL for the Lambda function
+    Value: !GetAtt LambdaUrl.FunctionUrl
   LambdaArn:
     Description: The ARN of the lambda function
     Value: !GetAtt SimpleFunc.Arn
