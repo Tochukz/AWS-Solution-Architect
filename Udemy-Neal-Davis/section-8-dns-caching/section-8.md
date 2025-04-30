@@ -15,3 +15,8 @@ __Route 53  Resolver Types__
 __Introduction__  
 It is a method where you are able to have multiple SSL/TLS certificate which correspond with different domain name running on the same IP address on CloudFront.   
 With this you can have two alter names - mydomain.com and anotherdomain.com with their seperate ACM certificate both configured on the same CloudFront Distribution.   
+
+### Cheat Sheets  
+[Amazon Route 53 Cheat Sheet](https://digitalcloud.training/amazon-route-53/)  
+[Amazon CloudFront Cheat Sheet](https://digitalcloud.training/amazon-cloudfront/)  
+[AWS Global Accelerator Cheat Sheet](https://digitalcloud.training/aws-global-accelerator/)

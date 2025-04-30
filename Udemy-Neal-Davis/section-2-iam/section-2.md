@@ -17,7 +17,7 @@ __Types of Policy__
 5. __Session policies__ - used with AssumeRole API action
 
 __IAM Policy Simulator__  
-Checkout the IAM policy Simulator at [policysim.aws.amazon.com](https://policysim.aws.amazon.com)
+Checkout the IAM policy Simulator at [policysim.aws.amazon.com](https://policysim.aws.amazon.com) 
 
 __Security best practices in IAM__  
 [Security best practices in IAM](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)  

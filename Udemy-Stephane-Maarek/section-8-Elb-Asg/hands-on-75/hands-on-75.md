@@ -79,7 +79,7 @@ Get the `LoadBalancerDns`, `ProductLambdaUrl` and `UserLambdaUrl` from the Stack
 $ aws cloudformation describe-stacks --stack-name AlbDemo --query "Stacks[0].Outputs" --no-cli-pager
 ```
 
-**Testing**
+**Testing**  
 Use the Load balancer DNS name to access the web server on a web browser.
 
 The root path `/` routes to the EC2 instance which is the default action for the Application Load Balancer.  
@@ -92,14 +92,14 @@ The table below showS the endpoint available for the microservices via the Appli
 | /product-service/categories/       | GET    | Product Service |
 | /product-service/categories/create | POST   | Product Service |
 
-**Debug Errors**
+**Debug Errors**  
 In the case of error during deployment, checkout the stack events
 
 ```bash
 $ aws cloudformation describe-stack-events --stack-name AlbDemo
 ```
 
-**Cleanup**
+**Cleanup**  
 To delete the stacks
 
 ```bash

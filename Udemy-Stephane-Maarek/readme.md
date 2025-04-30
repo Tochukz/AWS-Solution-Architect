@@ -17,7 +17,7 @@ Section    | Title
 9  | AWS Fundamentals: RDS + Aurora + ElastiCache
 10 | Route 53
 11 | Classic Solution Architecture Discussions
-12 | Amazone S3 Introduction
+12 | Amazon S3 Introduction
 13 | Advanced Amazon S3
 14 | Amazon S3 Security
 15 | CloudFront & AWS Global Accelerator
@@ -94,6 +94,7 @@ __Section 12: Amazon S3 Introduction__
 __Section 13: Advanced Amazon S3__  
 143 - S3 Life Cycle Rule
 146 - S3 Event Notifications
+Extra 13.1 - S3 Transfer Acceleration
 
 __Section 14: Amazon S3 Security__  
 152 - S3 Encryption  

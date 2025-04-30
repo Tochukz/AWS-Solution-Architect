@@ -100,8 +100,6 @@ To connect from your local machine, make sure
 * the security group inbound rule allows traffic from your local machine
 You can use your preferred database client to connect
 
-
-
 __Provision IOPS SSD (io1)__    
 _Provisioned IOPS SS_ lets you simply allocate the number of IOPS you need when you create your instance.  The number of IOPS you provision is what you get and what you pay for, whether you use it or not. You must specify IOPS in increments of 1,000.
 The maximum number of IOPS you can achieve and how much storage you can allocated are constrained by the database engine you select.   
