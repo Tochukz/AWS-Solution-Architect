@@ -1,0 +1,36 @@
+{
+  "Version": "2012-10-17",
+  "Id": "efs-policy-wizard-7c085801-c6ff-4e28-8845-67d92289e135",
+  "Statement": [
+    {
+      "Sid": "efs-statement-df24f30d-5cf3-4b28-9963-93c22c3373b4",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": [
+        "elasticfilesystem:ClientRootAccess",
+        "elasticfilesystem:ClientWrite",
+        "elasticfilesystem:ClientMount"
+      ],
+      "Condition": {
+        "Bool": {
+          "elasticfilesystem:AccessedViaMountTarget": "true"
+        }
+      }
+    },
+    {
+      "Sid": "efs-statement-d1d83a69-0d1a-4a35-b59c-f70e065fbb80",
+      "Effect": "Deny",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "*",
+      "Condition": {
+        "Bool": {
+          "aws:SecureTransport": "false"
+        }
+      }
+    }
+  ]
+}

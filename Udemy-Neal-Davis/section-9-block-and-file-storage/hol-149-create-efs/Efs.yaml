@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: AWS CloudFormation template to create an EFS file system with a mount target in a specified VPC and subnet.
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Default: DevSimpleKey
+  VpcId:
+    Type: String
+    Description: VPC ID
+  SubnetIdA:
+    Type: String
+    Description: Subnet ID for Availability zone A of the given region
+  SubnetIdB:
+    Type: String
+    Description: Subnet ID for Availability zone B of the given region
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecurityGroup
+      GroupDescription: Enable SSH access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access;
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  SecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow NFS access from instances in this same security group
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 2049
+      ToPort: 2049
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Ec2EfsRole
+      Description: Role for EC2 to access EFS File System
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowEfsAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowEfsBasicOperation
+                Effect: Allow
+                Action:
+                  - elasticfilesystem:ClientMount
+                  - elasticfilesystem:ClientRootAccess
+                  - elasticfilesystem:ClientWrite
+                Resource: !GetAtt FileSystem.Arn
+
+  FileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+      Encrypted: true
+      BackupPolicy:
+        Status: DISABLED
+      ThroughputMode: elastic
+      FileSystemTags:
+        - Key: Name
+          Value: DemoEfs
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_7_DAYS
+        - TransitionToArchive: AFTER_14_DAYS
+        - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
+      # FileSystemPolicy: # Go through the EFS Console Wizard for EFS Creation to see more EFS related policy samples
+      #   Version: 2012-10-17
+      #   Statement:
+      #     - Sid: AllowBasicEfsOperations
+      #       Effect: Allow
+      #       Principal:
+      #         AWS: !GetAtt Ec2Role.Arn
+      #       Action:
+      #         - elasticfilesystem:ClientMount
+      #         - elasticfilesystem:ClientRootAccess
+      #         - elasticfilesystem:ClientWrite
+      #       Condition:
+      #         Bool:
+      #           elasticfilesystem:AccessedViaMountTarget: true
+      #     - Sid: DenyUnsecuredRequest
+      #       Effect: Deny
+      #       Principal:
+      #         AWS: !GetAtt Ec2Role.Arn
+      #       Action: "*"
+      #       Condition:
+      #         Bool:
+      #           aws:SecureTransport: false
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: Ec2InstanceProfl
+      Roles:
+        - !Ref Ec2Role
+
+  InstanceA:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref SubnetIdA
+      Tags:
+        - Key: Name
+          Value: InstanceA
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Install efs UTILS
+          yum install -y amazon-efs-utils
+
+          # Create a mount point
+          mkdir ~/efs-mount-point
+
+          # Mount the EFS file system
+          mount -t efs -o tls ${FileSystem}.efs.${AWS::Region}.amazonaws.com:/ ~/efs-mount-point
+
+  InstanceB:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref SubnetIdB
+      Tags:
+        - Key: Name
+          Value: InstanceB
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Install efs UTILS
+          yum install -y amazon-efs-utils
+
+          # Create a mount point         
+          mkdir ~/efs-mount-point
+
+          # Mount the EFS file system
+          mount -t efs -o tls ${FileSystem}.efs.${AWS::Region}.amazonaws.com:/ ~/efs-mount-point
+
+  MountAzA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !Ref SubnetIdA
+
+  MountAzB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !Ref SubnetIdB
+
+Outputs:
+  FileSystemDns:
+    Description: EFS FileSystem DNS name
+    Value: !Sub ${FileSystem}.efs.${AWS::Region}.amazonaws.com
+  InstanceAIp:
+    Description: Public IP address for InstanceA
+    Value: !GetAtt InstanceA.PublicIp
+  InstanceBIp:
+    Description: Public IP address for InstanceB
+    Value: !GetAtt InstanceB.PublicIp
