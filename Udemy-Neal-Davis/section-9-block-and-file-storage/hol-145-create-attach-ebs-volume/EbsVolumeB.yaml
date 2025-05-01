@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an EBS volume from a snapshot and attach it to an EC2 instance in the availability zone.
+
+Parameters:
+  SnapshotId:
+    Type: String
+    Description: The ID of the snapshot to create the EBS volume from.
+
+Resources:
+  EbsVolumeB:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      AvailabilityZone: !Sub ${AWS::Region}b
+      VolumeType: gp3
+      SnapshotId: !Ref SnapshotId
+      Tags:
+        - Key: Name
+          Value: EbsVolumeB
+
+  AttachVolume:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      Device: /dev/sdf # The device name to expose to the instance
+      InstanceId: !ImportValue EbsVolumeA-InstanceBId
+      VolumeId: !Ref EbsVolumeB
