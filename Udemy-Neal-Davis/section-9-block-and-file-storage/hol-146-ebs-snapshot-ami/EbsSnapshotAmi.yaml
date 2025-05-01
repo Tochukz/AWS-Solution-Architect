@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an EC2 instance in AZ A of given region
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecurityGroup
+      GroupDescription: Enable HTTP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  InstanceA:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      AvailabilityZone: !Sub ${AWS::Region}a
+      Tags:
+        - Key: Name
+          Value: InstanceA
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+
+          # Update the system and install Apache web server
+          yum update -y
+          yum install -y httpd
+
+          # Start and enable Apache to run on boot
+          systemctl start httpd
+          systemctl enable httpd
+
+          # Create an index.html file with CSS animations for background color changing
+          cat > /var/www/html/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <meta charset="UTF-8">
+              <title>Custom AMI Instance</title>
+              <style>
+                  @keyframes backgroundChange {
+                      0% { background-color: #6495ED; }
+                      50% { background-color: #ADD8E6; }
+                      100% { background-color: #6495ED; }
+                  }
+                  body {
+                      color: white;
+                      font-size: 48px;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      height: 100vh;
+                      margin: 0;
+                      animation: backgroundChange 4s infinite;
+                  }
+              </style>
+          </head>
+          <body>
+              <div>This Instance Was Launched from a Custom AMI in ${AWS::Region}</div>
+          </body>
+          </html>
+          EOF
+
+          # Ensure the httpd service is correctly set up to start on boot
+          chkconfig httpd on
+
+Outputs:
+  InstanceAId:
+    Description: Instance ID of Instance A
+    Value: !Ref InstanceA
+  InstanceAIp:
+    Description: Public IP address of Instance A
+    Value: !GetAtt InstanceA.PublicIp
+  SecurityGroupId:
+    Description: Security Group ID
+    Value: !GetAtt SecurityGroup.GroupId
+    Export:
+      Name: EbsSnapshotAmi-SecurityGroupId

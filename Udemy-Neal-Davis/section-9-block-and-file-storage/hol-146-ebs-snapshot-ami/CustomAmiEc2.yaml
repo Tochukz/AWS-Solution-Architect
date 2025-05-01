@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an EC2 instance with AZ B of given region using a custom AMI
+
+Parameters:
+  CustomAmiId:
+    Type: AWS::EC2::Image::Id
+    Description: The AMI ID to use for the instance
+
+Resources:
+  InstanceB:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref CustomAmiId
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !ImportValue EbsSnapshotAmi-SecurityGroupId
+      AvailabilityZone: !Sub ${AWS::Region}b
+      Tags:
+        - Key: Name
+          Value: InstanceB
+
+Outputs:
+  InstanceBId:
+    Description: Instance ID of Instance B
+    Value: !Ref InstanceB
+  InstanceBIp:
+    Description: Public IP address of Instance B
+    Value: !GetAtt InstanceB.PublicIp
