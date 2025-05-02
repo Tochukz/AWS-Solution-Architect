@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParaneterValue": "vpc-id"
+  },
+  {
+    "ParameterKey": "PublicSubnetIdA",
+    "ParameterValue": "subnet-1-id"
+  },
+  {
+    "ParameterKey": "PublicSubnetIdB",
+    "ParameterValue": "subnet-2-id"
+  }
+]

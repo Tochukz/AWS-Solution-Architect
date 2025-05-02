@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an ECS Service Cluster
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id
+  PublicSubnetIdA:
+    Type: String
+    Description: Subnet Id of public subnet in AZ A
+  PublicSubnetIdB:
+    Type: String
+    Description: Subnet Id of public subnet in AZ B
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: DemoCluster
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+      Configuration:
+        ExecuteCommandConfiguration:
+          Logging: DEFAULT
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DemoTaskRole
+      Description: Task Role for ECS Container
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ContainerS3Allow
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowS3Read
+                Effect: Allow
+                Action:
+                  - S3:GetObject
+                  - S3:ListObject
+                Resource: "*"
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DemonTaskExecRole
+      Description: Role for ECS Task Execustion
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Cpu: 1024 # (1 vCPU)
+      Memory: 2048 # (2 GB)
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      Family: DemoTaskFamily
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ContainerDefinitions:
+        - Name: NginxContainer
+          Image: nginx:latest
+          Cpu: 1024 # Use all available CPU in the task definition
+          Memory: 2048 #Use all available Memory in the task definition
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: /aws/ecs/NginxContainer
+              awslogs-stream-prefix: "nginx-logs"
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+              AppProtocol: http
+              Protocol: tcp
+          Environment:
+            - Name: ENV
+              Value: development
+
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: EcsSecGroup
+      GroupDescription: Security group for ECS service
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow HTTP access
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: NginxService
+      TaskDefinition: !Ref TaskDefinition
+      #AvailabilityZoneRebalancing: ENABLED
+      Cluster: !GetAtt Cluster.Arn
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt EcsSecurityGroup.GroupId
+          Subnets:
+            - !Ref PublicSubnetIdA
+            - !Ref PublicSubnetIdB
