@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create ECR and IAM Role with Permissions to upload Image to the ECR
+
+Parameters:
+  IamUser:
+    Type: String
+    Description: Name of an IAM user
+
+Resources:
+  NginxRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: nginx-repo
+      EmptyOnDelete: true
+
+  EcrRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EcrRole
+      Description: Role for ECR image push
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:user/${IamUser}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EcrUploadPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowEcrImageUpload
+                Effect: Allow
+                Action:
+                  - ecr:CompleteLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:InitiateLayerUpload
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                Resource: !GetAtt NginxRepository.Arn
+              - Sid: AllowGetAuthToken
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+
+Outputs:
+  RepositoryUri:
+    Description: The URI of the repository
+    Value: !GetAtt NginxRepository.RepositoryUri
+  RepositoryArn:
+    Description: The ARN of the repository
+    Value: !GetAtt NginxRepository.Arn
+  EcrRoleArn:
+    Description: The ARN of the IAM Role
+    Value: !GetAtt EcrRole.Arn
