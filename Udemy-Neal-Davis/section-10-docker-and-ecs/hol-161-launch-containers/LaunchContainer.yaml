@@ -68,6 +68,15 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: TaskExecRolePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowCreateLogGroup
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: "*"
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -135,3 +144,14 @@ Resources:
           Subnets:
             - !Ref PublicSubnetIdA
             - !Ref PublicSubnetIdB
+
+Outputs:
+  ClusterArn:
+    Description: The ARN of the cluster
+    Value: !GetAtt Cluster.Arn
+  TaskDefinitionArn:
+    Description: The ARN of the TaskDefinition
+    Value: !Ref TaskDefinition
+  SecurityGroupId:
+    Description: Group Id of the security group
+    Value: !Ref EcsSecurityGroup
