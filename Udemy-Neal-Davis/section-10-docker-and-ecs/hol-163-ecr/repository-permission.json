@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Description": "Allow ECR Image push to private ECR repository",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:CompleteLayerUpload",
+        "ecr:GetAuthorizationToken",
+        "ecr:UploadLayerPart",
+        "ecr:InitiateLayerUpload",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:PutImage"
+      ],
+      "Resource": "arn:aws:ecr:eu-west-2:111111111111:repository/nginx-repo"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ecr:GetAuthorizationToken"],
+      "Resource": "*"
+    }
+  ]
+}
