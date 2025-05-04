@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an AppRunner Service using an ECS image
+
+Resources:
+  AppRunnerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AppRunnerRole
+      Description: Role for AppRunner Service
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      # ManagedPolicyArns:
+      #   - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+      # The AWSAppRunnerServicePolicyForECRAccess managed policy is an alternative to the Custom Policy below
+      Policies:
+        - PolicyName: AppRunnerEcrPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: BasicEcrAccess
+                Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:DescribeImages
+                Resource: !ImportValue EcrRepository-RepositoryArn
+              - Sid: GetAuthToken
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: "*"
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      # Policies:
+      #   - PolicyName: CloudWatchLogsAccess
+      #     PolicyDocument:
+      #       Version: 2012-10-17
+      #       Statement:
+      #         - Effect: Allow
+      #           Action:
+      #             - logs:CreateLogStream
+      #             - logs:PutLogEvents
+      #           Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/apprunner/*"
+      #         - Effect: Allow
+      #           Action: logs:CreateLogGroup
+      #           Resource: "*"
+
+  AppService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: NginxService
+      NetworkConfiguration:
+        IngressConfiguration:
+          IsPubliclyAccessible: true
+      InstanceConfiguration:
+        Cpu: 1024 # 1vCPU
+        Memory: 2048 # 2GB
+        InstanceRoleArn: !GetAtt InstanceRole.Arn
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerRole.Arn
+        AutoDeploymentsEnabled: true
+        ImageRepository:
+          ImageRepositoryType: ECR
+          ImageIdentifier:
+            Fn::Sub:
+              - "${RepoUri}:latest"
+              - RepoUri: !ImportValue EcrRepository-RepositoryUri
+          ImageConfiguration:
+            Port: 80
+            RuntimeEnvironmentVariables:
+              - Name: ENV
+                Value: development
+
+Outputs:
+  ServiceUrl:
+    Description: The DNS name for the AppRunner Service
+    Value: !GetAtt AppService.ServiceUrl

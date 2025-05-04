@@ -49,9 +49,13 @@ Outputs:
   RepositoryUri:
     Description: The URI of the repository
     Value: !GetAtt NginxRepository.RepositoryUri
+    Export:
+      Name: EcrRepository-RepositoryUri
   RepositoryArn:
     Description: The ARN of the repository
     Value: !GetAtt NginxRepository.Arn
+    Export:
+      Name: EcrRepository-RepositoryArn
   EcrRoleArn:
     Description: The ARN of the IAM Role
     Value: !GetAtt EcrRole.Arn
