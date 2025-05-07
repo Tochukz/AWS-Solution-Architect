@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  SubscriptionEmail:
+    Type: String
+    Description: Email for SNS Subscription
+  TrailName:
+    Type: String
+    Description: Constant for the TailName
+    Default: SimpleTrail
+    AllowedValues:
+      - SimpleTrail
+  S3KeyPrefix:
+    Type: String
+    Description: S3 Prefix for the logs
+    Default: demo-trails
+    AllowedValues:
+      - demo-trails
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: Ec2Events
+
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SnsTopic
+      Protocol: email
+      Endpoint: !Ref SubscriptionEmail
+
+  TrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: trail-bucket-06-05
+
+  TrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TrailBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowGetAcl
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt TrailBucket.Arn
+            Condition:
+              StringEquals:
+                aws:SourceArn: !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/{TrailName}"
+          - Sid: AllowCloudTralWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub ${TrailBucket.Arn}/${S3KeyPrefix}/AWSLogs/${AWS::AccountId}/*
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: "bucket-owner-full-control"
+                aws:SourceArn: !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${TrailName}"
+
+  Trail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: TrailBucketPolicy
+    Properties:
+      TrailName: !Ref TrailName
+      S3BucketName: !Ref TrailBucket
+      S3KeyPrefix: !Ref S3KeyPrefix
+      IsLogging: true
+      AdvancedEventSelectors:
+        - Name: Ec2EventsOnly
+          FieldSelectors:
+            - Field: eventCategory
+              Equals: [Management]
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+
+  SnsTargetRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SnsTargetRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SnsTargetPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: PushMessage
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref SnsTopic
+
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Ec2EventsRule
+      EventBusName: default
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.ec2
+        detail-type:
+          - "EC2 Instance State-change Notification"
+      Targets:
+        - Id: SnsTarget
+          Arn: !Ref SnsTopic
+          RoleArn: !GetAtt SnsTargetRole.Arn
+
+Outputs:
+  TrailArn:
+    Description: ARN of the Trail
+    Value: !GetAtt Trail.Arn
+  InstanceId:
+    Description: Instance ID of EC2 instance
+    Value: !Ref Ec2Instance
