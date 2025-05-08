@@ -27,3 +27,20 @@ __Kinesis Vs SQS Vs SNS__
 ## Amazon SQS
 __SQS Queue Types__  
 ![sqs-queue-types](slides/sqs-queue-types.png)
+
+* FIFO queues require the _Message Group ID_ and _Message Deduplication ID_ parameters to be added to messages
+
+* __Message Group ID__:  
+  - The tag that specifies that a message belongs to a specific message group. Messages that belong to the same message group are guaranteed to be processed in a FIFO manner
+* __Message Deduplication ID__:  
+  - The token used for deduplication of messages within the deduplication interval
+
+
+__SQS Long Polling vs Short Polling__  
+* SQS _Long polling_ is a way to retrieve messages from SQS queues – waits for messages to arrive
+* SQS _Short polling_ returns immediately (even if the message queue is empty)
+* SQS Long polling can lower costs
+* SQS Long polling can be enabled at the queue level or at the API level using _WaitTimeSeconds_
+* SQS Long polling is in effect when the Receive Message Wait Time is a value greater than 0 seconds and up to 20 seconds
+
+## Amazon SNS
