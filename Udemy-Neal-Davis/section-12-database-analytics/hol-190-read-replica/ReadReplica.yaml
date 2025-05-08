@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This creates a Read Replica of an existing DB in another region
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id
+  SourceInstanceArn:
+    Type: String
+    Description: ARN of the primary database
+  SourceRegion:
+    Type: String
+    Description: region of the Source DB
+
+Resources:
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DbSecGroup
+      GroupDescription: "Security Group for MySQL instance"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow from anywhere
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+  ReplicaDb:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: simple-db-replica
+      # SourceDBInstanceIdentifier: !Ref SourceInstanceArn
+      DBInstanceClass: db.t3.micro
+      SourceRegion: !Ref SourceRegion
+      AllocatedStorage: 20
+      StorageType: gp2
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !GetAtt DbSecurityGroup.GroupId
+
+Outputs:
+  EndpointAddress:
+    Description: "The connection endpoint for the database"
+    Value: !GetAtt ReplicaDb.Endpoint.Address

@@ -7,11 +7,7 @@ Parameters:
     Type: String 
     Description: The API Name
     Default: SimpleHttpApi
-  # StageName:
-  #   Type: String 
-  #   Description: The Stage Name
-  #   Default: prod
-
+    
 Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -154,11 +150,10 @@ Resources:
       LogGroupName: !Sub '/aws/apigateway/${ApiName}/access-logs'
       RetentionInDays: 7
 
-  DefaultStage: # NamedStage
+  DefaultStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
       ApiId: !Ref SimpleApi
-      # StageName: !Ref StageName
       StageName: "$default" # Use a $default stage name to avoid appending the API Endpoint with the stage name as suffix such as https://endpoint/prod
       AutoDeploy: true
       AccessLogSettings:
@@ -193,6 +188,3 @@ Outputs:
   ApiEndpoint:
     Description: The API Endpoint
     Value: !GetAtt SimpleApi.ApiEndpoint
-  # ApiEndpoint:
-  #   Description: The API Endpoint
-  #   Value: !Sub ${SimpleApi.ApiEndpoint}/${StageName}

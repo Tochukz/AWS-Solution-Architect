@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-029030bea564452de"
+  },
+  {
+    "ParameterKey": "SourceInstanceArn",
+    "ParameterValue": "arn:aws:rds:eu-west-2:314146339647:db:simple-db-instance"
+  },
+  {
+    "ParameterKey": "SourceRegion",
+    "ParameterValue": "eu-west-2"
+  }
+]
