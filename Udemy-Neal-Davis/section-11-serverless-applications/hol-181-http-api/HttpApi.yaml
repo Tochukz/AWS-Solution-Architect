@@ -1,0 +1,194 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration creates a HTTP API and a S3 Website to test the API
+
+Parameters:
+  ApiName:
+    Type: String 
+    Description: The API Name
+    Default: SimpleHttpApi
+  StageName:
+    Type: String 
+    Description: The Stage Name
+    Default: prod
+
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: website-bucket-08-05
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub ${WebsiteBucket.Arn}/*
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleLambdaRole
+      Description: Role for Lambda Function
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LambdaFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleFunc08
+      Handler: index.handler
+      Runtime: python3.9
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          import json
+
+          def handler(event, context):
+              operation = event['queryStringParameters']['operation']
+              num1 = float(event['queryStringParameters']['num1'])
+              num2 = float(event['queryStringParameters']['num2'])
+              
+              if operation == 'add':
+                  result = num1 + num2
+              elif operation == 'subtract':
+                  result = num1 - num2
+              elif operation == 'multiply':
+                  result = num1 * num2
+              elif operation == 'divide':
+                  result = num1 / num2
+              else:
+                  return {
+                      'statusCode': 400,
+                      'body': json.dumps('Invalid operation')
+                  }
+
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps(f"The result is {result}")
+              }
+
+  SimpleApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref ApiName
+      Description: Simple HTTP API
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowHeaders:
+          - "*"
+        AllowMethods:
+          - "*"
+        AllowOrigins:
+          - "*"
+        ExposeHeaders:
+          - "*"
+        MaxAge: 300 # in seconds
+
+  HttpApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt LambdaFunc.Arn
+
+  LambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      Description: Integration to Lambda
+      ApiId: !Ref SimpleApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunc.Arn}/invocations
+      PayloadFormatVersion: "2.0"
+      CredentialsArn: !GetAtt HttpApiRole.Arn 
+
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SimpleApi
+      RouteKey: "$default"
+      Target: !Sub integrations/${LambdaIntegration}
+
+  CalculatorRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SimpleApi
+      RouteKey: "GET /calculate"
+      Target: !Sub "integrations/${LambdaIntegration}"
+
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${ApiName}/access-logs'
+      RetentionInDays: 7
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref SimpleApi
+      StageName: !Ref StageName
+      AutoDeploy: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: '{
+          "requestTime": "$context.requestTime",
+          "requestId": "$context.requestId",
+          "httpMethod": "$context.httpMethod",
+          "path": "$context.path",
+          "routeKey": "$context.routeKey",
+          "status": "$context.status",
+          "responseLatency": "$context.responseLatency",
+          "integrationError": "$context.integration.error",
+          "errorMessage": "$context.error.message",
+          "errorResponseType": "$context.error.responseType",
+          "ip": "$context.identity.sourceIp",
+          "userAgent": "$context.identity.userAgent"
+        }'
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunc
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SimpleApi}/*/*/*"
+    
+Outputs:
+  WebsiteUrl:
+    Description: The URL of the S3 Website
+    Value: !GetAtt WebsiteBucket.WebsiteURL
+  ApiEndpoint:
+    Description: The API Endpoint
+    Value: !Sub ${SimpleApi.ApiEndpoint}/${StageName}
