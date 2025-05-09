@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configures a unencrypted RDS instance
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id
+  SubnetId1:
+    Type: String
+    Description: Subnet Id 1
+  SubnetId2:
+    Type: String
+    Description: Subnet Id 2
+  DbUsername:
+    Type: String
+    Description: DB Master username
+    NoEcho: true
+  DbPassword:
+    Type: String
+    Description: DB Master password
+    NoEcho: true
+
+Resources:
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: SimpleSubnetGroup
+      DBSubnetGroupDescription: "Subnet group for MySQL RDS"
+      SubnetIds:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DbSecGroup
+      GroupDescription: "Security Group for MySQL instance"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow from anywhere
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+  UnencryptedInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: simple-db-instance-01
+      DBName: bookstore
+      Engine: mysql
+      EngineVersion: "8.0.33"
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: !Ref DbPassword
+      AllocatedStorage: 20
+      StorageType: gp2
+      DBInstanceClass: db.t3.micro
+      MultiAZ: false
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !GetAtt DbSecurityGroup.GroupId
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: "03:00-04:00"
+      PreferredMaintenanceWindow: "sun:04:00-sun:05:00"
+      StorageEncrypted: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: SimpleDbInstance
+
+Outputs:
+  EndpointAddress:
+    Description: "The connection endpoint for the database"
+    Value: !GetAtt UnencryptedInstance.Endpoint.Address
+  DbInstanceArn:
+    Description: DB instance ARN
+    Value: !GetAtt UnencryptedInstance.DBInstanceArn

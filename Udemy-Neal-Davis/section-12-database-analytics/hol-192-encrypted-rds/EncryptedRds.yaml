@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configures an encrypted RDS instance from an encrypted snapshot
+
+Parameters:
+  EncryptedSnapshotIdentifier:
+    Type: String
+    Description: Encrypted snapshot ARN
+
+Resources:
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DbSecGroup
+      GroupDescription: "Security Group for MySQL instance"
+      SecurityGroupIngress:
+        - Description: Allow from anywhere
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+  EncryptedInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: simple-db-instance-02
+      DBSnapshotIdentifier: !Ref EncryptedSnapshotIdentifier
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !GetAtt DbSecurityGroup.GroupId
+
+Outputs:
+  EndpointAddress:
+    Description: "The connection endpoint for the database"
+    Value: !GetAtt EncryptedInstance.Endpoint.Address
+  DbInstanceArn:
+    Description: DB instance ARN
+    Value: !GetAtt EncryptedInstance.DBInstanceArn
