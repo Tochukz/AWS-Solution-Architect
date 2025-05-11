@@ -44,3 +44,13 @@ __SQS Long Polling vs Short Polling__
 * SQS Long polling is in effect when the Receive Message Wait Time is a value greater than 0 seconds and up to 20 seconds
 
 ## Amazon SNS
+
+### Cheat Sheets  
+[AWS Lambda Cheat Sheet](https://digitalcloud.training/aws-lambda/)    
+[Amazon API Gateway](https://digitalcloud.training/amazon-api-gateway/)  
+[Amazon SNS Cheat Sheet](https://digitalcloud.training/aws-application-integration/#amazon-simple-notification-service)  
+[Amazon SQS Cheat Sheet](https://digitalcloud.training/aws-application-integration/#amazon-simple-queue-service-amazon-sqs)  
+[Amazon SWF Cheat Sheet](https://digitalcloud.training/aws-application-integration/#amazon-simple-workflow-service-amazon-swf)
+[Amazon MQ Cheat Sheet](https://digitalcloud.training/aws-application-integration/#amazon-mq)  
+[AWS Step Functions](https://digitalcloud.training/aws-application-integration/#aws-step-functions)  
+[Amazon CloudWatch](https://digitalcloud.training/amazon-cloudwatch/)  
