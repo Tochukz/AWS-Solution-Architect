@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Create a EBS volume an attach to EC2 instance
+Description: Create a EBS volume and attach to EC2 instance
 
 Parameters:
   Az:

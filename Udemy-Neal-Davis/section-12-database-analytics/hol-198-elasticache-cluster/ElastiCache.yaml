@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create Elastic Cache Redis Cluster
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID where the Redis cluster will be created.
+  SubnetId1:
+    Type: String
+    Description: Subnet ID 1
+  SubnetId2:
+    Type: String
+    Description: Subnet ID 2
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance.
+    Default: DevSimpleKey
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: RedisSubnetGroup
+      Description: Subnet group for Redis Cluster
+      SubnetIds:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Ec2SecurityGroup
+      GroupDescription: Security group for EC2 instance
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: RedisSecurityGroup
+      GroupDescription: Security group for Redis Cluster
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          # CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref Ec2SecurityGroup
+
+  # CacheCluster:
+  #   Type: AWS::ElastiCache::CacheCluster
+  #   Properties:
+  #     ClusterName: SimpleRedisCluster
+  #     CacheNodeType: cache.t2.micro
+  #     Engine: redis
+  #     EngineVersion: 7.1
+  #     NumCacheNodes: 1
+  #     Port: 6379
+  #     VpcSecurityGroupIds:
+  #       - !Ref RedisSecurityGroup
+  #     CacheSubnetGroupName: !Ref RedisSubnetGroup
+
+  RedisCluster:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties:
+      ReplicationGroupId: SimpleRedisCluster
+      ReplicationGroupDescription: Redis replication group
+      Engine: redis
+      EngineVersion: 7.1
+      CacheNodeType: cache.t2.micro
+      ClusterMode: disabled
+      NumNodeGroups: 1 # For Valkey or Redis OSS (cluster mode disabled) either omit this parameter or set it to 1.
+      ReplicasPerNodeGroup: 2
+      AutoMinorVersionUpgrade: true
+      AutomaticFailoverEnabled: true
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      TransitEncryptionEnabled: true
+      AtRestEncryptionEnabled: true
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref Ec2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: RedisClientInstance
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+
+          curl -O https://bootstrap.pypa.io/get-pip.py
+          python3 get-pip.py --user
+          ## Redis
+          pip install redis
+
+Outputs:
+  PrimaryEndPoint:
+    Description: Redis primary endpoint
+    Value: !GetAtt RedisCluster.PrimaryEndPoint.Address
+  PrimaryPort:
+    Description: Redis primary port
+    Value: !GetAtt RedisCluster.PrimaryEndPoint.Port
+  PublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.PublicIp
