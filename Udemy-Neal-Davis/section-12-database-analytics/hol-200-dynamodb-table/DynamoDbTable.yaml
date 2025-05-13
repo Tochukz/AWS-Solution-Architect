@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create DynamoDB table
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: eStore
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: clientid
+          AttributeType: S
+        - AttributeName: createdat
+          AttributeType: S
+      KeySchema:
+        - AttributeName: clientid
+          KeyType: HASH # Hash is Partition key
+        - AttributeName: createdat
+          KeyType: RANGE # Range is Sort key
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
