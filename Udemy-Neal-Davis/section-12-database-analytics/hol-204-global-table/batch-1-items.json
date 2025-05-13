@@ -1,0 +1,55 @@
+{
+  "eStore": [
+    {
+      "PutRequest": {
+        "Item": {
+          "clientid": {
+            "S": "alexandra@euwest1.com"
+          },
+          "createdat": {
+            "S": "2022-07-24T15:58Z"
+          },
+          "sku": {
+            "S": "SKU-122"
+          },
+          "category": {
+            "S": "Coffee Mug"
+          },
+          "qty": {
+            "N": "1"
+          },
+          "price": {
+            "N": "885.28"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "clientid": {
+            "S": "harold@euwest1.com"
+          },
+          "createdat": {
+            "S": "2023-02-17T17:51Z"
+          },
+          "sku": {
+            "S": "SKU-945"
+          },
+          "category": {
+            "S": "Smartphone"
+          },
+          "qty": {
+            "N": "8"
+          },
+          "price": {
+            "N": "979.36"
+          },
+          "brand": {
+            "S": "Apple"
+          }
+        }
+      }
+    }
+  ]
+}

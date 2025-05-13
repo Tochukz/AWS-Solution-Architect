@@ -1,0 +1,55 @@
+{
+  "eStore": [
+    {
+      "PutRequest": {
+        "Item": {
+          "clientid": {
+            "S": "bernard@euwest3.net"
+          },
+          "createdat": {
+            "S": "2022-11-27T06:28Z"
+          },
+          "sku": {
+            "S": "SKU-795"
+          },
+          "category": {
+            "S": "Backpack"
+          },
+          "qty": {
+            "N": "2"
+          },
+          "price": {
+            "N": "315.33"
+          },
+          "size": {
+            "S": "Medium"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "clientid": {
+            "S": "fernando@euwest3.net"
+          },
+          "createdat": {
+            "S": "2021-09-11T01:12Z"
+          },
+          "sku": {
+            "S": "SKU-649"
+          },
+          "category": {
+            "S": "Coffee Mug"
+          },
+          "qty": {
+            "N": "4"
+          },
+          "price": {
+            "N": "910.57"
+          }
+        }
+      }
+    }
+  ]
+}

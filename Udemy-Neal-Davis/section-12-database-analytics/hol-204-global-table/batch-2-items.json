@@ -1,0 +1,58 @@
+{
+  "eStore": [
+    {
+      "PutRequest": {
+        "Item": {
+          "clientid": {
+            "S": "isabella@euwest2.org"
+          },
+          "createdat": {
+            "S": "2022-07-17T12:15Z"
+          },
+          "sku": {
+            "S": "SKU-864"
+          },
+          "category": {
+            "S": "Laptop"
+          },
+          "qty": {
+            "N": "10"
+          },
+          "price": {
+            "N": "34.0"
+          },
+          "brand": {
+            "S": "HP"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "clientid": {
+            "S": "caroline@euwest2.org"
+          },
+          "createdat": {
+            "S": "2022-04-04T14:13Z"
+          },
+          "sku": {
+            "S": "SKU-620"
+          },
+          "category": {
+            "S": "Laptop"
+          },
+          "qty": {
+            "N": "1"
+          },
+          "price": {
+            "N": "307.43"
+          },
+          "brand": {
+            "S": "Dell"
+          }
+        }
+      }
+    }
+  ]
+}
