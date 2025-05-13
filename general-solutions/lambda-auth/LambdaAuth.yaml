@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure Lambda URL with IAM authentication enables
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair
+    Default: DevSimpleKey
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  BasicFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: BasicFunc
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            return {
+              statusCode: 200,
+              body: JSON.stringify('Hello from Lambda!\n'),
+            };
+          };
+      MemorySize: 128
+      Timeout: 3
+
+  LambdaUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt BasicFunc.Arn
+      AuthType: AWS_IAM
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Ec2Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaInvokePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowInvokeFunction
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt BasicFunc.Arn
+              - Sid: AllowInvokeFunctionUrl
+                Effect: Allow
+                Action: lambda:InvokeFunctionUrl
+                Resource: !GetAtt BasicFunc.Arn
+                Condition:
+                  StringEquals:
+                    lambda:FunctionUrlAuthType: AWS_IAM
+
+  Ec2Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: Ec2Profile
+      Roles:
+        - !Ref Ec2Role
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Ec2SecurityGroup
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      IamInstanceProfile: !Ref Ec2Profile
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          # Update system
+          yum update -y
+
+          # Install Node.js 20.x from NodeSource
+          curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+          yum install -y nodejs
+          echo "Node.js installed successfully" > /tmp/install.log
+
+    # Allow public access to the URL
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BasicFunc
+      Action: lambda:InvokeFunctionUrl
+      Principal: ec2.amazonaws.com
+      FunctionUrlAuthType: AWS_IAM
+      SourceArn: !Sub arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Ec2Instance}
+      # FunctionUrlAuthType: NONE
+
+Outputs:
+  LambdaUrl:
+    Description: URL for the Lambda function
+    Value: !GetAtt LambdaUrl.FunctionUrl
+  PublicIp:
+    Description: EC2 Public IP
+    Value: !GetAtt Ec2Instance.PublicIp
