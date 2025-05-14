@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Create Elastic Cache Redis Cluster
+Description: Create ElastiCache Redis Cluster and EC2 instance
 
 Parameters:
   VpcId:
@@ -58,8 +58,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 6379
           ToPort: 6379
-          # CidrIp: 0.0.0.0/0
-          SourceSecurityGroupId: !Ref Ec2SecurityGroup
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !Ref Ec2SecurityGroup
 
   # CacheCluster:
   #   Type: AWS::ElastiCache::CacheCluster
@@ -101,6 +101,7 @@ Resources:
       KeyName: !Ref KeyName
       SecurityGroupIds:
         - !Ref Ec2SecurityGroup
+      SubnetId: !Ref SubnetId1
       Tags:
         - Key: Name
           Value: RedisClientInstance
