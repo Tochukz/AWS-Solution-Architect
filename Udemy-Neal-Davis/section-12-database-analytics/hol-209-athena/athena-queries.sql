@@ -1,3 +1,4 @@
+-- @todo: This script does not work when run a Athena Console editor
 -- Create table for query results 
 CREATE EXTERNAL TABLE IF NOT EXISTS alb_logs (
             type string,
@@ -41,10 +42,11 @@ CREATE EXTERNAL TABLE IF NOT EXISTS alb_logs (
             'input.regex' = 
             STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat'
             OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-            LOCATION 's3://alb-access-logs-14-05/AWSLogs/123456789/elasticloadbalancing/eu-west-2/';
+            LOCATION 's3://alb-access-logs-14-05/AWSLogs/123456789/elasticloadbalancing/eu-west-2/'
             TBLPROPERTIES (
             "compression" = "gzip" 
             );
+-- NB: Remember to replace the bucket name and account ID with your own.
 
 -- Example Queries 
 

@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Deploy an ASG with instances across two AZs and an ALB in front.
+Description: Configures access logs for an Application Load Balancer.
 
 Parameters:
   VpcId:
