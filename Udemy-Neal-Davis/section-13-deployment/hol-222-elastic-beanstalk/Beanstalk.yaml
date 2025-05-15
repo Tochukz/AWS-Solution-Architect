@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select the VPC
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Select the first subnet for the ALB and Instance
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Select the second subnet for the ALB and Instance
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Default: DevSimpleKey
+  S3Bucket:
+    Type: String
+    Description: S3 bucket containing the application code
+  S3Key:
+    Type: String
+    Description: S3 key for the application code ZIP file
+    Default: v0.0.1/express-app.zip
+
+Resources:
+  # ServiceRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: BeanstalkServiceRole
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: "elasticbeanstalk.amazonaws.com"
+  #           Action: "sts:AssumeRole"
+  #     Policies:
+  #       - PolicyName: BeanstalkServicePolicy
+  #         PolicyDocument:
+  #           Version: 2012-10-17
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - "elasticbeanstalk:*"
+  #                 - "s3:*"
+  #                 - "cloudwatch:*"
+  #               Resource: "*"
+
+  # IAM Role for Elastic Beanstalk service
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - elasticbeanstalk.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth
+        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  Application:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: SimpleNodeApp
+      Description: Simple Node.js application
+      # ResourceLifecycleConfig:
+      #   ServiceRole: !GetAtt ServiceRole.Arn
+      #   VersionLabel: !Ref VersionLabel
+      #   VersionLifecycleConfig:
+      #     MaxCountRule:
+      #       Enabled: true
+      #       MaxCount: 5
+      #       DeleteSourceFromS3: true
+      #     MaxAgeRule:
+      #       Enabled: true
+      #       MaxAgeInDays: 30
+      #       DeleteSourceFromS3: true
+
+  AppVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref Application
+      Description: "ExpressJS App version"
+      SourceBundle:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Ref S3Key
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: BeanstalkInstanceProfile
+      Roles:
+        - !Ref InstanceRole
+
+  Environment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref Application
+      CNAMEPrefix: nodeapp-15
+      EnvironmentName: ExpressAppEnv
+      SolutionStackName: "64bit Amazon Linux 2023 v6.5.1 running Node.js 22" # "64bit Amazon Linux 2 v5.4.0 running Python 3.8"
+      VersionLabel: !Ref AppVersion
+      Tier:
+        Name: WebServer
+        Type: Standard
+      OptionSettings:
+        # Environment Configuration
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value: !Ref ServiceRole
+        # Vpc Configuration
+        - Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref VpcId
+        - Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: !Sub "${SubnetId1},${SubnetId2}"
+        # Instance configuration
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: t2.micro
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: EC2KeyName
+          Value: !Ref KeyName
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: SingleInstance # Use LoadBalanced for multiple instances for scaling
+        # - Namespace: "aws:elasticbeanstalk:environment" # Uncomment whe using LoadBalanced EnvironmentType
+        #   OptionName: "LoadBalancerType"
+        #   Value: "application"
+
+        # Application configuration
+        - Namespace: "aws:elasticbeanstalk:container:nodejs"
+          OptionName: "NodeCommand"
+          Value: "npm start"
+        - Namespace: "aws:elasticbeanstalk:container:nodejs"
+          OptionName: "ProxyServer"
+          Value: "nginx"
+        - Namespace: "aws:elasticbeanstalk:application:environment"
+          OptionName: "NODE_ENV"
+          Value: "development"
+        # Auto Scaling
+        - Namespace: aws:autoscaling:asg
+          OptionName: MinSize
+          Value: 1
+        - Namespace: aws:autoscaling:asg
+          OptionName: MaxSize
+          Value: 1
+
+      # Learn more: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options.html
+
+Outputs:
+  EndpointUrl:
+    Description: "URL of the application"
+    Value: !GetAtt Environment.EndpointURL
