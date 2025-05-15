@@ -23,30 +23,6 @@ Parameters:
     Default: v0.0.1/express-app.zip
 
 Resources:
-  # ServiceRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     RoleName: BeanstalkServiceRole
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service: "elasticbeanstalk.amazonaws.com"
-  #           Action: "sts:AssumeRole"
-  #     Policies:
-  #       - PolicyName: BeanstalkServicePolicy
-  #         PolicyDocument:
-  #           Version: 2012-10-17
-  #           Statement:
-  #             - Effect: Allow
-  #               Action:
-  #                 - "elasticbeanstalk:*"
-  #                 - "s3:*"
-  #                 - "cloudwatch:*"
-  #               Resource: "*"
-
-  # IAM Role for Elastic Beanstalk service
   ServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -83,18 +59,6 @@ Resources:
     Properties:
       ApplicationName: SimpleNodeApp
       Description: Simple Node.js application
-      # ResourceLifecycleConfig:
-      #   ServiceRole: !GetAtt ServiceRole.Arn
-      #   VersionLabel: !Ref VersionLabel
-      #   VersionLifecycleConfig:
-      #     MaxCountRule:
-      #       Enabled: true
-      #       MaxCount: 5
-      #       DeleteSourceFromS3: true
-      #     MaxAgeRule:
-      #       Enabled: true
-      #       MaxAgeInDays: 30
-      #       DeleteSourceFromS3: true
 
   AppVersion:
     Type: AWS::ElasticBeanstalk::ApplicationVersion
@@ -148,14 +112,13 @@ Resources:
         - Namespace: aws:elasticbeanstalk:environment
           OptionName: EnvironmentType
           Value: SingleInstance # Use LoadBalanced for multiple instances for scaling
-        # - Namespace: "aws:elasticbeanstalk:environment" # Uncomment whe using LoadBalanced EnvironmentType
+          # Value: LoadBalanced # Uncomment when using LoadBalanced EnvironmentType
+
+        # - Namespace: "aws:elasticbeanstalk:environment" # Uncomment when using LoadBalanced EnvironmentType
         #   OptionName: "LoadBalancerType"
         #   Value: "application"
 
         # Application configuration
-        - Namespace: "aws:elasticbeanstalk:container:nodejs"
-          OptionName: "NodeCommand"
-          Value: "npm start"
         - Namespace: "aws:elasticbeanstalk:container:nodejs"
           OptionName: "ProxyServer"
           Value: "nginx"
@@ -169,7 +132,6 @@ Resources:
         - Namespace: aws:autoscaling:asg
           OptionName: MaxSize
           Value: 1
-
       # Learn more: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options.html
 
 Outputs:
