@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: S3 bucket name for CloudFormation templates
+  Prefix:
+    Type: String
+    Description: Prefix for the S3 bucket templates
+    Default: templates
+
+Resources:
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${BucketName}.s3.amazonaws.com/${Prefix}/Vpc.yaml
+
+  Subnet1Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${BucketName}.s3.amazonaws.com/${Prefix}/Subnet1.yaml
+      Parameters:
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+
+  Subnet2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${BucketName}.s3.amazonaws.com/${Prefix}/Subnet2.yaml
+      Parameters:
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !GetAtt VpcStack.Outputs.VpcId
+  Subnet1Id:
+    Description: Subnet 1 ID
+    Value: !GetAtt Subnet1Stack.Outputs.Subnet1Id
+  Subnet2Id:
+    Description: Subnet 2 ID
+    Value: !GetAtt Subnet2Stack.Outputs.Subnet2Id
