@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an EC2 Instance in the SharedSubnet on the memeber account side
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC in the management account
+  SharedSubnetCidrBlock:
+    Type: String
+    Description: The CIDR block of the Shared Subnet in the management account
+  SharedSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The ID of the Shared Subnet in the management account
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 Keypair Keyname
+    Default: DevEuWest2Key
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  NetworkSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: NetworkSecGroup
+      GroupDescription: Allows SSH and HTTP access from anywhere
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow HTTP access from anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow SSH access from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow ICMP access only within the shared Subnet
+          IpProtocol: ICMP
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref SharedSubnetCidrBlock
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      SecurityGroupIds:
+        - !Ref NetworkSecGroup
+      SubnetId: !Ref SharedSubnetId
+      Tags:
+        - Key: Name
+          Value: DevInstance
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+
+          echo "<h1>From Development (member) Account: ${AWS::AccountId}</h1>" > /var/www/html/index.html
+
+Outputs:
+  DevPublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.PublicIp
+  DevPrivateIp:
+    Description: Private IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.PrivateIp

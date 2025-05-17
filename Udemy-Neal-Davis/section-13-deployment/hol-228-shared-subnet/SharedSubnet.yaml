@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template build on the hands-on-202/EcsCluster.yaml template by adding a Task Definition resource to the stack
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 Keypair Keyname
+    Default: MainEuWest2Key
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: CustomVpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: DemoInternetGateway
+
+  VpcGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CustomVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.0.0/18
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1
+
+  SharedSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CustomVpc
+      CidrBlock: 10.0.64.0/18
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: SharedSubnet
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CustomVpc
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttach
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+  PublicSubnet1RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  SharedSubnetRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SharedSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  NetworkSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: NetworkSecGroup
+      GroupDescription: Allows SSH and HTTP access from anywhere
+      VpcId: !Ref CustomVpc
+
+      SecurityGroupIngress:
+        - Description: Allow HTTP access from anywhere
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow SSH access from anywhere
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow ICMP access only within the shared Subnet
+          IpProtocol: ICMP
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !GetAtt SharedSubnet.CidrBlock
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap [Images, !Ref "AWS::Region", Ami]
+      SecurityGroupIds:
+        - !Ref NetworkSecGroup
+      SubnetId: !Ref SharedSubnet
+      Tags:
+        - Key: Name
+          Value: MgtInstance
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+
+          echo "<h1>From Management Account: ${AWS::AccountId}</h1>" > /var/www/html/index.html
+
+  ShareResource:
+    Type: AWS::RAM::ResourceShare
+    Properties:
+      Name: SubnetShare
+      ResourceArns:
+        -
+        - !Sub arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${SharedSubnet}
+      Principals:
+        - !ImportValue OrgAndAccount-DevelopmentAccountId
+
+Outputs:
+  VpcId:
+    Description: Custom VPC Id
+    Value: !Ref CustomVpc
+  PublicSubnetId1:
+    Description: Subnet ID for Public Subnet 1
+    Value: !Ref PublicSubnet1
+  SharedSubnetId:
+    Description: Subnet ID for Public Subnet 2
+    Value: !Ref SharedSubnet
+  SharedSubnetCidrBlock:
+    Description: CidrBlock for Shared Subnet
+    Value: !GetAtt SharedSubnet.CidrBlock
+  MainPublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.PublicIp
+  MainPrivateIp:
+    Description: Private IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.PrivateIp

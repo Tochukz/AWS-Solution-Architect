@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "FirstAccountEmail",
+    "ParameterValue": "first.lastname@aol.com"
+  },
+  {
+    "ParameterKey": "DevelopmentAccountEmail",
+    "ParameterValue": "first.lastname@np.ie"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-xxxxxxxxx"
+  },
+  {
+    "ParameterKey": "SharedSubnetCidrBlock",
+    "ParameterValue": "10.0.64.0/18"
+  },
+  {
+    "ParameterKey": "SharedSubnetId",
+    "ParameterValue": "subnet-xxxxxxxxxx"
+  }
+]

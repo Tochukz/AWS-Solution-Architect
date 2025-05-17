@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template build on hol-70. It adds an Organizational unit and puts the FirstAccount in it.
+
+Parameters:
+  FirstAccountEmail:
+    Type: String
+    Description: Email address for the first AWS account. Must be unique across AWS
+  DevelopmentAccountEmail:
+    Type: String
+    Description: Email address for the development AWS account. Must be unique across AWS
+
+Resources:
+  SimpleOrganization:
+    Type: AWS::Organizations::Organization
+    Properties:
+      FeatureSet: ALL
+
+  OrgUnit:
+    Type: AWS::Organizations::OrganizationalUnit
+    Properties:
+      Name: SimpleOrgUnit
+      ParentId: !GetAtt SimpleOrganization.RootId
+
+  FirstAccount:
+    Type: AWS::Organizations::Account
+    Properties:
+      AccountName: FirstAccount
+      Email: !Ref FirstAccountEmail
+      RoleName: OrganizationAccountAccessRole
+      ParentIds:
+        - !Ref OrgUnit
+
+  DevelopmentAccount:
+    Type: AWS::Organizations::Account
+    Properties:
+      AccountName: DevelopmentAccount
+      Email: !Ref DevelopmentAccountEmail
+      RoleName: OrganizationAccountAccessRole
+      ParentIds:
+        - !GetAtt SimpleOrganization.RootId
+
+Outputs:
+  AccountStatus:
+    Description: The status of the FirstAccount
+    Value: !GetAtt FirstAccount.Status
+  FirstAccountId:
+    Description: The FirstAccount AccountId
+    Value: !Ref FirstAccount
+  DevelopmentAccountId:
+    Description: The DevelopmentAccount AccountId
+    Value: !Ref DevelopmentAccount
+    Export:
+      Name: OrgAndAccount-DevelopmentAccountId
+  FirstAccountRoleArn:
+    Description: Role ARN for the FirstAccount. It can be assumed by the management account
+    Value: !Sub arn:aws:iam::${FirstAccount.AccountId}:role/OrganizationAccountAccessRole
+  DevelopmentAccountRoleArn:
+    Description: Role ARN for the FirstAccount. It can be assumed by the management account
+    Value: !Sub arn:aws:iam::${DevelopmentAccount.AccountId}:role/OrganizationAccountAccessRole
+  OrgRootId:
+    Description: The Organization RootId
+    Value: !GetAtt SimpleOrganization.RootId
+  OrgUnitId:
+    Description: The Organizational Unit Id
+    Value: !Ref OrgUnit
+    Export:
+      Name: OrgAndAccount-OrgUnitId
