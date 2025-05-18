@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create an Event Rule to trigger a Lambda function for TerminateInstance event
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  BasicFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: BasicFunc
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.9
+      Timeout: 30
+      Code:
+        ZipFile: |
+          import json
+
+          def handler(event, context):
+              print('LogEC2StopInstance')
+              print('Received event:', json.dumps(event, separators=(',', ':')))
+              return {
+                  'statusCode': 200,
+                  'body': 'Finished'
+              }
+
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Ec2StopInstanceRule
+      Description: Event rule to trigger Lambda function on EC2 instance termination
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+        detail:
+          state:
+            - stopped
+      Targets:
+        - Id: TargetFunc
+          Arn: !GetAtt BasicFunc.Arn
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BasicFunc
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventRule.Arn
