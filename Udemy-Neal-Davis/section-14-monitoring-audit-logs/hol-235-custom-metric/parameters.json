@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-xxxxxxxxxxxxx"
+  },
+  {
+    "ParameterKey": "SubscriptionEmail",
+    "ParameterValue": "youremail@gmail.com"
+  }
+]

@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a Custom Metric for Memory usage and an Alarm that sends out SNS notitification when the threshold is breached.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC where the EC2 instance will be launched.
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: The name of an existing EC2 KeyPair to enable SSH access to the instance.
+    Default: DevSimpleKey
+  SubscriptionEmail:
+    Type: String
+    Description: The email address to subscribe to the SNS topic for alarm notifications.
+  InstanceName:
+    Type: String
+    Description: The name of the EC2 instance.
+    Default: MemoryUsageInstance
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  ManagedEc2Policy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: Ec2Policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+            Resource: "*"
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Ec2Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref ManagedEc2Policy
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: Ec2Profile
+      Roles:
+        - !Ref Ec2Role
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: CustomMetricLabSg
+      GroupDescription: Temporary SG for the Custom Metric Lab
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !FindInMap [Images, !Ref "AWS::Region", Ami]
+      KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo dnf install stress-ng -y
+
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: MemoryUsageAlarmTopic
+
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SnsTopic
+      Protocol: email
+      Endpoint: !Ref SubscriptionEmail
+
+  Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: MemoryUsageAlarm
+      AlarmDescription: Alarm when Memory usage exceeds 40%
+      MetricName: MemUsage
+      Namespace: Custom/Memory
+      Statistic: Average
+      Period: 60 # in seconds. Ensure that the period is greater than or equal to the  metric's sampling frequency
+      EvaluationPeriods: 1
+      Threshold: 40
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: InstanceName
+          Value: !Ref InstanceName
+        - Name: InstanceId
+          Value: !Ref Ec2Instance
+      AlarmActions: # For various types of actions see https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html
+        - !Ref SnsTopic
+
+Outputs:
+  PublicIP:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt Ec2Instance.PublicIp
+# Ensure that the Period is greater than or equal to the  metric's sampling frequency
+# If your metric is emitted once every 60 seconds, the alarm period should be 60, 120, 180 etc
+# If using EvaluationPeriods: 3, your metric must emit 3 consecutive datapoints that breach the threshold
