@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "InstanceArn",
+    "ParameterValue": "arn:aws:sso:::instance/ssoins-xxxxxxxxxx"
+  },
+  {
+    "ParameterKey": "IdentityStoreId",
+    "ParameterValue": "d-xxxxxxxxxx"
+  },
+  {
+    "ParameterKey": "TargetAccountId",
+    "ParameterValue": "123456789"
+  }
+]

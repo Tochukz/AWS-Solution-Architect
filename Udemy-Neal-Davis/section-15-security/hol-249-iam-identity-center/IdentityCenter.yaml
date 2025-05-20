@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates Permission Set, Groups and User for IAM Identity Center
+
+Parameters:
+  InstanceArn:
+    Type: String
+    Description: The ARN of the IAM Identity Center (AWS SSO) instance.
+  IdentityStoreId:
+    Type: String
+    Description: The ID of the Identity Store.
+  TargetAccountId:
+    Type: String
+    Description: The AWS account ID of an existing account in the AWS Organization
+
+Resources:
+  AdminPermissionSet:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      Name: AdminPermissionSet
+      Description: Permission set for admin users
+      InstanceArn: !Ref InstanceArn
+      SessionDuration: PT1H #  1-hour session (ISO 8601 format)
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  AnalystPermissionSet:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      Name: AnalystPermissionSet
+      Description: Permission set for IAM user with view-only access
+      InstanceArn: !Ref InstanceArn
+      SessionDuration: PT1H
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/job-function/ViewOnlyAccess
+        # arn:aws:iam::aws:policy/ReadOnlyAccess
+
+  ManagementGroup:
+    Type: AWS::IdentityStore::Group
+    Properties:
+      IdentityStoreId: !Ref IdentityStoreId
+      DisplayName: ManagementGroup
+      Description: Group for management users
+
+  AnalystGroup:
+    Type: AWS::IdentityStore::Group
+    Properties:
+      IdentityStoreId: !Ref IdentityStoreId
+      DisplayName: AnalystGroup
+      Description: Group for analyst users
+
+  AdminGroupAssignment:
+    Type: AWS::SSO::Assignment
+    Properties:
+      InstanceArn: !Ref InstanceArn
+      PermissionSetArn: !GetAtt AdminPermissionSet.PermissionSetArn
+      PrincipalId: !GetAtt ManagementGroup.GroupId
+      PrincipalType: GROUP
+      TargetId: !Ref TargetAccountId
+      TargetType: AWS_ACCOUNT
+
+  AnalystGroupAssignment:
+    Type: AWS::SSO::Assignment
+    Properties:
+      InstanceArn: !Ref InstanceArn
+      PermissionSetArn: !GetAtt AnalystPermissionSet.PermissionSetArn
+      PrincipalId: !GetAtt AnalystGroup.GroupId
+      PrincipalType: GROUP
+      TargetId: !Ref TargetAccountId
+      TargetType: AWS_ACCOUNT
+
+Outputs:
+  ManagementGroupId:
+    Description: The ID of the management group
+    Value: !GetAtt ManagementGroup.GroupId
+  AnalystGroupId:
+    Description: The ID of the analyst group
+    Value: !GetAtt AnalystGroup.GroupId
