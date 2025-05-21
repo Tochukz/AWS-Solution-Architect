@@ -88,7 +88,6 @@ Resources:
 
           # Install pip
           sudo dnf install -y python3-pip
-
 Outputs:
   PublicIp:
     Description: Public IP of the Bastion instance

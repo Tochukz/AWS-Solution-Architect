@@ -3,11 +3,10 @@
 ### Description
 
 This template configures cross regional replication from one S3 source bucket to another S3 destination bucket.  
-Any already existing objects in the source bucket before replication was configured can
-only be replicated using _S3 Batch Replication_.
+Any already existing objects in the source bucket before replication was configured can only be replicated using _S3 Batch Replication_.  
 Replication can be done from one source bucket to multiple destination buckets.
 
-Normal delete operation are replicated from source to target using the delete merker.  
+Normal delete operation are replicated from source to target using the delete marker.  
 Deletion done with version Id are not replicated to avoid malicious delete.
 
 There can be no chaining of replication.  

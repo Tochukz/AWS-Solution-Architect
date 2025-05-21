@@ -59,6 +59,7 @@ __Section 8: High Availability and Scalability - ELB & ASG__
 82 - ALB with SSL certificate (HTTPS listener), ACM Certificate  
 85 - Auto Scaling Group (ASG), manual scaling  
 87 - ASG with scaling policy, target scaling  
+Extra 8.1 - Scheduled Scaling Policy
 
 __Section 9: AWS Fundamentals - RDS + Aurora + ElastiCache__  
 90 - Relational Database Service (RDS), regional and cross-region replication  

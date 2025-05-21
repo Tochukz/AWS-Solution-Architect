@@ -2,7 +2,7 @@
 
 ### Description
 
-This template build on hol-72 which created an Organization and an Account within the Organization.  
+This template build on `hol-70` which created an Organization and an Account within the Organization.  
 Here we have updated the `OrgAndAccount` stack to include an Organizational Unit and then moved the Account into the Organizational Unit.
 
 We also created a second template `SCP.yaml` to configure a Service Control Policy which is then attached to the Organizational Unit created in `OrgAndAccount`.

@@ -14,7 +14,7 @@ Resources:
     Properties:
       BucketName: !Ref BucketName
       VersioningConfiguration:
-        Status: Enabled # Versioning must be turned own for replication can be configured
+        Status: Enabled # Versioning must be turned own before replication can be configured
     DeletionPolicy: Delete # or Retain
 
 Outputs:
