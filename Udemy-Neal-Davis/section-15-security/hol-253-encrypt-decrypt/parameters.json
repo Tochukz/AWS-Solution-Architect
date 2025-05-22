@@ -1,0 +1,6 @@
+[
+  {
+    "ParameterKey": "AdminArns",
+    "ParameterValue": "arn:aws:iam::123456789:user/username1,arn:aws:iam::123456789:user/username2"
+  }
+]
