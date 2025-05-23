@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Analyse images using AWS Rekognition and store results in DynamoDB.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: "S3 bucket name for storing images."
+    Default: storage-bucket-23-05
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ImageAnalysisResults
+      AttributeDefinitions:
+        - AttributeName: ImageName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ImageName
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
+
+  LambdaProcessor:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: RekognitionLab
+      Runtime: python3.9
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+
+          def handler(event, context):
+              s3_client = boto3.client('s3')
+              rekognition_client = boto3.client('rekognition')
+              dynamodb = boto3.resource('dynamodb')
+              table = dynamodb.Table('ImageAnalysisResults')  # Replace with your table name
+
+              bucket_name = event['Records'][0]['s3']['bucket']['name']
+              object_key = event['Records'][0]['s3']['object']['key']
+
+              response = rekognition_client.detect_labels(
+                  Image={'S3Object': {'Bucket': bucket_name, 'Name': object_key}},
+                  MaxLabels=10
+              )
+
+              labels = [{'Confidence': label['Confidence'], 'Name': label['Name']} for label in response['Labels']]
+              table.put_item(
+                  Item={
+                      'ImageName': object_key,
+                      'Labels': json.dumps(labels)
+                  }
+              )
+
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('Image processed successfully!')
+              }
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaProcessor
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${BucketName}
+
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: LambdaPermission
+    Properties:
+      BucketName: !Ref BucketName
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt LambdaProcessor.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .jpeg
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt LambdaProcessor.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .png

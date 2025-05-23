@@ -1,0 +1,11 @@
+[
+  { "Confidence": 99.93528747558594, "Name": "Car" },
+  { "Confidence": 99.93528747558594, "Name": "Suv" },
+  { "Confidence": 99.93528747558594, "Name": "Transportation" },
+  { "Confidence": 99.93528747558594, "Name": "Vehicle" },
+  { "Confidence": 89.74385833740234, "Name": "Moving Van" },
+  { "Confidence": 89.74385833740234, "Name": "Van" },
+  { "Confidence": 85.4491195678711, "Name": "Machine" },
+  { "Confidence": 85.4491195678711, "Name": "Wheel" },
+  { "Confidence": 76.20023345947266, "Name": "Hatchback" }
+]

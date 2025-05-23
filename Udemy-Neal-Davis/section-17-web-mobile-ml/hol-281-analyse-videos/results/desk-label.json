@@ -1,0 +1,12 @@
+[
+  { "Confidence": 99.9998550415039, "Name": "Furniture" },
+  { "Confidence": 99.85699462890625, "Name": "Table" },
+  { "Confidence": 99.57018280029297, "Name": "Chair" },
+  { "Confidence": 99.37525177001953, "Name": "Indoors" },
+  { "Confidence": 97.55048370361328, "Name": "Desk" },
+  { "Confidence": 96.44981384277344, "Name": "Monitor" },
+  { "Confidence": 96.44981384277344, "Name": "Screen" },
+  { "Confidence": 85.88683319091797, "Name": "Computer Keyboard" },
+  { "Confidence": 83.31259155273438, "Name": "Office" },
+  { "Confidence": 82.54347229003906, "Name": "Office Chair" }
+]

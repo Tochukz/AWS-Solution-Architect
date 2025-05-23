@@ -11,8 +11,21 @@ Section | Title
 2       | AWS Identity and Access Management (IAM)
 3       | Amazon Elastic Compute Cloud (EC2)
 4       | Elastic Load Balancing and Auto Scaling
-5       |  AWS Organizations and Control Tower
-
+5       | AWS Organizations and Control Tower
+6       | Amazon Virtual Private Cloud (VPC)
+7       | Amazon Simple Storage Service (S3)
+8       | DNS, Caching and Performance Optimization
+9       | Block and File Storage
+10      | Docker Containers and ECS
+11      | Serverless Applications
+12      | Database Analysis
+13      | Deployment and Management
+14      | Monitoring, Logging and Auditing
+15      | Security in the Cloud
+16      | Migration and Transfer
+17      | Web, Mobile, ML and Cost Management
+18      | Full-Length Practice Exam
+19      | Final Exam Preparation 
 ### Hand On Lab
 __Section 2: AWS Identity and Access Management (IAM)__  
 19. Access Evaluation Tool
