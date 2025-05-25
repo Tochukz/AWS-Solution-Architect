@@ -1,4 +1,4 @@
-# Lesson 347: IPv6 FOR VPC- Hands On
+# Lesson 347: IPv6 for VPC- Hands On
 
 ### Description
 
