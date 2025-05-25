@@ -81,8 +81,8 @@ __Section 11: Classic Solution Architect__
 122 - WhatsTheTime.com  
 123 - MyClothes.com  
 124 - MyWordPress.com  
-127a - Beanstalk Hands On    
-127b - Beanstalk Hands On with Variation
+127 - Beanstalk Hands On    
+Extra 11.1 -  Beanstalk Hands On with Variation
 
 __Section 12: Amazon S3 Introduction__  
 130 - S3 Hands on  

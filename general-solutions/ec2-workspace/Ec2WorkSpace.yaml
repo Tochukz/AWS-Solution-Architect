@@ -77,14 +77,13 @@ Resources:
           #!/bin/bash
 
           # Install Node Version Manager
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
-          echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bash_profile
-          echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bash_profile
-          echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> ~/.bash_profile
-          source ~/.bash_profile
+          export NVM_DIR="$HOME/.nvm"
+          source "$NVM_DIR/nvm.sh"
 
-          nvm install 20
+          nvm install 22 
+          node -v
 
           # Install pip
           sudo dnf install -y python3-pip
