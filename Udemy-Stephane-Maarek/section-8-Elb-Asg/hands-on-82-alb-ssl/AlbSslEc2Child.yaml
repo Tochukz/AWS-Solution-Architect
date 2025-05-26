@@ -7,7 +7,7 @@ Parameters:
     Type: String
     Description: EC2 instance type
   ImageId:
-    Type: String
+    Type: AWS::EC2::Image::Id
     Description: Amazon Machine Image (AMI) Id
   KeyName:
     Type: String

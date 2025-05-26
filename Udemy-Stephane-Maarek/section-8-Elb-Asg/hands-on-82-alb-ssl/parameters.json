@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-xxxxxx"
+  },
+  {
+    "ParameterKey": "SubnetId1",
+    "ParameterValue": "subnet-xxxx"
+  },
+  {
+    "ParameterKey": "SubnetId2",
+    "ParameterValue": "subnet-xxxx"
+  },
+  {
+    "ParameterKey": "TemplateBucket",
+    "ParameterValue": "my-bucket-name"
+  },
+  {
+    "ParameterKey": "CertificateArn",
+    "ParameterValue": "arc:aws:acm:xxxxxxx"
+  }
+]

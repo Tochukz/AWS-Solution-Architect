@@ -6,15 +6,12 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: Vpc Id
-    Default: vpc-097728e00a72ac827 # Default VPC
   SubnetId1:
     Type: AWS::EC2::Subnet::Id
     Description: First subnet Id in the Vpc provided
-    Default: subnet-01e6764eb590a6eb3 # Default Subnet 1
   SubnetId2:
     Type: AWS::EC2::Subnet::Id
     Description: Second subnet Id in the Vpc provided
-    Default: subnet-08e8eaec953c85086 # Default Subnet 2
   InstanceType:
     Type: String
     Description: EC2 instance type
@@ -33,12 +30,17 @@ Parameters:
   TemplateBucket:
     Type: String
     Description: S3 bucket where child templates are stored
-    Default: chucks-workspace-storage
   CertificateArn:
     Type: String
     Description: ACM certificate ARN
-    AllowedPattern: ^(arn:aws:acm:)
-    Default: ""
+  HostedZoneName:
+    Type: String
+    Description: Route53 hosted zone name (e.g., example.com)
+    Default: goodguys.click
+  DomainName:
+    Type: String
+    Description: Domain name for the ALB (e.g., alb.example.com)
+    Default: alb-ssl.goodguys.click
 
 Resources:
   AlbSecGroup:
@@ -136,6 +138,7 @@ Resources:
       Port: 443
       Certificates:
         - CertificateArn: !Ref CertificateArn
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref AlbTargetGroup
@@ -153,10 +156,20 @@ Resources:
             Port: 443
             StatusCode: HTTP_301
 
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub "${HostedZoneName}."
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt AlbBalancer.DNSName
+        HostedZoneId: !GetAtt AlbBalancer.CanonicalHostedZoneID
+
 Outputs:
-  LoadBalancerDns:
-    Description: DNS name of the ALB
-    Value: !GetAtt AlbBalancer.DNSName
+  DomainUrl:
+    Description: ALB SSL Endpoint
+    Value: !Sub https://${DomainName}
   InstanceId1:
     Description: First EC2 instance ID
     Value: !GetAtt Ec2Instance1.Outputs.InstanceId
