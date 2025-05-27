@@ -1,0 +1,7 @@
+{
+  "queryStringParameters": {
+    "operation": "add",
+    "num1": 10,
+    "num2": 10
+  }
+}
