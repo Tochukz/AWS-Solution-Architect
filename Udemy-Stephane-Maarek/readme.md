@@ -4,41 +4,41 @@ __By Stephane Maarek__
 
 __Content__    
 
-Section    | Title
------------|--------
-1  | Introduction   
-2  | Code & Slide Download   
-3  | Getting Started with AWS   
-4  | IAM & AWS CLI   
-5  | EC2 Fundamentals   
-6  | EC2 - Solution Architect Associate Level   
-7  | EC2 Instance Storage   
-8  | High Availability and Scalability: ELB & ASG   
-9  | AWS Fundamentals: RDS + Aurora + ElastiCache
-10 | Route 53
-11 | Classic Solution Architecture Discussions
-12 | Amazon S3 Introduction
-13 | Advanced Amazon S3
-14 | Amazon S3 Security
-15 | CloudFront & AWS Global Accelerator
-16 | AWS Storage Extras
-17 | Decoupling applications: SQS, SNS, Kinesis, Active MQ
-18 | Containers on AWS: ECS, Fargate, ECR & EKS
-19 | Serverless Overview from Solution Architect Perspective
-20 | Serverless Solution Architect Discusion
-21 | Database in AWS
-22 | Data Analytics
-23 | Machine Learning
-24 | AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
-25 | Identity and Access Management (IAM) - Advanced
-26 | AWS Security and Encryption: KMS, SSM Parameter Store, Shield, WAF
-27 | Networking - VPC  
-28 | Disaster Recovery & Migrations
-29 | More Solution Architectures
-30 | Other Services
-31 | WhitePapers and Architectures - AWS Certified Solution Architect Associate
-32 | Preparing for the Exams + Practice Exam - AWS Certified Solution Architect Associate
-33 | Congratulations - AWS Certified Solution Architect Associate
+Section | Pg  | Title
+--------|-----|--------
+1       | 6   | Introduction   
+2       | 6   | Code & Slide Download   
+3       | 14  | Getting Started with AWS   
+4       | 24  | IAM & AWS CLI   
+5       | 41  | EC2 Fundamentals   
+6       |  -  | EC2 - Solution Architect Associate Level   
+7       | 95  | EC2 Instance Storage   
+8       | 120 | High Availability and Scalability: ELB & ASG   
+9       | 162 | AWS Fundamentals: RDS + Aurora + ElastiCache
+10      | 194 | Route 53
+11      | 225 | Classic Solution Architecture Discussions
+12      | 265 | Amazon S3 Introduction
+13      | 290 | Advanced Amazon S3
+14      | 310 | Amazon S3 Security
+15      | 332 | CloudFront & AWS Global Accelerator
+16      | 349 | AWS Storage Extras
+17      | 377 | Decoupling applications: SQS, SNS, Kinesis, Active MQ
+18      | 421 | Containers on AWS: ECS, Fargate, ECR & EKS
+19      | 448 | Serverless Overview from Solution Architect Perspective
+20      | 496 | Serverless Solution Architect Discusion
+21      | 518 | Database in AWS
+22      | 533 | Data Analytics
+23      | 568 |Machine Learning
+24      | 584 |AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
+25      | 627 |Identity and Access Management (IAM) - Advanced
+26      | 655 | AWS Security and Encryption: KMS, SSM Parameter Store, Shield, WAF
+27      | 698 | Networking - VPC  
+28      | 774 |Disaster Recovery & Migrations
+29      | 800 | More Solution Architectures
+30      | 822 | Other Services
+31      | 849 | WhitePapers and Architectures - AWS Certified Solution Architect Associate
+32      | 856 | Preparing for the Exams + Practice Exam - AWS Certified Solution Architect Associate
+33      | 872 | Congratulations - AWS Certified Solution Architect Associate
 
 ### Hands On
 __Section 6: EC2 - Solution Architect Level__  
@@ -130,8 +130,8 @@ __Section 18: Containers on AWS: ECS, Fargate, ECR & EKS__
 __Section 19: Serverless Overview from Solution Architect Perspective__  
 216 - Lambda  
 225 - Amazon DynamoDB  
-228a - API Gateway  - HTTP API  
-228b - API Gateway - Rest API  
+228 - API Gateway  - HTTP API  
+Extra 19.1 - API Gateway - Rest API  
 
 __Section 20: Serverless Solution Architect Discusion__
 231 - Mobile Application: MyTodoList  
