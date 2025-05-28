@@ -1,0 +1,238 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an Application Load Balancer that distributes traffic to a target group with two EC2 instances
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Vpc Id
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet Id in the Vpc provided
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet Id in the Vpc provided
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Default: t2.micro
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: Amazon Machine Image
+    Default: ami-0abb41dc69b6b6704 # Amazon Linux 2 AMI 64-bit (x86)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Keypair name
+    Default: DevSimpleKey
+  TemplateBucket:
+    Type: String
+    Description: S3 bucket where child templates are stored
+  HostedZoneName:
+    Type: String
+    Description: Route53 hosted zone name (e.g., example.com)
+    Default: goodguys.click
+  Hostname1:
+    Type: String
+    Description: Hostname of the first service. Must be a Route53 hosted domain name
+    Default: server.goodguys.click
+  Host1CertificateArn:
+    Type: String
+    Description: ACM certificate ARN
+  Hostname2:
+    Type: String
+    Description: hostname of the second service. Can be Route53 or third party hosted domain name
+    Default: service.iclinic.net.za
+  Host2CertificateArn:
+    Type: String
+    Description: ACM certificate ARN
+
+Resources:
+  AlbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: AlbSecGroup
+      GroupDescription: Application Load Balancer security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allows HTTP access
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allows HTTPS access
+          IpProtocol: TCP
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group SSH and HTTP
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access to all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP traffic originating from AlbSecGroup only
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt AlbSecGroup.GroupId
+
+  Ec2Instance1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbSniEc2Child.yaml
+      Parameters:
+        InstanceType: !Ref InstanceType
+        ImageId: !Ref ImageId
+        KeyName: !Ref KeyName
+        SubnetId: !Ref SubnetId1
+        WebSecGroup: !Ref WebSecGroup
+        TagName: DemoInstance1
+        WebsiteContent: "<h3 style='color:blue'>Hello world from EC2 instance 1</h3>"
+
+  Ec2Instance2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/AlbSniEc2Child.yaml
+      Parameters:
+        InstanceType: !Ref InstanceType
+        ImageId: !Ref ImageId
+        KeyName: !Ref KeyName
+        SubnetId: !Ref SubnetId2
+        WebSecGroup: !Ref WebSecGroup
+        TagName: DemoInstance2
+        WebsiteContent: "<h3 style='color:green'>Hello world from EC2 instance 2</h3>"
+
+  AlbTargetGroup1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleTarget1
+      TargetType: instance
+      Protocol: HTTP
+      Port: 80
+      VpcId: !Ref VpcId
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckPath: /
+      Targets:
+        - Id: !GetAtt Ec2Instance1.Outputs.InstanceId
+
+  AlbTargetGroup2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleTarget2
+      TargetType: instance
+      Protocol: HTTP
+      Port: 80
+      VpcId: !Ref VpcId
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckPath: /
+      Targets:
+        - Id: !GetAtt Ec2Instance2.Outputs.InstanceId
+
+  AlbBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleBalancer
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      SecurityGroups:
+        - !Ref AlbSecGroup
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AlbBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: 443
+            StatusCode: HTTP_301
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AlbBalancer
+      Protocol: HTTPS
+      Port: 443
+      Certificates: # You can only have one certificate under this array
+        - CertificateArn: !Ref Host1CertificateArn # Default certificate
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: 404
+            ContentType: "text/html"
+            MessageBody: "<p style='color:orange'>No matching route found</p>"
+
+  OtherListenerCertificates:
+    Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
+    Properties:
+      ListenerArn: !Ref HttpsListener
+      Certificates:
+        - CertificateArn: !Ref Host2CertificateArn
+
+  HostBasedRule1:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpsListener
+      Priority: 1
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values:
+              - !Ref Hostname1
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup1
+
+  HostBasedRule2:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpsListener
+      Priority: 2
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values:
+              - !Ref Hostname2
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup2
+
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub "${HostedZoneName}."
+      Name: !Ref Hostname1
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt AlbBalancer.DNSName
+        HostedZoneId: !GetAtt AlbBalancer.CanonicalHostedZoneID
+
+Outputs:
+  AlbDnsName:
+    Description: ALB DNS name
+    Value: !GetAtt AlbBalancer.DNSName
+  Host1Url:
+    Description: ALB SSL Endpoint
+    Value: !Sub https://${Hostname1}
+  Host2Url:
+    Description: ALB SSL Endpoint
+    Value: !Sub https://${Hostname2}

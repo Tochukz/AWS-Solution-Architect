@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-xxxxxx"
+  },
+  {
+    "ParameterKey": "SubnetId1",
+    "ParameterValue": "subnet-xxxx"
+  },
+  {
+    "ParameterKey": "SubnetId2",
+    "ParameterValue": "subnet-xxxx"
+  },
+  {
+    "ParameterKey": "TemplateBucket",
+    "ParameterValue": "my-bucket-name"
+  },
+  {
+    "ParameterKey": "Host1CertificateArn",
+    "ParameterValue": "arn:aws:acm:eu-west-2:123456789:certificate/xxxxx-xxx-xxx-xxx-xxxxxxx"
+  },
+  {
+    "ParameterKey": "Host2CertificateArn",
+    "ParameterValue": "arn:aws:acm:eu-west-2:123456789:certificate/xxxxx-xxx-xxx-xxx-xxxxxxx"
+  }
+]
