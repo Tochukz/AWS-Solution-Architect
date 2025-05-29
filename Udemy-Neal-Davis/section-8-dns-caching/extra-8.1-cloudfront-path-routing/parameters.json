@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "CertificateArn",
+    "ParameterValue": "arn:aws:acm:us-east-1:xxxxxxxxx:certificate/112233-4466-9090-1010-777777"
+  },
+  {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "site.company.com"
+  }
+]

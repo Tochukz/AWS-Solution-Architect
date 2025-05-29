@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  CertificateArn:
+    Type: String
+    Description: The ARN of the ACM certificate for the CloudFront distribution.
+  HostedZoneName:
+    Type: String
+    Description: The name of the Route 53 hosted zone (e.g., example.com).
+    Default: goodguys.click
+  DomainName:
+    Type: String
+    Description: An alternate domain name for the CloudFront distribution.
+  TargetId1:
+    Type: String
+    Description: The target ID for the first S3 bucket origin.
+    Default: Site1BucketTarget
+    AllowedValues:
+      - Site1BucketTarget
+  TargetId2:
+    Type: String
+    Description: The target ID for the second S3 bucket origin.
+    Default: Site2BucketTarget
+    AllowedValues:
+      - Site2BucketTarget
+
+Mappings:
+  Dev:
+    Constants:
+      OriginId: SimpleS3Bucket
+    Policies: # To see other manages cache policies, go to CloudFront console > Policies > Cache
+      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+Resources:
+  Site1Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: site-1-bucket-23-05
+
+  Site2Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: site-2-bucket-23-05
+
+  S3BucketAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: S3BucketAccessControl
+        Description: Access control for PDF bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Function:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: MultiSiteFunc
+      AutoPublish: true
+      FunctionConfig:
+        Runtime: cloudfront-js-2.0
+        Comment: "URI rewrite for path: /site2"
+      FunctionCode: |
+        function handler(event) {
+          const request = event.request;
+          const uri = request.uri.toLowerCase();
+
+          if (uri == '/site2') {
+            request.uri = '/index.html';
+          } else if (uri.startsWith('/site2')) {
+            request.uri = uri.replace('/site2', '');
+          }
+
+          return request;
+        }
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Aliases:
+          - !Ref DomainName
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: !Ref TargetId1
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+        CacheBehaviors:
+          - PathPattern: /site2/*
+            TargetOriginId: !Ref TargetId2
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt Function.FunctionARN
+        Origins:
+          - Id: !Ref TargetId1
+            DomainName: !GetAtt Site1Bucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref S3BucketAccessControl
+          - Id: !Ref TargetId2
+            DomainName: !GetAtt Site2Bucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref S3BucketAccessControl
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+
+  Site1BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Site1Bucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${Site1Bucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+  Site2BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Site2Bucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${Site2Bucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub "${HostedZoneName}."
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt Distribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront hosted zone ID
+
+Outputs:
+  DistDomainName:
+    Description: CloudFront Distribution Domain Name
+    Value: !GetAtt Distribution.DomainName
+  AlternateUrl:
+    Description: Custom Domain Name for CloudFront
+    Value: !Sub https://${DomainName}
