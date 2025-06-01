@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create two EC2 instance, IMDSv1 and IMDSv2 enabled (IMDS meand Instance Metadata Service)
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Default: DevSimpleKey
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP and SSH access
+      SecurityGroupIngress:
+        - Description: Allow SSH access from anywhere
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access from anywhere
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  IMDSv1Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt WebSecurityGroup.GroupId
+      MetadataOptions:
+        HttpTokens: optional
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          # Update system and install httpd (Apache)
+          yum update -y
+          yum install -y httpd
+
+          # Start httpd service and enable it to start on boot
+          systemctl start httpd
+          systemctl enable httpd
+
+          # Fetch metadata using IMDSv1        
+          INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+          AMI_ID=$(curl http://169.254.169.254/latest/meta-data/ami-id)
+          INSTANCE_TYPE=$(curl http://169.254.169.254/latest/meta-data/instance-type)
+
+          # Create a web page to display the metadata
+          cat <<EOF > /var/www/html/index.html
+          <html>
+          <head>
+              <title>EC2 Instance Metadata</title>
+          </head>
+          <body>
+              <h1>EC2 Instance Metadata</h1>
+              <p>Instance ID: $INSTANCE_ID</p>
+              <p>AMI ID: $AMI_ID</p>
+              <p>Instance Type: $INSTANCE_TYPE</p>
+          </body>
+          </html>
+          EOF
+
+  IMDSv2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt WebSecurityGroup.GroupId
+      MetadataOptions:
+        HttpTokens: required
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          # Update system and install httpd (Apache)
+          yum update -y
+          yum install -y httpd
+
+          # Start httpd service and enable it to start on boot
+          systemctl start httpd
+          systemctl enable httpd
+
+          # Fetch metadata using IMDSv2
+          TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+          INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+          AMI_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/ami-id)
+          INSTANCE_TYPE=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type)
+
+          # Create a web page to display the metadata
+          cat <<EOF > /var/www/html/index.html
+          <html>
+          <head>
+              <title>EC2 Instance Metadata</title>
+          </head>
+          <body>
+              <h1>EC2 Instance Metadata</h1>
+              <p>Instance ID: $INSTANCE_ID</p>
+              <p>AMI ID: $AMI_ID</p>
+              <p>Instance Type: $INSTANCE_TYPE</p>
+          </body>
+          </html>
+          EOF
+
+Outputs:
+  PubblicIpForIMDSv1:
+    Description: Public IP of the IMDSv1 enabled instance
+    Value: !GetAtt IMDSv1Instance.PublicIp
+  PubblicIpForIMDSv2:
+    Description: Public IP of the IMDSv2 enabled instance
+    Value: !GetAtt IMDSv2Instance.PublicIp

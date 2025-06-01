@@ -5,27 +5,27 @@ __By Neal Davis__
 [Course Downloads](https://digitalcloud.training/aws-csaa-course-downloads/)  
 
 ### Course Content
-Section | Title
---------|-------------------
-1       | Let's Get Started
-2       | AWS Identity and Access Management (IAM)
-3       | Amazon Elastic Compute Cloud (EC2)
-4       | Elastic Load Balancing and Auto Scaling
-5       | AWS Organizations and Control Tower
-6       | Amazon Virtual Private Cloud (VPC)
-7       | Amazon Simple Storage Service (S3)
-8       | DNS, Caching and Performance Optimization
-9       | Block and File Storage
-10      | Docker Containers and ECS
-11      | Serverless Applications
-12      | Database Analysis
-13      | Deployment and Management
-14      | Monitoring, Logging and Auditing
-15      | Security in the Cloud
-16      | Migration and Transfer
-17      | Web, Mobile, ML and Cost Management
-18      | Full-Length Practice Exam
-19      | Final Exam Preparation
+Section | Title                                    | Pg
+--------|------------------------------------------|----
+1       | Let's Get Started                        | 1
+2       | AWS Identity and Access Management (IAM) | 17
+3       | Amazon Elastic Compute Cloud (EC2)       | 56
+4       | Elastic Load Balancing and Auto Scaling  | 129
+5       | AWS Organizations and Control Tower      | 191
+6       | Amazon Virtual Private Cloud (VPC)       | 209
+7       | Amazon Simple Storage Service (S3)       | 282
+8       | DNS, Caching and Performance Optimization| 341
+9       | Block and File Storage                   | 395
+10      | Docker Containers and ECS                | 449
+11      | Serverless Applications                  | 500
+12      | Database Analysis                        | 556
+13      | Deployment and Management                | 692
+14      | Monitoring, Logging and Auditing         | 735
+15      | Security in the Cloud                    | 767
+16      | Migration and Transfer                   | 835
+17      | Web, Mobile, ML and Cost Management      | 864
+18      | Full-Length Practice Exam                | -
+19      | Final Exam Preparation                   | -
 
 ### Hand On Lab
 __Section 2: AWS Identity and Access Management (IAM)__  
@@ -33,6 +33,7 @@ __Section 2: AWS Identity and Access Management (IAM)__
 
 __Section 3: Amazon Elastic Compute Cloud EC2__  
 27. Launching Amazon EC2 Instances
+29. Using User Data and Metadata
 40. Private Subnet and Bastion Host
 42. Private Subnet with NAT Gateway
 
@@ -55,7 +56,7 @@ __Section 6: Amazon Virtual Private Cloud (VPC)__
 88. Create VPC Endpoint
 96. VPC Flow Logs
 Extra 6.1 - Same Region VPC peering
-Extra 6.3 -  Transit GAteway VPC peering
+Extra 6.3 -  Transit Gateway VPC peering
 
 __Section 7: Amazon Simple Storage Service (S3)__  
 110. Enforce Encryption with AWS KMS
@@ -65,11 +66,13 @@ __Section 7: Amazon Simple Storage Service (S3)__
 __Section 8: DNS, Caching and Performance Optimization__  
 127. Failover Routing Policy with ALB
 132. CloudFront Cache and Behavior Settings
-133. CloudFront SSL/TLS and SNI
+133. CloudFront SSL/TLS and SNI - Tags: multiple alternate url
+Extra 8.1 - CloudFront Path Bases Routing - Tags: path-based routing
+Extra 8.2 - Multi-tenanted Distribution  
 
 __Section 9: Block and File Storage__  
 145. Create and Attach an EBS Volume
-146. EBS Shapshots and AMIs
+146. EBS Snapshots and AMIs
 149. Create an Amazon EFS File System
 
 __Section 10: Docker Containers and ECS__  
@@ -110,4 +113,4 @@ __Section 15: Security in the Cloud__
 253. Encrypt and Decrypt Data with AWS KMS
 
 __Section 17: Web, Mobile, ML and Cost Management__  
-281. Process and Analyse Vidoes
+281. Process and Analyse Videos

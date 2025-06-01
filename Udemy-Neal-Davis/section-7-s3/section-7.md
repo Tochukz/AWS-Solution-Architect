@@ -31,5 +31,14 @@ __S3 Transfer Acceleration__
 __S3 Select__ and __Glacier Select__ are _SQL expressions_  that can be used to retrieve an object within a larger object.   
 For example, you can retrieve a single file from a zip archive using the SQL expression.
 
+## Amazon Glacier
+__Things to note__  
+* There is a charge if you delete data within 90 days –
+* Retrieved data is available for 24 hours by default (can be changed)
+* Amazon Glacier must complete a job before you can get its output
+* Glacier automatically encrypts data at rest using AES 256 symmetric keys and supports secure transfer of data over SSL
+* Retrieved data will not be encrypted if it was uploaded unencrypted
+* You do not need an MFA device to access the retrieved files
+
 ### Cheat Sheets  
 [Amazon S3 Cheat Sheet](https://digitalcloud.training/amazon-s3-and-glacier/)   
