@@ -39,10 +39,10 @@ Get the `EnvironmentURL` and `ElbUrl` from the stack outputs
 $ aws cloudformation describe-stacks --stack-name BeanStalkExtra --query "Stacks[0].Outputs" --no-cli-pager
 ```
 
-**Testing**
+**Testing**  
 Use the `EnvironmentURL` or `ElbUrl` on a browser to test the application.
 
-**Debug Errors**
+**Debug Errors**  
 In the case of error during deployment, in the main stack, checkout the stack events leading to the failure
 
 ```bash
@@ -51,7 +51,7 @@ $ aws cloudformation describe-stack-events --stack-name BeanStalkExtra
 
 And also, go to the CloudFormation console and checkout the Events of the underlying stack created by the Environment resource.
 
-**Cleanup**
+**Cleanup**  
 To delete the stack
 
 ```
