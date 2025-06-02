@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Permission and bucket policy
+
+Parameters:
+  RegularUser:
+    Type: String
+    Description: The name of the user to whom the identity policy will be attached.
+  AdminUser:
+    Type: String
+    Description: The name of the user to whom the resource policy applies
+
+Resources:
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: simple-bucket-02-06
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SimpleBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:user/${AdminUser}"
+            Action:
+              - s3:DeleteObject
+            Resource: !Sub "${SimpleBucket.Arn}/*"
+
+  UserBucketPermission:
+    Type: AWS::IAM::UserPolicy
+    Properties:
+      PolicyName: UserBucketPermission
+      UserName: !Ref RegularUser
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListAllMyBuckets
+              - s3:GetBucketLocation
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource: !Sub "${SimpleBucket.Arn}/*"

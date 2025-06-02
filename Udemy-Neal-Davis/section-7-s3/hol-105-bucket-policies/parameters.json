@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "RegularUser",
+    "ParameterValue": "matt"
+  },
+  {
+    "ParameterKey": "AdminUser",
+    "ParameterValue": "kelvin"
+  }
+]
