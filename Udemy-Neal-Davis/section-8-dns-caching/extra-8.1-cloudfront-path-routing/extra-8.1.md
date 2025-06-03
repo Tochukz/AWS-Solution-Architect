@@ -3,8 +3,7 @@
 ### Description
 
 This configuration demonstrates path-based routing for a CloudFront Distribution.  
-Here we have a main bucket that server as the default origin and a second bucket
-where request are routing to if the path matches `/site2/*`.
+Here we have a main bucket that server as the default origin and a second bucket where request are routing to if the path matches `/site2/*`.
 
 ### Operation
 

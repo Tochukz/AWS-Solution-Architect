@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Description: COnfigures path-based routing for CloudFront distribution
+
 Parameters:
   CertificateArn:
     Type: String
