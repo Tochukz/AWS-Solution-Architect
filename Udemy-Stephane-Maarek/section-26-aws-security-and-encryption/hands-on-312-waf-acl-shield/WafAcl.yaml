@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configures Web Application Firewall ACL
+
+Resources:
+  SimpleWebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: SimpleWebAcl
+      Scope: REGIONAL # Use CLOUDFRONT for as CloudFront Dist or Amplify
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: BlockSQLInjection
+      Rules:
