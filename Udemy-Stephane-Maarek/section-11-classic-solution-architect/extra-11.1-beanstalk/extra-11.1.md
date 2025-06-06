@@ -2,7 +2,7 @@
 
 ### Description
 
-This configuration is a variation of `hands-on-127`.
+This configuration is a variation of `hands-on-127-beanstalk`.
 It used `ConfigurationTemplate` for it's Beanstalk Environment resource.
 It also configures the use of _Elastic Load Balancer_ for the Beanstalk Environment.
 
