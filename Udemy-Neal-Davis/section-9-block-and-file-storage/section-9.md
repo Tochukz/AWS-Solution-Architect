@@ -19,6 +19,12 @@ __Amazon EBS Multi-Attach__
 __SSD EBS Volume Types__  
 ![ssd-ebs-volume-types](slides/ssd-ebs-volume-types.png)
 
+__Somethings about provisioned IOPS SSD__  
+* Provisioned IOPS SSD (io1, io2) allows you to specify a consistent IOPS rate when you create the volume,
+* Amazon EBS delivers within 10 percent of the provisioned IOPS performance 99.9 percent of the time over a given year.
+* Therefore you should expect to get 90% of your provisioned IOPS most of the year
+* That means if you provisioned 1000 IOPS then you expect to get 900 IOPS most of the year
+
 __HDD EBS Volume Types__  
 ![hdd-ebs-volume-types](slides/hdd-ebs-volume-types.png)
 
@@ -63,7 +69,7 @@ __Using RAID with EBS__
 
 ## Amazon Elastic File System (EFS)
 __Introduction__  
-* __Data consistency__ - write ooperations for Regional file system are durably stored across Availability Zones
+* __Data consistency__ - write operations for Regional file system are durably stored across Availability Zones
 * __File locking__ - NFS client applications can use NFS v4 file locking for read an write operations on EFS files
 * __Storage classes__ - there are three options:  
   - __EFS Standard__ - uses SSDs for low latency performance
@@ -71,10 +77,10 @@ __Introduction__
   - __EFS Archive__ - even cheaper for less active data (archival)
 * __Durability__ - all storage classes offer 11 9s of durability
 * __EFS Replication__ - data is replicated across Regions for disaster recovery purposes with RPO/RTO in the minutes
-* __Automatic Backups__ - EFS integratiions with AWS Backup Service for automatic file system backups
+* __Automatic Backups__ - EFS integrations with AWS Backup Service for automatic file system backups
 * __Performance options__ - there are two options:
   - __Provisioned throughput__ - Specify a level of throughput that the file system can drive independent of the file system's size
-  - __Bursting throughput__ - Throughput scales with the amount of storage and supports bursting ot higher levels
+  - __Bursting throughput__ - Throughput scales with the amount of storage and supports bursting to higher levels
 
 ## Amazon FSx
 __Introduction__  

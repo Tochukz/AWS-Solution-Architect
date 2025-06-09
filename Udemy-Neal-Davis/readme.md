@@ -30,6 +30,7 @@ Section | Title                                    | Pg
 ### Hand On Lab
 __Section 2: AWS Identity and Access Management (IAM)__  
 19. Access Evaluation Tool
+Extra-1.2 - Federated users Authentication
 
 __Section 3: Amazon Elastic Compute Cloud EC2__  
 27. Launching Amazon EC2 Instances
@@ -59,6 +60,7 @@ Extra 6.1 - Same Region VPC peering
 Extra 6.3 -  Transit Gateway VPC peering
 
 __Section 7: Amazon Simple Storage Service (S3)__  
+105. S3 Permissions and Bucket Policies
 110. Enforce Encryption with AWS KMS
 111. S3 Event Notification
 118. Cross Account Access
@@ -102,6 +104,7 @@ __Section 13: Deployment and Management__
 222. Create an Elastic Beanstalk Application
 225. SSM Automation and Config Rules
 228. Share a subnet Across Accounts
+Extra-13.1 - Create StackSet
 
 __Section 14: Monitoring, Logging and Auditing__  
 235. Create a Custom Metric and Alarm

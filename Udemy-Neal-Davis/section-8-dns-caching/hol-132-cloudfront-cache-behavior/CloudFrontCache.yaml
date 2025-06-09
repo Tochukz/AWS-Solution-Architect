@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Description: Configures Cache Behavior for two S3 buckets origins and one S3 website
+
 Mappings:
   Dev:
     Constants:

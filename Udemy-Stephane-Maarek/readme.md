@@ -28,12 +28,12 @@ Section | Pg  | Title
 20      | 496 | Serverless Solution Architect Discusion
 21      | 518 | Database in AWS
 22      | 533 | Data Analytics
-23      | 568 |Machine Learning
-24      | 584 |AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
-25      | 627 |Identity and Access Management (IAM) - Advanced
+23      | 568 | Machine Learning
+24      | 584 | AWS Monitoring and Audit: CloudWatch, CloudTrail & Config
+25      | 627 | Identity and Access Management (IAM) - Advanced
 26      | 655 | AWS Security and Encryption: KMS, SSM Parameter Store, Shield, WAF
 27      | 698 | Networking - VPC  
-28      | 774 |Disaster Recovery & Migrations
+28      | 774 | Disaster Recovery & Migrations
 29      | 800 | More Solution Architectures
 30      | 822 | Other Services
 31      | 849 | WhitePapers and Architectures - AWS Certified Solution Architect Associate
@@ -60,6 +60,7 @@ __Section 8: High Availability and Scalability - ELB & ASG__
 85 - Auto Scaling Group (ASG), manual scaling  
 87 - ASG with scaling policy, target scaling  
 Extra 8.1 - Scheduled Scaling Policy
+Extra 8.2 - ALB, SSL and SNI - Tags: Host-based routing
 
 __Section 9: AWS Fundamentals - RDS + Aurora + ElastiCache__  
 90 - Relational Database Service (RDS), regional and cross-region replication  
@@ -110,6 +111,7 @@ __Section 15: CloudFront and AWS Global Accelerator__
 166 - CloudFront with S3  
 170 - CloudFront - Cache Invalidation  
 172 - AWS Global Accelerator  
+Extra 15.1 - CloudFront Streaming
 
 __Section 16: AWS Storage Extras__  
 
@@ -130,7 +132,7 @@ __Section 18: Containers on AWS: ECS, Fargate, ECR & EKS__
 __Section 19: Serverless Overview from Solution Architect Perspective__  
 216 - Lambda  
 225 - Amazon DynamoDB  
-228 - API Gateway  - HTTP API  
+228 - API Gateway - HTTP API - Tags: Path-bases routing
 Extra 19.1 - API Gateway - Rest API  
 
 __Section 20: Serverless Solution Architect Discusion__
@@ -162,7 +164,7 @@ __Section 26: AWS Security and Encryption__
 __Section 27: Networking - VPC__  
 321 - VPC
 323 - Subnets
-325 - Internet Gatewate and Route Table
+325 - Internet Gateway and Route Table
 327 - Bastion Host
 329 - NAT Instance
 331 - NAT Gateway

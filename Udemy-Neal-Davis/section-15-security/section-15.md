@@ -1,4 +1,44 @@
 # Section 15: Security in the Cloud
+## AWS Directory Service
+A Directory is a database of user accounts and credentials which can be used for authentication and authorization.  
+AWS provides three type for Active Directory resource
+1. AWS Managed Microsoft AD
+2. AD Connector
+3. Simple AD
+
+__AWS Managed Microsoft AD__  
+* Managed implementation of _Microsoft Active Directory_ running on Windows Server
+* Fully managed AWS service
+* Best choice if you have more than 5000 users and/or need a trust relationship setup
+* Can perform schema extensions
+* Can setup trust relationships with on-premise Active Directories:
+  - On-premise users and groups can access resources in either domain using SSO
+  - Required a VPN or Direct Connect connection
+* Can be used ass a standalone AD in the AWS Cloud
+
+__AD Connector__  
+* Redirects directory requests to your on-premise Active Directory
+* Best choice when you want to use an existing Active Directory with AWS Services
+* AD Connector comes in two sizes:
+  - Small - designed for organizations up to 500 users
+  - Large - designed for organizations up to 5,000 users
+* Requires a VPC or Direct Connect connection
+* Join EC2 instances to your on-premise AD through AD Connector
+* Login to the AWS Management Console using your on-premise AD DCs for authentication
+
+__Simple AD__  
+* Inexpensive Active Directory-compatible service with common directory features
+* Standalone, fully managed, directory on the AWS cloud
+* Simple AD is generally the least expensive option
+* Best choice for less than 5,000 users and don't need advances AD features
+* Features includes
+  - Managed user accounts / groups
+  - Apply group policies
+  - Kerberos-based SSO
+  - Support joining Linux or Windows bases EC2 instances
+
+
+
 ## AWS Key Management Service (KMS)
 __Introduction__  
 * Create and managed symmetric and asymmetric encryption keys
