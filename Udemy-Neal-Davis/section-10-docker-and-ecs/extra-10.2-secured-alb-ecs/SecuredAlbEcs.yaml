@@ -18,6 +18,17 @@ Parameters:
     Default: NginxContainer
     AllowedValues:
       - NginxContainer
+  HostedZoneName:
+    Type: String
+    Description: The name of the hosted zone for the DNS record
+    Default: goodguys.click
+  SubdomainName:
+    Type: String
+    Description: The subdomain for the ALB custom domain
+    Default: alb.goodguys.click
+  CertificateArn:
+    Type: String
+    Description: ARN of an ACM certificate
 
 Resources:
   Cluster:
@@ -132,6 +143,11 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+        - Description: Allow HTTPS access
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
 
   EcsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -144,7 +160,6 @@ Resources:
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          # CidrIp: 0.0.0.0/0
           SourceSecurityGroupId: !Ref AlbSecurityGroup
 
   AppLoadBalancer:
@@ -172,12 +187,31 @@ Resources:
   AlbListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref AppLoadBalancer
       Port: 80
       Protocol: HTTP
       DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      LoadBalancerArn: !Ref AppLoadBalancer
+
+  AlbHttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref AlbTargetGroup
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06 #See more here https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html
 
   ContainerService:
     Type: AWS::ECS::Service
@@ -187,7 +221,7 @@ Resources:
       Cluster: !GetAtt Cluster.Arn
       TaskDefinition: !Ref TaskDefinition
       AvailabilityZoneRebalancing: ENABLED
-      DesiredCount: 2
+      DesiredCount: 1
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
@@ -201,18 +235,21 @@ Resources:
         - ContainerName: !Ref ContainerName
           ContainerPort: 80
           TargetGroupArn: !Ref AlbTargetGroup
-# Outputs:
-#   ClusterArn:
-#     Description: The ARN of the cluster
-#     Value: !GetAtt Cluster.Arn
-#   TaskDefinitionArn:
-#     Description: The ARN of the TaskDefinition
-#     Value: !Ref TaskDefinition
-#   SecurityGroupId:
-#     Description: Group Id of the security group
-#     Value: !Ref EcsSecurityGroup
+
+  DnsAlias:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref SubdomainName
+      HostedZoneName: !Sub "${HostedZoneName}."
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt AppLoadBalancer.DNSName
+        HostedZoneId: !GetAtt AppLoadBalancer.CanonicalHostedZoneID
 
 Outputs:
   AlbDnsName:
     Description: DNS Name of the ALB
     Value: !GetAtt AppLoadBalancer.DNSName
+  CustomDns:
+    Description: DNS Name of the ALB
+    Value: !Sub https://${SubdomainName}

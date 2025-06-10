@@ -82,6 +82,7 @@ __Section 10: Docker Containers and ECS__
 163. Amazon Elastic Container Registry (ECR)
 164. AWS App Runner
 Extra 10.1 - ECS Service with Application Load Balancer
+Extra 10.2 - Secured ALB and ECS
 
 __Section 11: Serverless Applications__  
 171. Create Function to Resize Instance
