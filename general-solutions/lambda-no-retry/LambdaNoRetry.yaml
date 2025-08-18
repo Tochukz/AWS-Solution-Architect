@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Testing if event bridge will retry a failed or timed out Lambda function.
+
+Parameters:
+  Email:
+    Type: String
+    Description: Email address to subscribe to the SNS topic for Lambda function failure notifications.
+
+Resources:
+  FailureTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: LambdaFailureTopic
+
+  FailureQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: LambdaFailureQueue
+      MessageRetentionPeriod: 1209600 # 14 Days
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/TestFunc
+      RetentionInDays: 14
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaSqsSnsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowPublishToTopic
+                Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref FailureTopic
+              - Sid: AllowSendToQueue
+                Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt FailureQueue.Arn
+
+  TestFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: TestFunc # DataPreparationFunc
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs20.x
+      Timeout: 60 # 1 minutes
+      DeadLetterConfig: # Dead letter Config give you details only about the EventBridge event and nothing about the Lambda context or error
+        TargetArn: !Ref FailureTopic
+      Code:
+        ZipFile: |
+          const handler = async (event) => {
+            console.log("Runing at", new Date().toISOString());
+            const date = new Date().toISOString();
+            throw new Error(`Errored at ${date.substring(11, 19)}`);
+          };
+          exports.handler = handler;
+
+  SubscriptionEmail:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref FailureTopic
+      Protocol: email
+      Endpoint: !Ref Email
+
+  FuncDestination: # Lambda Destination give you details about the EventBridge event and the lambda function context and error
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      Qualifier: "$LATEST"
+      FunctionName: !Ref TestFunc
+      MaximumRetryAttempts: 0
+      DestinationConfig:
+        OnFailure:
+          Destination: !GetAtt FailureQueue.Arn
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: DailyTrigger
+      Description: Invoke the TestFunc at set time every day
+      ScheduleExpression: "cron(33 7 * * ? *)" #  # 7:33 UTC every day i.e 9:33 SA Time since SA is UTC+2
+      State: ENABLED
+      Targets:
+        - Id: TestFunc
+          Arn: !GetAtt TestFunc.Arn
+          RetryPolicy:
+            MaximumRetryAttempts: 0
+
+  TestFuncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TestFunc
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventBridgeRule.Arn

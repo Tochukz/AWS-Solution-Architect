@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-08-18T07:33:04.996Z",
+  "requestContext": {
+    "requestId": "aef4850b-cfee-4b3d-9829-e4e2accbec5f",
+    "functionArn": "arn:aws:lambda:eu-west-2:<account-id>:function:TestFunc:$LATEST",
+    "condition": "RetriesExhausted",
+    "approximateInvokeCount": 1
+  },
+  "requestPayload": {
+    "version": "0",
+    "id": "706bc7cc-8a82-44f1-63ef-9160d25d54f8",
+    "detail-type": "Scheduled Event",
+    "source": "aws.events",
+    "account": "<account-id>",
+    "time": "2025-08-18T07:33:00Z",
+    "region": "eu-west-2",
+    "resources": ["arn:aws:events:eu-west-2:<account-id>:rule/DailyTrigger"],
+    "detail": {}
+  },
+  "responseContext": {
+    "statusCode": 200,
+    "executedVersion": "$LATEST",
+    "functionError": "Unhandled"
+  },
+  "responsePayload": {
+    "errorType": "Error",
+    "errorMessage": "Errored at 07:33:04",
+    "trace": [
+      "Error: Errored at 07:33:04",
+      "    at Runtime.handler (/var/task/index.js:4:9)",
+      "    at Runtime.handleOnceNonStreaming (file:///var/runtime/index.mjs:1206:29)"
+    ]
+  }
+}

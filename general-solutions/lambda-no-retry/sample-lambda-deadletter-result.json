@@ -1,0 +1,11 @@
+{
+  "version": "0",
+  "id": "706bc7cc-8a82-44f1-63ef-9160d25d54f8",
+  "detail-type": "Scheduled Event",
+  "source": "aws.events",
+  "account": "<account-id>",
+  "time": "2025-08-18T07:33:00Z",
+  "region": "eu-west-2",
+  "resources": ["arn:aws:events:eu-west-2:<account-id>:rule/DailyTrigger"],
+  "detail": {}
+}
