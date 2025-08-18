@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Testing if event bridge will retry a failed or timed out Lambda function.
+
+Parameters:
+  Email:
+    Type: String
+    Description: Email address to subscribe to the SNS topic for Lambda function failure notifications.
+
+Resources:
+  FailureTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: FuncFailureTopic
+
+  FailureQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: FuncFailureQueue
+      MessageRetentionPeriod: 1209600 # 14 Days
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref FailureQueue
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt FailureQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref FailureTopic
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref FailureTopic
+      Protocol: email
+      Endpoint: !Ref Email
+
+  QueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref FailureTopic
+      Protocol: sqs
+      Endpoint: !GetAtt FailureQueue.Arn
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/DemoFunc
+      RetentionInDays: 14
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: FuncRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaSnsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowPublishToTopic
+                Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref FailureTopic
+
+  DemoFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: DemoFunc # DataPreparationFunc
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs20.x
+      Timeout: 60 # 1 minutes
+      Code:
+        ZipFile: |
+          const handler = async (event) => {
+            console.log("Runing at", new Date().toISOString());
+            const date = new Date().toISOString();
+            throw new Error(`Errored at ${date.substring(11, 19)}`);
+          };
+          exports.handler = handler;
+
+  FuncDestination:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      Qualifier: "$LATEST"
+      FunctionName: !Ref DemoFunc
+      MaximumRetryAttempts: 0
+      DestinationConfig:
+        OnFailure:
+          Destination: !Ref FailureTopic
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: DailyTrigger2
+      Description: Invoke the DemoFunc at set time every day
+      ScheduleExpression: "cron(8 9 * * ? *)" #  # 9:08 UTC every day i.e 11:08 SA Time since SA is UTC+2
+      State: ENABLED
+      Targets:
+        - Id: DemoFunc
+          Arn: !GetAtt DemoFunc.Arn
+          RetryPolicy:
+            MaximumRetryAttempts: 0
+
+  DemoFuncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DemoFunc
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventBridgeRule.Arn
