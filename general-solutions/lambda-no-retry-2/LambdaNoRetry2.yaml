@@ -28,7 +28,8 @@ Resources:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
-            Principal: "*"
+            Principal:
+              Service: sns.amazonaws.com
             Action:
               - sqs:SendMessage
             Resource: !GetAtt FailureQueue.Arn
@@ -112,7 +113,7 @@ Resources:
     Properties:
       Name: DailyTrigger2
       Description: Invoke the DemoFunc at set time every day
-      ScheduleExpression: "cron(8 9 * * ? *)" #  # 9:08 UTC every day i.e 11:08 SA Time since SA is UTC+2
+      ScheduleExpression: "cron(26 12 * * ? *)" #  # 9:08 UTC every day i.e 11:08 SA Time since SA is UTC+2
       State: ENABLED
       Targets:
         - Id: DemoFunc

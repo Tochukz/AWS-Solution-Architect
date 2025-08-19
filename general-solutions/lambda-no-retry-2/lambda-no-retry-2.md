@@ -1,6 +1,6 @@
 # Lambda Retry
 
-## Testing Lambda Retry by Event Bridge
+## Disabled Invocation Lambda Retry by Event Bridge
 
 ## Requirement
 
