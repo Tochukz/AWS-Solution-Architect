@@ -55,11 +55,11 @@ Resources:
       GroupDescription: Security group for Redis Cluster
       VpcId: !Ref VpcId
       SecurityGroupIngress:
-        - IpProtocol: tcp
+        - Description: Allow TCP connections from Ec2SecurityGroup
+          IpProtocol: tcp
           FromPort: 6379
           ToPort: 6379
-          CidrIp: 0.0.0.0/0
-          # SourceSecurityGroupId: !Ref Ec2SecurityGroup
+          SourceSecurityGroupId: !Ref Ec2SecurityGroup
 
   # CacheCluster:
   #   Type: AWS::ElastiCache::CacheCluster
@@ -90,7 +90,7 @@ Resources:
       CacheSubnetGroupName: !Ref RedisSubnetGroup
       SecurityGroupIds:
         - !Ref RedisSecurityGroup
-      TransitEncryptionEnabled: true
+      TransitEncryptionEnabled: false
       AtRestEncryptionEnabled: true
 
   Ec2Instance:
@@ -122,6 +122,12 @@ Outputs:
   PrimaryPort:
     Description: Redis primary port
     Value: !GetAtt RedisCluster.PrimaryEndPoint.Port
+  ReaderEndpoint:
+    Description: Redis read endpoint
+    Value: !GetAtt RedisCluster.ReaderEndPoint.Address
+  ReaderPort:
+    Description: Redis read endpoint port
+    Value: !GetAtt RedisCluster.ReaderEndPoint.Port
   PublicIp:
     Description: Public IP of the EC2 instance
     Value: !GetAtt Ec2Instance.PublicIp

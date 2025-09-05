@@ -1,0 +1,14 @@
+Resources:
+  # 1. Using Fn::Sub in conjunction with Fn::ImportValue (Method 1)
+  ResourceName1:
+    Type: AWS::Service::Type
+    Properties:
+      Prop1: !Sub
+        - "s3://${Placeholder}"
+        - Placeholder: !ImportValue ExternalOutput
+
+  # 2. Using Fn::Sub in conjunction with Fn::ImportValue (Method 2)
+  ResourceName2:
+    Type: AWS::Service::Type
+    Properties:
+      Prop1: !Sub ["s3://${Placeholder}", {Placeholder: !ImportValue ExternalOutput}]

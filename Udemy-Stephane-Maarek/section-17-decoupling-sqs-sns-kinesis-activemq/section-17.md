@@ -71,9 +71,24 @@ __Introduction__
 * Amazon MQ does not scale as much as SQS/SNS
 * Amazon MQ runs on servers, can run in Multi-AZ with failover
 * Amazon MQ has both queue feature (like SQS) and topic features (like SNS)
-### Hands on
-185: SQS - Standard Queue   
-188: SQS - Fifo Queue  
-192: Standard SNS Topic  
-194: Kinesis Data Stream  
-196: Amazon Firehose Stream  
+
+### Kinesis Data Stream vs FireHose vs Analystics
+#### Ingestion
+* Kinesis Data Stream can ingest data from source
+* Kinesis Data Firehose can ingest data from source
+* Kinesis Data Analytics cannot directly ingest data from source. It ingest data either from Kinesis Data Stream or Kinesis Data Firehose.
+
+#### Output
+* Kinesis Data Stream cannot directly write the output to Amazon S3
+* Kinesis Data Firehose can directly write output to S3, RedShift, OpenSearch, Splunk, Custom endpoint but _NOT DynamoDB_
+* Kinesis Data Analytics can send processed data to output
+
+#### Integration or with other AWS Services
+* Kinesis Data Stream does not offer a ready-made integration via an intermediary AWS Lambda function. You will need to do a lot of custom coding to get it.
+* Kinesis Data Firehose have native integration to other AWS services like Lambda
+* Kinesis Data Analytics...
+
+#### Maintenance
+* Kinesis Data Stream required administration such as provisioning sharding and manully scalling then when needed.  
+* Kinesis Data Firehose is fully mananged service and automatically scales, no administration needed
+* Kinesis Data Analytics...

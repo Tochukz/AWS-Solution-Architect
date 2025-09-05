@@ -61,8 +61,10 @@ Extra 6.3 -  Transit Gateway VPC peering
 
 __Section 7: Amazon Simple Storage Service (S3)__  
 105. S3 Permissions and Bucket Policies
+107. Cross Account Replication
 110. Enforce Encryption with AWS KMS
 111. S3 Event Notification
+112. Presigned URL
 118. Cross Account Access
 
 __Section 8: DNS, Caching and Performance Optimization__  

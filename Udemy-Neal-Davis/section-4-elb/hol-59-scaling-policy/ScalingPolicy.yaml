@@ -182,7 +182,7 @@ Resources:
       MaxSize: 3
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
-        Version: !GettAtt LaunchTemplate.LatestVersionNumber  
+        Version: !GettAtt LaunchTemplate.LatestVersionNumber
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
@@ -212,7 +212,7 @@ Resources:
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
-          PredefinedMetricType: ALBRequestCountPerTarget
+          PredefinedMetricType: ALBRequestCountPerTarget # ASGAverageCPUUtilization | ASGAverageNetworkIn | ASGAverageNetworkOut | ALBRequestCountPerTarget
           ResourceLabel: !Sub "${AppLoadBalancer.LoadBalancerFullName}/${TargetGroup.TargetGroupFullName}"
         TargetValue: 50 # Will auto scale if 50 connection per target is reached.
     DependsOn: [AppLoadBalancer, TargetGroup]

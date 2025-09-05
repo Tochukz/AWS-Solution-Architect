@@ -12,8 +12,11 @@ Mappings:
   Dev:
     Constants:
       OriginId: SimpleS3Bucket
-    Policies: # To see other manages cache policies, go to CloudFront console > Policies > Cache
-      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6
+    ManagedPolicies:
+      CachingDisabled: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # This policy disables caching. This policy is useful for dynamic content and for requests that are not cacheable.
+      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6 # This policy is designed to optimize cache efficiency by minimizing the values that CloudFront includes in the cache key.
+      # To see other manages cache policies, go to CloudFront console > Policies > Cache, see list under "Managed policies"
+      # Or visit https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
 
 Resources:
   OriginBucket:
@@ -63,7 +66,7 @@ Resources:
         DefaultCacheBehavior:
           TargetOriginId: !FindInMap [Dev, Constants, OriginId]
           ViewerProtocolPolicy: redirect-to-https
-          CachePolicyId: !FindInMap [Dev, Policies, CachingOptimized]
+          CachePolicyId: !FindInMap [Dev, ManagedPolicies, CachingOptimized]
           AllowedMethods:
             - GET
             - HEAD

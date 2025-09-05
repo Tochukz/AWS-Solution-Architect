@@ -5,8 +5,7 @@
 This configuration creates a Customer Managed KMS key.  
 We then use the Key to encrypt and decrypt a file.
 
-You can use symmetric encryption KMS keys to encrypt and decrypt small amounts of data,
-but they are more commonly used to generate data keys and data key pairs.
+You can use symmetric encryption KMS keys to encrypt and decrypt small amounts of data, but they are more commonly used to generate data keys and data key pairs.
 
 ### Operation
 

@@ -82,7 +82,7 @@ __Section 11: Classic Solution Architect__
 122 - WhatsTheTime.com  
 123 - MyClothes.com  
 124 - MyWordPress.com  
-127 - Beanstalk Hands On    
+128 - Beanstalk Hands On    
 Extra 11.1 -  Beanstalk Hands On with Variation
 
 __Section 12: Amazon S3 Introduction__  
@@ -97,6 +97,7 @@ __Section 13: Advanced Amazon S3__
 143 - S3 Life Cycle Rule
 146 - S3 Event Notifications
 Extra 13.1 - S3 Transfer Acceleration
+Extra 13.2 - Object Lock and Retention Configuration
 
 __Section 14: Amazon S3 Security__  
 152 - S3 Encryption  
@@ -118,7 +119,7 @@ __Section 16: AWS Storage Extras__
 __Section 17: Decoupling applications: SQS, SNS, Kinesis, Active MQ__  
 185 - SQS - Standard Queue  
 188 - SQS - Fifo Queue  
-192 - SNS  
+192 - Standard SNS Topic  
 194 - Amazon Kinesis Data Stream  
 196 - Amazon Data FireHose  
 

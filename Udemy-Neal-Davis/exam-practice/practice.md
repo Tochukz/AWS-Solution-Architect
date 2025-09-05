@@ -8,12 +8,10 @@ Set 2: Practice Question only     | 102
 Set 2: Plus Answers & Explanations| 135
 
 
-__Set 1__
-
-Set   | Attemp 1 | Attemp 2
-------|----------|---------
-Set 1 |   64%    |
-Set 2 |   67%    |
+Set   | Attempt 1 | Attempt 2
+------|-----------|---------
+Set 1 |   64%     |
+Set 2 |   67%     |
 
 __Calculating Score__  
 To calculate your total score, sum up the number of correct answers and multiply them by 1.54 (weighting out of 100%) to get your percentage score out of 100%.  

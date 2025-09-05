@@ -2,9 +2,8 @@
 
 ### Description
 
-This template extends hands-on-85 which configures an Auto Scaling Group that manages the number of EC2 instances in
-the target group of an Application Load Balancer.  
-Here we have added a Dynamoic Scaling Policy that uses CPU Utilization as a metric to scale in or out as needed.
+This template extends `hands-on-85` which configures an Auto Scaling Group that manages the number of EC2 instances in the target group of an Application Load Balancer.  
+Here we have added a Dynamic Scaling Policy that uses `CPUUtilization` as a metric to scale in or out as needed.
 
 ### Operation
 
