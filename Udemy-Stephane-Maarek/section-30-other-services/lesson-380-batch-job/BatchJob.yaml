@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: AWS Batch with Fargate Example
+
+Parameters:
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of existing subnet Ids
+  EcrImageUrl:
+    Type: String
+    Description: ECR Image for the Container Application
+
+Resources:
+  JobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  BatchExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  BatchServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: batch.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+
+  BatchSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BatchSecurityGroup
+      GroupDescription: Security group for AWS Batch compute
+      SecurityGroupIngress: []
+
+  ComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      ComputeEnvironmentName: SimpleFargateEnv
+      Type: MANAGED
+      State: ENABLED
+      ServiceRole: !GetAtt BatchServiceRole.Arn
+      ComputeResources:
+        Type: FARGATE
+        MaxvCpus: 256
+        Subnets: !Ref SubnetIds
+        SecurityGroupIds:
+          - !GetAtt BatchSecurityGroup.GroupId
+
+  BatchJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      JobQueueName: SimpleBatchQueue
+      # JobQueueType: ECS_FARGATE # EKS | ECS | ECS_FARGATE | SAGEMAKER_TRAINING  AWS Batch automatically determines the type based on compute environment
+      Priority: 1
+      State: ENABLED
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref ComputeEnvironment
+
+  BatchJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      JobDefinitionName: SimpleBatchJob
+      Type: container
+      PlatformCapabilities:
+        - FARGATE
+      Timeout:
+        AttemptDurationSeconds: 600
+      ContainerProperties:
+        Image: !Ref EcrImageUrl
+        ResourceRequirements:
+          - Type: VCPU
+            Value: 1
+          - Type: MEMORY
+            Value: 2048
+        Command: ["node", "job.js"]
+        ExecutionRoleArn: !GetAtt BatchExecutionRole.Arn
+        JobRoleArn: !GetAtt JobRole.Arn
+        Environment:
+          - Name: NODE_ENV
+            Value: development
+          - Name: AWS_REGION
+            Value: !Ref AWS::Region
+        NetworkConfiguration:
+          AssignPublicIp: ENABLED
+        FargatePlatformConfiguration:
+          PlatformVersion: LATEST
