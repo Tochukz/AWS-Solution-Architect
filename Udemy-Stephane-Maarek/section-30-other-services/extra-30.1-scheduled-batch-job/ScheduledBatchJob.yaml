@@ -140,12 +140,21 @@ Resources:
     Properties:
       Name: DailyJobEvent1
       Description: Send a job to the job queue every day
-      ScheduleExpression: "cron(25 2 * * ? *)" # every day at 2:25 UTC
+      ScheduleExpression: "cron(25 14 * * ? *)" # every day at 14:25 UTC
       State: ENABLED
       Targets:
         - Arn: !Ref BatchJobQueue
           Id: BatchJobTarget
           RoleArn: !GetAtt EventBridgeRole.Arn
+          Input: |
+            {
+              "ContainerOverrides": {
+                "Command": ["node", "job.js", "arg1", "arg2", "arg3"],
+                "Environment": [
+                  {"Name": "JOB_FUNCTION", "Value": "func1"}
+                ]
+              }
+            }
           RetryPolicy:
             MaximumRetryAttempts: 0
           # DeadLetterConfig:
@@ -160,12 +169,21 @@ Resources:
     Properties:
       Name: DailyJobEvent2
       Description: Send a job to the job queue every day with unique job names
-      ScheduleExpression: "cron(26 2 * * ? *)" # every day at 2:26 UTC
+      ScheduleExpression: "cron(26 14 * * ? *)" # every day at 14:26 UTC
       State: ENABLED
       Targets:
         - Id: BatchJobTarget
           Arn: !Ref BatchJobQueue
           RoleArn: !GetAtt EventBridgeRole.Arn
+          Input: |
+            {
+              "ContainerOverrides": {
+                "Command": ["node", "job.js", "param1", "param2"],
+                "Environment": [
+                  {"Name": "JOB_FUNCTION", "Value": "funcX"}
+                ]
+              }
+            }
           BatchParameters:
             JobDefinition: !Ref BatchJobDefinition
             JobName: DailyBatchJobX
