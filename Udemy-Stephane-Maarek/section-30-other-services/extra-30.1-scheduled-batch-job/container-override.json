@@ -1,0 +1,4 @@
+{
+  "command": ["node", "job.js", "inputArg1", "inputArg2"],
+  "environment": [{ "name": "JOB_FUNCTION", "value": "funcX" }]
+}

@@ -56,6 +56,12 @@ $ aws cloudformation deploy --template-file ScheduledBatchJob.yaml  --stack-name
 
 3. Go to the AWS Batch Console > Dashboard, to see the Jobs that have been run and their status.
 
+4. If you need to trigger the Job manually
+
+```bash
+$ aws batch submit-job  --job-queue SimpleBatchQueue --job-definition SimpleBatchJob --job-name test-job-x --container-overrides file://container-override.json
+```
+
 **Debug Errors**  
  In the case of error during deployment, checkout the stack events
 
