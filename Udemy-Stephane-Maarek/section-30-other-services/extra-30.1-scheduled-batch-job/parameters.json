@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "SubnetIds",
+    "ParameterValue": "subnet-xxxxx,subnet-yyyy"
+  },
+  {
+    "ParameterKey": "EcrImageUrl",
+    "ParameterValue": "<account-id>.dkr.ecr.eu-west-2.amazonaws.com/nestjs-repos:job-code"
+  }
+]
