@@ -1,0 +1,282 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Event Based Batch Job with Fargate
+
+Parameters:
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of existing subnet Ids
+  EcrImageUrl:
+    Type: String
+    Description: ECR Image for the Container Application
+
+Resources:
+  SimpleQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: simple-queue-1009
+
+  SimpleDlQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: simple-dlq-1009
+
+  JobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SQSAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt SimpleQueue.Arn
+
+  BatchExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  BatchServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: batch.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+
+  BatchSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BatchSecurityGroup
+      GroupDescription: Security group for AWS Batch compute
+      SecurityGroupIngress: []
+
+  ComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      ComputeEnvironmentName: SimpleFargateEnv
+      Type: MANAGED
+      State: ENABLED
+      ServiceRole: !GetAtt BatchServiceRole.Arn
+      ComputeResources:
+        Type: FARGATE
+        MaxvCpus: 256
+        Subnets: !Ref SubnetIds
+        SecurityGroupIds:
+          - !GetAtt BatchSecurityGroup.GroupId
+
+  BatchJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      JobQueueName: SimpleBatchQueue
+      # JobQueueType: ECS_FARGATE # EKS | ECS | ECS_FARGATE | SAGEMAKER_TRAINING  AWS Batch automatically determines the type based on compute environment
+      Priority: 1
+      State: ENABLED
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref ComputeEnvironment
+
+  BatchJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      JobDefinitionName: SimpleBatchJob
+      Type: container
+      PlatformCapabilities:
+        - FARGATE
+      Timeout:
+        AttemptDurationSeconds: 600
+      ContainerProperties:
+        Image: !Ref EcrImageUrl
+        ResourceRequirements:
+          - Type: VCPU
+            Value: 1
+          - Type: MEMORY
+            Value: 2048
+        Command: ["node", "job.js"]
+        ExecutionRoleArn: !GetAtt BatchExecutionRole.Arn
+        JobRoleArn: !GetAtt JobRole.Arn
+        Environment:
+          - Name: NODE_ENV
+            Value: development
+          - Name: AWS_REGION
+            Value: !Ref AWS::Region
+          - Name: QUEUE_URL
+            Value: !Ref SimpleQueue
+        NetworkConfiguration:
+          AssignPublicIp: ENABLED
+        FargatePlatformConfiguration:
+          PlatformVersion: LATEST
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/trail/trail-logs
+      RetentionInDays: 7
+
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: simple-bucket-1009
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SimpleBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowGetAcl
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt SimpleBucket.Arn
+          - Sid: AllowPutObject
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub ${SimpleBucket.Arn}/*
+
+  CloudTrailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudtrail.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudTrailLogging
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt LogGroup.Arn
+              # - Effect: Allow
+              #   Action:
+              #     - s3:GetBucketAcl
+              #   Resource: !GetAtt SimpleBucket.Arn
+              # - Effect: Allow
+              #   Action:
+              #     - s3:PutObject
+              #     - s3:GetBucketAcl
+              #   Resource: !Sub ${SimpleBucket.Arn}/*
+
+  SqsDataTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: SqsDataTrail
+      IsLogging: True
+      CloudWatchLogsLogGroupArn: !GetAtt LogGroup.Arn
+      CloudWatchLogsRoleArn: !GetAtt CloudTrailRole.Arn
+      S3BucketName: !Ref SimpleBucket
+      S3KeyPrefix: cloudtrail-logs
+      AdvancedEventSelectors:
+        - Name: SqsSendMessage
+          FieldSelectors:
+            - Field: eventCategory
+              Equals: [Data]
+            - Field: eventSource
+              Equals: ["sqs.amazonaws.com"]
+            - Field: eventName
+              Equals: [SendMessage]
+            - Field: "resources.type"
+              Equals: ["AWS::SQS::Queue"]
+            - Field: "resources.ARN"
+              Equals: [!GetAtt SimpleQueue.Arn]
+
+  EventBridgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BatchSubmitAndSendMessage
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: batch:SubmitJob
+                Resource:
+                  - !Ref BatchJobQueue
+                  - !Ref BatchJobDefinition
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt SimpleDlQueue.Arn
+
+  SqsEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SqsEventRule
+      Description: Start Batch Job on SQS Message
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.cloudtrail
+        detail-type:
+          - "AWS API Call via CloudTrail"
+        detail:
+          eventSource:
+            - sqs.amazonaws.com
+          eventName:
+            - SendMessage
+          eventCategory:
+            - Data
+          resources:
+            ARN:
+              - !GetAtt SimpleQueue.Arn
+          # requestParameters:
+          #   queueUrl:
+          #     - !Ref SimpleQueue
+      Targets:
+        - Arn: !Ref BatchJobQueue
+          Id: BatchJobTarget
+          RoleArn: !GetAtt EventBridgeRole.Arn
+          RetryPolicy:
+            MaximumRetryAttempts: 3
+          DeadLetterConfig:
+            Arn: !GetAtt SimpleDlQueue.Arn
+          BatchParameters:
+            JobDefinition: !Ref BatchJobDefinition
+            JobName: DailyBatchJob
+            # RetryStrategy: {}
