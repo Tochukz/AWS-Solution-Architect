@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Scheduled start/stop of RDS instance using EventBridge + Lambda
+
+Parameters:
+  RdsInstanceIdentifier:
+    Type: String
+    Default: mydbinstance
+    Description: Name of the RDS instance to start/stop
+
+Resources:
+  LambdRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: RDSControlPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:StartDBInstance
+                  - rds:StopDBInstance
+                Resource: "*"
+
+  StartRdsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: StartRDSInstance
+      Runtime: python3.11
+      Handler: index.handler
+      Role: !GetAtt LambdRole.Arn
+      Code:
+        ZipFile: |
+          import boto3, os
+          def handler(event, context):
+              rds = boto3.client('rds')
+              db_id = os.environ['DB_ID']
+              rds.start_db_instance(DBInstanceIdentifier=db_id)
+              print(f"Started RDS instance {db_id}")
+      Environment:
+        Variables:
+          DB_ID: !Ref RdsInstanceIdentifier
+      Timeout: 60
+
+  StopRdsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: StopRDSInstance
+      Runtime: python3.11
+      Handler: index.handler
+      Role: !GetAtt LambdRole.Arn
+      Code:
+        ZipFile: |
+          import boto3, os
+          def handler(event, context):
+              rds = boto3.client('rds')
+              db_id = os.environ['DB_ID']
+              rds.stop_db_instance(DBInstanceIdentifier=db_id)
+              print(f"Stopped RDS instance {db_id}")
+      Environment:
+        Variables:
+          DB_ID: !Ref RdsInstanceIdentifier
+      Timeout: 60
+
+  StartRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: StartRdsAt9AM
+      ScheduleExpression: "cron(14 7 * * ? *)" # 7:05 AM UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt StartRdsLambda.Arn
+          Id: StartTarget
+
+  StartLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StartRdsLambda
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt StartRule.Arn
+
+  StopRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: StopRdsAt11PM
+      ScheduleExpression: "cron(0 23 * * ? *)" # 11 PM UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt StopRdsLambda.Arn
+          Id: StopTarget
+
+  StopLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StopRdsLambda
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt StopRule.Arn
