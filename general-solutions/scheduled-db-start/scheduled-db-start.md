@@ -1,6 +1,4 @@
-# Lambda Workspace
-
-## For testing source code on Lambda
+# Scheduled RDS Instance Start/Stop
 
 ## Requirement
 
