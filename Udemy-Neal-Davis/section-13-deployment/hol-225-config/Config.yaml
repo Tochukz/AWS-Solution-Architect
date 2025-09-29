@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create Config Rule and SSM Automation Remidation for Security Groups
+
+Resources:
+  SsmRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SsmConfigRemediationRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+      Policies:
+        - PolicyName: SsmConfigRemediationPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: RevokeSgIngress
+                Effect: Allow
+                Action:
+                  - ec2:RevokeSecurityGroupIngress
+                Resource: "*"
+
+  ConfigRule:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: vpc-sg-open-only-to-authorized-ports
+      Description: Checks if security groups are open to all IP addresses
+      Source:
+        Owner: AWS
+        SourceIdentifier: VPC_SG_OPEN_ONLY_TO_AUTHORIZED_PORTS # See run here: https://docs.aws.amazon.com/config/latest/developerguide/vpc-sg-open-only-to-authorized-ports.html
+      InputParameters:
+        authorizedTcpPorts: "80,443"
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::EC2::SecurityGroup
+
+  SSMDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      Name: RemoveInsecureIngress
+      DocumentType: "Automation"
+      Content:
+        schemaVersion: "0.3"
+        description: "Remediation for Security Groups open to the internet"
+        assumeRole: !GetAtt SsmRole.Arn
+        mainSteps:
+          - action: aws:invokeLambdaFunction
+            name: "InvokeLambdaFunction"
+            inputs:
+              FunctionName: !Ref LambdaFunction
+              Payload:
+                SecurityGroupId: "{{ SecurityGroupId }}"
+                PortRange: "{{ PortRange }}"
+                Protocols: "{{ Protocols }}"
+# List of AWS Config Managed Rules
+# https://docs.aws.amazon.com/config/latest/developerguide/managed-rules-by-aws-config.html
