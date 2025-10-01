@@ -39,3 +39,17 @@ $ ffmpeg -i input.mp4 -c copy -map 0 -segment_time 05:02:00 -f segment CSA_%03d.
 [ExamPro SAA-C03](https://www.exampro.co/saa-c03)  
 
 [GitPod](gitpod.io/#https://github.com/tochukz)  
+
+
+## RDS Cost
+All Upfront
+106 + 2.66 * 12 = 137.92 (R11.49/Month)
+
+Partial Upfront
+55 + 7.19 * 12 = 141.28
+
+No Upfront
+0 + 12.15 * 12 = 145.8     
+
+On Demand
+15.80 * 12 = 189.6 (R51 More than All Upfront) ($15.80/Month)

@@ -1,4 +1,4 @@
-# Udemy Course - AWS Certified Solution Architect
+# Udemy Course - AWS Certified Solution Architect Associate
 __By Stephane Maarek__  
 [AWS Certified Solution Architect](https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03)
 

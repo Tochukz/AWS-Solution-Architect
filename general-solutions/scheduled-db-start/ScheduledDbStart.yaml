@@ -76,7 +76,8 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: StartRdsAt9AM
-      ScheduleExpression: "cron(14 7 * * ? *)" # 7:05 AM UTC
+      ScheduleExpression: "cron(0 7 * * ? *)" # 8:00 UTC
+      #ScheduleExpression: "cron(0 11 * * ? *)" # 8:00 UTC
       State: ENABLED
       Targets:
         - Arn: !GetAtt StartRdsLambda.Arn
@@ -94,7 +95,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: StopRdsAt11PM
-      ScheduleExpression: "cron(0 23 * * ? *)" # 11 PM UTC
+      ScheduleExpression: "cron(0 21 * * ? *)" # 21:00 UTC
       State: ENABLED
       Targets:
         - Arn: !GetAtt StopRdsLambda.Arn
