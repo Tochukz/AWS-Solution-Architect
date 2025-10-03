@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+# If the VPCs are in different AWS regions, VPC Peering will not work because VPC peering is only supported between VPCs in the same region. However, you can achieve connectivity between VPCs in different regions using one of the following solutions:
+
+# 1. AWS Transit Gateway (Inter-Region Peering)
+# Transit Gateway allows you to connect VPCs across different regions using Inter-Region Peering.
+#
+# This is the most scalable and recommended solution for multi-region VPC connectivity.
+#
+# Steps to Set Up:
+# Create a Transit Gateway in each region.
+# 
+# Establish Inter-Region Peering between the Transit Gateways.
+#
+# Attach the VPCs to their respective Transit Gateways.
+#
+# Update the route tables in each VPC to route traffic through the Transit Gateway.
+#
+# CloudFormation Template:
+# Setting up Transit Gateway and Inter-Region Peering requires multiple stacks (one per region). Below is an example for one region:
+#
+# yaml
+
+Resources:
+  MyTransitGateway:
+    Type: AWS::EC2::TransitGateway
+    Properties:
+      Description: Transit Gateway for Region 1
+      AutoAcceptSharedAttachments: enable
+      DefaultRouteTableAssociation: enable
+      DefaultRouteTablePropagation: enable
+      Tags:
+        - Key: Name
+          Value: MyTransitGateway
+
+  VPC1Attachment:
+    Type: AWS::EC2::TransitGatewayVpcAttachment
+    Properties:
+      VpcId: vpc-12345678  # Replace with the VPC ID in Region 1
+      SubnetIds:
+        - subnet-12345678  # Replace with a subnet ID in the VPC
+      TransitGatewayId: !Ref MyTransitGateway
+      Tags:
+        - Key: Name
+          Value: VPC1Attachment
+
+  RouteTable1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: rtb-12345678  # Replace with the Route Table ID of the VPC
+      DestinationCidrBlock: 10.1.0.0/16  # Replace with the CIDR block of the VPC in Region 2
+      TransitGatewayId: !Ref MyTransitGateway

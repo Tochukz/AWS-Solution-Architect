@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure Auto Scaling Group with Step Scaling Policy
+
+Mappings:
+  Images: # Amazon Linux 2023 AMI 64-bit (x86), uefi-preferred
+    eu-west-1:
+      Ami: ami-0720a3ca2735bf2fa
+    eu-west-2:
+      Ami: ami-04ba8620fc44e2264
+    eu-west-3:
+      Ami: ami-0960d166ab83fd695
+
+Resources:
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP access
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - Description: Allow HTTP traffic
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: StepLaunchTemplate
+      LaunchTemplateData:
+        ImageId: !FindInMap [Images, !Ref AWS::Region, Ami]
+        InstanceType: t2.micro
+        SecurityGroupIds:
+          - !GetAtt WebSecurityGroup.GroupId
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+
+            yum update -y
+            yum install -y httpd
+            service httpd start
+            chkconfig httpd on
+
+            # echo "<h1>Step Scaling Demonstration</h1>" > /var/www/html/index.html
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: StepAutoScalingGroup
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 5
+      DesiredCapacity: 1
+      VPCZoneIdentifier:
+        - !Ref SubnetId
+
+  ScalingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: StepScaling
+      AdjustmentType: PercentChangeInCapacity
+      MetricAggregationType: Average
+      MinAdjustmentMagnitude: 2 #
+      StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          MetricIntervalUpperBound: 10
+          ScalingAdjustment: 1
+        - MetricIntervalLowerBound: 10
+          MetricIntervalUpperBound: 20
+          ScalingAdjustment: 2
+        - MetricIntervalLowerBound: 20
+          ScalingAdjustment: 3

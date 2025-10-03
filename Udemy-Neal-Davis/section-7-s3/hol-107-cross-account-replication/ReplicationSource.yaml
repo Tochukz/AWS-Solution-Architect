@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure the source bucket
+
+Parameters:
+  SourceBucketName:
+    Type: String
+    Description: Name of the source bucket
+    Default: source-bucket-02-06
+  DestinationBucketName:
+    Type: String
+    Description: Name of the source bucket
+    Default: destination-bucket-02-06
+  DestinationAccountId:
+    Type: String
+    Description: AccountId of the Destination Account
+  SourceRoleName:
+    Type: String
+    Description: Role name for the S3 role
+    Default: ReplicationRole
+
+Resources:
+  ReplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref SourceRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - s3.amazonaws.com
+                - batchoperations.s3.amazonaws.com # For Batch Replication job. May be omitted if no Batch Replication is required
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3ReplicationPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetReplicationConfiguration
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${SourceBucketName}"
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionAcl
+                  - s3:GetObjectVersionTagging
+                  - s3:GetObjectVersion
+                Resource: !Sub "arn:aws:s3:::${SourceBucketName}/*"
+
+  SourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref SourceBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      ReplicationConfiguration:
+        Role: !GetAtt ReplicationRole.Arn
+        Rules:
+          - Id: Rule1
+            Status: Enabled
+            Prefix: ""
+            DeleteMarkerReplication:
+              Status: Disabled
+            Destination:
+              Bucket: !Sub "arn:aws:s3:::${DestinationBucketName}"
+              AccessControlTranslation:
+                Owner: Destination
+              Account: !Ref DestinationAccountId

@@ -12,3 +12,10 @@ Resources:
     Type: AWS::Service::Type
     Properties:
       Prop1: !Sub ["s3://${Placeholder}", {Placeholder: !ImportValue ExternalOutput}]
+
+   #3. Use escape syntax ! to prevent CloudFormation trying to substitute variables that should not be substitutes at deploy time but only at run time.
+   # The variable ${cognito-identity.amazonaws.com:sub} will not be substituted by cloudformation because of the escape syntax !
+   ResourceName3:
+    Type: AWS::Service::Type
+    Properties:
+      Prop1: !Sub arn:aws:s3:::${FilesBucket}/${!cognito-identity.amazonaws.com:sub}/*

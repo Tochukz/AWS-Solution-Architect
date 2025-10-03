@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure the destination bucket
+
+Parameters:
+  DestinationBucketName:
+    Type: String
+    Description: Name of the source bucket
+    Default: destination-bucket-02-06
+  SourceAccountId:
+    Type: String
+    Description: Account Id of the source bucket account
+  SourceRoleName:
+    Type: String
+    Description: Role name of the source account
+    Default: ReplicationRole
+
+Resources:
+  DestinationBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete # or Retain
+    Properties:
+      BucketName: !Ref DestinationBucketName # destination-bucket-02-06 # !Ref DestinationBucketName
+      VersioningConfiguration:
+        Status: Enabled
+
+  # DestinationBucketPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref DestinationBucket
+  #     PolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             AWS: !Sub arn:aws:iam::${SourceAccountId}:role/${SourceRoleName}
+  #           Action:
+  #             - s3:ReplicateObject
+  #             - s3:ReplicateDelete
+  #             - s3:ReplicateTags
+  #             # - s3:GetObjectVersion
+  #             # - s3:GetObjectVersionAcl
+  #             # - s3:GetObjectVersionTagging
+  #           Resource: !Sub "${DestinationBucket.Arn}/*"
+  #         # - Effect: Allow
+  #         #   Principal:
+  #         #     AWS: !Sub arn:aws:iam::${SourceAccountId}:role/${SourceRoleName}
+  #         #   Action:
+  #         #     - s3:List*
+  #         #     - s3:GetBucketVersioning
+  #         #     - s3:PutBucketVersioning
+  #         #   Resource: !Sub arn:aws:s3:::${DestinationBucket.Arn}
