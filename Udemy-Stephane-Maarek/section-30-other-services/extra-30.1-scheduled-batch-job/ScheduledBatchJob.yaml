@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: AWS Batch with Fargate Example
+Description: Scheduled Batch Job with Fargate
 
 Parameters:
   SubnetIds:
