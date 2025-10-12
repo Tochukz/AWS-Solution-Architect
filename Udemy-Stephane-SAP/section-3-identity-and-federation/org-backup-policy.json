@@ -1,0 +1,21 @@
+{
+  "plans": {
+    "PII_Backup_Plan": {
+      "regions": {
+        "@@assign": ["us-east-1"]
+      },
+      "rules": {
+        "My_Hourly_Rule": {
+          "schedule_expression": {"@@assign": "cron(0 5 ? * * *)"},
+          "start_backup_window_minutes": {"@@assign": "604800"},
+          "enable_continuous_backup": {"@@assign": false},
+          "target_backup_vault_name": {"@@assign": "MyBackup_Valult"},
+          "lifecycle": {
+            "move_to_cold_storage_after_days": {"@@assign": "180"},
+            "delete_after_days": {"@@assign": "270"}
+          }
+        }
+      }
+    }
+  }
+}

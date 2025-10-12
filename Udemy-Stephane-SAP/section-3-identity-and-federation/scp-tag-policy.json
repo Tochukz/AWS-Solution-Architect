@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Description": "SCP Policy - Restrict creation of resources when the required tags are not present",
+  "Statement": [
+    {
+      "Sid": "DenyRunInstanceWithoutPrejectTag",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": ["arn:aws:ec2:*:*:instance/*", "arn:aws:ec2:*:*:volume/*"],
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Project": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyRunInstanceWithoutCostCenterTag",
+      "Effect": "Deny",
+      "Resource": ["arn:aws:ec2:*:*:instance/*", "arn:aws:ec2:*:*:volume/*"],
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/CostCenter": "true"
+        }
+      }
+    }
+  ]
+}

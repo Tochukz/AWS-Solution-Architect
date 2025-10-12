@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Description": "SCP Policy - Deny all ec2, rd and dynamodb actions for the specified region for all IAM users except the specified principals",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": ["ec2:*", "rds:*", "dynamodb:*"],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": ["eu-central-1", "eu-west-2"]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalARN": [
+            "arn:aws:iam::*:role/Role1AllowedToByPassThisSCP",
+            "arn:aws:iam::*:role/Role2AllowedToByPassThisSCP"
+          ]
+        }
+      }
+    }
+  ]
+}

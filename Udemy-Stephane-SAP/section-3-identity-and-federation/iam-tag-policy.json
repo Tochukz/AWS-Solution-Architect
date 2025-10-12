@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Description": "Allow ec2:CreateVolume only when Env and CostCenter Tags are specified"
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ec2:CreateVolume",
+      "Resource": "arn:aws:ec2:*:*:volume/*",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "aws:TagKeys": ["Env", "CostCenter"]
+        }
+      }
+    }
+  ]
+}
