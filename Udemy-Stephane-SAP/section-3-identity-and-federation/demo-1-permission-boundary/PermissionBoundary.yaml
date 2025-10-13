@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: IAM User and Role with a Permissions Boundary
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: DevSimpleKey
+
+Resources:
+  Ec2S3BoundaryPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: Ec2S3BoundaryPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - ec2:DecribeInstances
+              - s3:ListAllMyBuckets
+            Resource: "*"
+
+  LimitedUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: limited-user
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess # broader policy, but boundary limits it
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess # broader policy, but boundary limits it
+      PermissionsBoundary: !Ref Ec2S3BoundaryPolicy
+
+  LimitedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleEc2Role
+      Description: Role for EC2 Instance
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess # broader policy, but boundary limits it
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess # broader policy, but boundary limits it
+      PermissionsBoundary: !Ref Ec2S3BoundaryPolicy
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: SimpleEc2InstanceProfile
+      Roles:
+        - !Ref LimitedRole
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleEc2SecGroup
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - Description: SSH from anywhere
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-04ba8620fc44e2264 # AAmazon Linux 2023 AMI 64-bit in eu-west-2
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyName # replace with your key pair name
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the EC2 Instance
+    Value: !Ref Ec2Instance
+  PublicIP:
+    Description: Public IP of the EC2 Instance
+    Value: !GetAtt Ec2Instance.PublicIp
