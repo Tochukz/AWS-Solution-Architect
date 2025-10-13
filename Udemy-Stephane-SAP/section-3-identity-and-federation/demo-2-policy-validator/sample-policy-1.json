@@ -1,9 +1,9 @@
-{
+mo-{
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["ec2:DecribeInstances", "s3:ListAllMyBuckets"],
+      "Action": "s3:ListBuckt",
       "Resource": "*"
     }
   ]
