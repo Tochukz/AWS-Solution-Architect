@@ -2,7 +2,7 @@
 __EC2 and EBS Limits__  
 * 20 On-Demand EC2 instances and 300 TiB of aggregate PIOPS
 volume storage per region
-
+* EC2 status checks are performed _every minute_
 
 ### Auto Scaling Group
 __Default Termination Policy Order of Termination__  
@@ -12,5 +12,8 @@ __Default Termination Policy Order of Termination__
 
 __Note__
 When rebalancing, Amazon EC2 Auto Scaling launches new instances before terminating the old ones, so that rebalancing does not compromise the performance or availability of your application.
+
+__ASG_ Cooldown Period__  
+* The default cooldown period is 300 seconds
 
 [Control which Auto Scaling instances terminate during scale in](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-termination.html)  

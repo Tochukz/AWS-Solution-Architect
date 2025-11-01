@@ -22,7 +22,7 @@ but NOT Glacier.
 You can then use LifeCycle Policy to transition the data to Glacier if needed.  
 
 __Amazon FSx File Gateway__  
-Window machine or SMB based machines may not need a FSx File Gatway to access Amazon FSx for Windows File Server.  
+Window machine or SMB based machines may not need a FSx File Gateway to access Amazon FSx for Windows File Server.  
 However they can provide local caching for frequently accessed data.  
 FSx File Gateway has been discontinued by Amazon.
 

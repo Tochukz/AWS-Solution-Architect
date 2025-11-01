@@ -54,18 +54,18 @@ __EBS vs instance store__
 __Using RAID with EBS__  
 * RAID stands for _Redundant Array of Independent Disks_   
 * We take multiple disk and aggregate them together
-* This is done to either improve performace or implement redendancy or both
+* This is done to either _improve performance_ or implement _redundancy_ or both
 * RAID is configured through your operating system and not on AWS
-* Here you make take a couple of EBS volume to create a RAID
+* Here you take a couple of EBS volume to create a RAID
 * There are different type of RAID
   - RAID 0 and RAID 1 are potential options on EBS
-  - RAID 5 and RAID 6 are not recommented by AWS
-* RAID 0 is used for striping data across dist for performance improvement
+  - RAID 5 and RAID 6 are not recommended by AWS
+* _RAID 0_ is used for striping data across disk for _performance improvement_
   - Use 2 or more disks
   - If one disk fails, the entire RAID set fails
-* RAID 1 is used for mirroring data across disks for redendancy / fault tolerance
+* _RAID 1_ is used for mirroring data across disks for _redundancy / fault tolerance_
  - If one disk fails, the other disk is still working
- - Data gets sents to 2 EBS volumes at the same time
+ - Data gets sent to 2 EBS volumes at the same time
 
 ## Amazon Elastic File System (EFS)
 __Introduction__  
