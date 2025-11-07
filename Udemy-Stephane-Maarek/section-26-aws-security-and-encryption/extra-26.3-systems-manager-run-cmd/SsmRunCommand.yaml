@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Working with System Manager Run Command
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: DevSimpleKey
+  Ami:
+    Type: AWS::EC2::Image::Id
+    Default: ami-04ba8620fc44e2264 # Amazon Linux 2023 AMI 64-bit for eu-west-2
+
+Resources:
+  WebAccessSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebAccessSecGroup
+      GroupDescription: Security group for web access
+      SecurityGroupIngress:
+        - Description: Allow HTTP access
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow SSH access
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimpleInstanceRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: SimpleProfile
+      Roles:
+        - !Ref InstanceRole
+
+  SimpleInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.nano
+      ImageId: !Ref Ami
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt WebAccessSecGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: SimpleInstance
+
+  SimpleInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.nano
+      ImageId: !Ref Ami
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt WebAccessSecGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: SimpleInstance
+
+Outputs:
+  Instance1Id:
+    Description: InstanceId of instance-1
+    Value: !Ref SimpleInstance1
+  Instance2Id:
+    Description: InstanceId of instance-w
+    Value: !Ref SimpleInstance2
+  PublicIp1:
+    Description: Public IP for instance-1
+    Value: !GetAtt SimpleInstance1.PublicIp
+  PublicIp2:
+    Description: Public IP for instance-2
+    Value: !GetAtt SimpleInstance2.PublicIp
