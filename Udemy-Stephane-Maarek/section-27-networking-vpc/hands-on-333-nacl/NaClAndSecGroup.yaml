@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create NetWork Access Control List and Security Group
+
+Resources:
+  CustomVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: CustomVpc
+
+  AccessControlList:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref CustomVpc
+      Tags:
+        - Key: Name
+          Value: SimpleNacl
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleSecGroup
+      GroupDescription: Simple Security group
+      VpcId: !Ref CustomVpc
