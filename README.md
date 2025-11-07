@@ -13,6 +13,22 @@ Get all the managed policies
 $ aws iam list-policies --scope AWS --output table > aws-policies.md
 ```
 
+### Convert yaml to JSON template
+Install `cfn-flip`  
+```bash
+$ pip install cfn-flip
+```
+
+Convert yaml template to JSON template
+```bash
+$ cfn-flip template.yaml template.json
+```  
+
+Covert JSON template to yaml template
+```bash
+$ cfn-flip template.json template.yaml
+```
+
 ### Downloading Video from Youtube
 __Install CLI tools__   
 ```bash
