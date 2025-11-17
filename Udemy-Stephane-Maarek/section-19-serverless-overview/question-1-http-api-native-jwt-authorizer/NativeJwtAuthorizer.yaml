@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  API Gateway HTTP API with JWT Authorizer for OIDC provider
+
+Parameters:
+  OidcIssuer:
+    Type: String
+    Description: "OIDC Provider Issuer URL (e.g., https://example.auth0.com/)"
+    Default: https://accounts.google.com
+  OidcAudience:
+    Type: String
+    Description: "Audience or Client ID expected inside the token"
+    Default: "123456789012-abcde12345fghij67890klmnopqrstuv.apps.googleusercontent.com" # Change to your actual Google OAuth 2.0 Client ID
+  LambdaArn:
+    Type: String
+    Description: "ARN of the Lambda function to integrate with"
+
+Resources:
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: OIDCProtectedHTTPAPI
+      ProtocolType: HTTP
+
+  JWTAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref ApiGateway
+      AuthorizerType: JWT
+      IdentitySource:
+        - "$request.header.Authorization"
+      Name: OidcJwtAuthorizer
+      JwtConfiguration:
+        Audience:
+          - !Ref OidcAudience
+        Issuer: !Ref OidcIssuer
+
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Ref LambdaArn
+      PayloadFormatVersion: "2.0"
+      IntegrationMethod: POST
+
+  ApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: "GET /protected"
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JWTAuthorizer
+      Target: !Join [ "/", [ "integrations", !Ref ApiIntegration ] ]
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: "$default"
+      AutoDeploy: true
+
+Outputs:
+  APIEndpoint:
+    Description: "URL of the HTTP API"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com"
+
+
+# This Client ID is found in your Google Cloud Console under:
+# APIs & Services → Credentials → OAuth 2.0 Client IDs
+# Look for the "Client ID" string, which typically looks like:
+# 123456789012-abcde12345fghij67890klmnopqrstuv.apps.googleusercontent.com
