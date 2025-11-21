@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Enable S3 Bucket Keys with SSE-KMS
+
+Resources:
+  S3KmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS CMK used for encrypting S3 bucket objects
+      EnableKeyRotation: true
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: simple-secure-bucket-2111
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref S3KmsKey
+            BucketKeyEnabled: true # This enables S3 bucket key
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowS3KmsEncryption
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub "${S3Bucket.Arn}/*"
+            Condition:
+              StringEquals:
+                "s3:x-amz-server-side-encryption": "aws:kms"
+                "s3:x-amz-server-side-encryption-aws-kms-key-id": !Ref S3KmsKey
