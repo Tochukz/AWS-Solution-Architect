@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure S3 Bucket Analytics for two bucket with and without a destination bucket
+
+Parameters:
+  DestinationBucketName:
+    Type: String
+    Default: chucks-workspace-storage
+
+Resources:
+  SimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: simple-bucket-2411
+      AnalyticsConfigurations:
+        - Id: storage-class-analysis
+          StorageClassAnalysis:
+            DataExport:
+              OutputSchemaVersion: V_1
+              Destination:
+                S3BucketDestination:
+                  BucketAccountId: !Ref AWS::AccountId
+                  Bucket: !Sub arn:aws:s3:::${DestinationBucketName}
+                  Prefix: analytics-report/
+
+  # Configure S3 Bucket Analytics without Destination Bucket
+  AnotherBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: another-bucket-2411
+      AnalyticsConfigurations:
+        - Id: MyAnalytics
+          StorageClassAnalysis: {}
