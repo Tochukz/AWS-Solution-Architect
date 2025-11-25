@@ -27,14 +27,13 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: AllowS3KmsEncryption
-            Effect: Allow
+          - Sid: RequireKMSEncryptionOnPut
+            Effect: Deny
             Principal: "*"
             Action:
-              - s3:GetObject
               - s3:PutObject
             Resource: !Sub "${S3Bucket.Arn}/*"
             Condition:
-              StringEquals:
+              StringNotEquals:
                 "s3:x-amz-server-side-encryption": "aws:kms"
                 "s3:x-amz-server-side-encryption-aws-kms-key-id": !Ref S3KmsKey
