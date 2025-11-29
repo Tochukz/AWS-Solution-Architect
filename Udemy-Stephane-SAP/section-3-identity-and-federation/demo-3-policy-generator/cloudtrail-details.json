@@ -1,0 +1,12 @@
+{
+  "accessRole": "arn:aws:iam::1234567890:role/AccessAnalyzerCloudTrailAccessRole",
+  "startTime": "2025-08-01T00:00:00Z",
+  "endTime": "2025-10-29T00:00:00Z",
+  "trails": [
+    {
+      "allRegions": false,
+      "cloudTrailArn": "arn:aws:cloudtrail:eu-west-2:1234567890:trail/SomeTrail",
+      "regions": ["eu-west-1", "eu-west-2"]
+    }
+  ]
+}

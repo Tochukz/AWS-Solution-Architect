@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates an IAM role for access analyzer to use for policy generation
+
+Parameters:
+  CloudTrailBucket:
+    Type: String
+    Description: The name of the S3 bucket associated with the CloudTrail that Access Analyzer should analyzer
+    Default: dev-cloudtrail-storage
+
+Resources:
+  AccessAnalyzerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AccessAnalyzerCloudTrailAccessRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: access-analyzer.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AccessAnalyzerCloudTrailReadAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: CloudTrailAccess
+                Effect: Allow
+                Action:
+                  - cloudtrail:GetTrail
+                Resource: "*"
+              - Sid: IamAccess
+                Effect: Allow
+                Action:
+                  - iam:GetServiceLastAccessedDetails
+                  - iam:GenerateServiceLastAccessedDetails
+                Resource: "*"
+              - Sid: AccessCloudtrailAssocBucket
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${CloudTrailBucket}
+                  - !Sub arn:aws:s3:::${CloudTrailBucket}/*
+
+Outputs:
+  AccessAnalyzerRoleArn:
+    Description: Role for Access Analyzer
+    Value: !GetAtt AccessAnalyzerRole.Arn
