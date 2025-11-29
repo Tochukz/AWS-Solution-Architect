@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a Basic and an Advanced Parameter Store Parameters
+
+Parameters:
+  EmailParam:
+    Type: String
+    Default: john.kelvin@yahoo.com
+  UsernameParam:
+    Type: String
+    Default: john.kelvin
+
+Resources:
+  BasicParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /demo-29/email
+      Type: String
+      Value: !Ref EmailParam
+      Description: Basic parameter store parameter
+      Tier: Standard
+
+  AdvancedParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /demo-29/username
+      Type: String
+      Value: !Ref UsernameParam
+      Description: Advanced parameter store parameter
+      Tier: Advanced
+      AllowedPattern: "^[a-zA-Z0-9-.]*$"
+      Policies: |
+        [
+          {
+            "Type": "Expiration",
+            "Version": "1.0",
+            "Attributes": {
+              "Timestamp": "2025-12-12T00:00:00.000Z"
+            }
+          },
+          {
+            "Type": "ExpirationNotification",
+            "Version": "1.0",
+            "Attributes": {
+              "Before": "7",
+              "Unit": "Days"
+            }
+          },
+          {
+            "Type": "NoChangeNotification",
+            "Version": "1.0",
+            "Attributes": {
+              "After": "5",
+              "Unit": "Days"
+            }
+          }
+        ]
+
+Outputs:
+  BasicParameterName:
+    Description: Basic Parameter Store Parameter name
+    Value: !Ref BasicParameter
+  AdvancedParameterName:
+    Description: Advanced Parameter Store Parameter name
+    Value: !Ref AdvancedParameter
