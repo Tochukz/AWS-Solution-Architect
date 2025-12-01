@@ -56,6 +56,8 @@ Resources:
           }
         ]
 
+# @todo: For some reason, the Expiration Policy does not appear in the SSM Console.
+# Find out why and fix it
 Outputs:
   BasicParameterName:
     Description: Basic Parameter Store Parameter name

@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Configure KMS Key to Support External Key Material
+
+Resources:
+  SimpleKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: AES-256 key with imported external material
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYM_DEFAULT
+      EnableKeyRotation: false # must be false for imported keys
+      PendingWindowInDays: 7
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+
+Outputs:
+  KeyId:
+    Value: !Ref SimpleKey
+  KeyArn:
+    Value: !GetAtt SimpleKey.Arn
