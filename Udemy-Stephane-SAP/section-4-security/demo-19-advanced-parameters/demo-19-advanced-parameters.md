@@ -28,11 +28,12 @@ $ aws cloudformation deploy --template-file Parameters.yaml  --stack-name Parame
 ```
 
 **After Deployment**
+
 Go the the Parameter Store Console > Select the Advanced Parameter (`/demo-29/username`) > Policies
 
 **Testing**
 
-**Debug Errors**
+**Debug Errors**  
 In the case of error during deployment, checkout the stack events
 
 ```bash

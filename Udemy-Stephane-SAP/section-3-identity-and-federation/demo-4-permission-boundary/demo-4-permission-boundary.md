@@ -1,11 +1,9 @@
-# Permission Boundary
+# Lesson 4: IAM
 
-Configure a permission boundary and apply it to a role.
-
-# Demo-1: Permission Boundary
+# Demo-4: Permission Boundary
 
 ### Description
-
+This example configures a permission boundary and apply it to a role.  
 A permissions boundary is an IAM policy that defines the maximum permissions an IAM user or role can have.  
 Even if a user’s inline or attached policies grant broader access, the permissions boundary restricts them to only what’s allowed by the boundary.  
 Effective permissions = intersection of (user’s policies) AND (permissions boundary).

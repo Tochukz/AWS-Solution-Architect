@@ -1,4 +1,6 @@
-# Demo 3: Policy Generator - IAM Access Analyzer
+# Lesson 5: IAM Access Analyzer
+
+## Demo 5: Policy Generator - IAM Access Analyzer
 
 ### Description
 

@@ -1,4 +1,6 @@
-# Demo 2: Policy Validator - IAM Access Analyzer
+# Lesson 5: IAM Access Analyzer
+
+## Demo 5: Policy Validator - IAM Access Analyzer
 
 ### Description
 
