@@ -50,7 +50,7 @@ __Introduction__
 __CloudTrail – Types of Events__  
 * __Management events__ provide information about management operations that are performed on resources in your AWS account
 * __Data events__ provide information about the resource operations performed on or in a resource
-* __Insights events__ identify and respond to unusual activity associated with write API calls by continuously analyzing CloudTrail management events
+* __Insights events__ identify and respond to unusual activity associated with write API calls by continuously analysing CloudTrail management events
 
 ### Cheat Sheets  
 [Amazon CloudWatch](https://digitalcloud.training/amazon-cloudwatch/)  

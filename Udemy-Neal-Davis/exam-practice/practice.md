@@ -8,12 +8,21 @@ Set 2: Practice Question only     | 102
 Set 2: Plus Answers & Explanations| 135
 Set 3: Practice Questions only    | 197
 Set 3: Plus Answers & Explanations| 225
+Set 4: Practice Questions only    | 282
+Set 4: Plus Answers & Explanations| 312
+Set 5: Practice Questions only    | 373
+Set 5: Plus Answers & Explanations| 402
+Set 6: Practice Questions only    | 463
+Set 6: Plus Answers & Explanations| 492
 
 Set   | Attempt 1 | Attempt 2
 ------|-----------|---------
 Set 1 |   64%     | 80%
 Set 2 |   67%     | 78%
-Set 3 |   87%     | 
+Set 3 |   87%     |
+Set 4 |   87%     |
+Set 5 |   92%     |
+Set 6 |   80%     |
 
 __Active Directory Question__
 Set 1;
