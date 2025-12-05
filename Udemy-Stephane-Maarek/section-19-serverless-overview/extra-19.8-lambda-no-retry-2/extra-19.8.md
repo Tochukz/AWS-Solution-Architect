@@ -1,4 +1,4 @@
-# Lambda Retry
+# Extra 19.8: Lambda Retry
 
 ## Disabled Invocation Lambda Retry by Event Bridge
 

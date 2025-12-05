@@ -1,0 +1,64 @@
+{
+  "Records": [
+    {
+      "messageId": "a5d66d0a-166a-4ffa-88a7-05d4f5957bfa",
+      "receiptHandle": "AQEBk1TcoOWSI66/pPXt3PaDDrtoNVhaY6j88xHvw0GIYIkgwUR8FEg3oVJvIbspqJgYy5xHxmKuVyU9yCXYK6OZmj+q1LVTWv9Iv6rXThGD7yqH9D6teiaRWjabPD8tt7yj2o+TeXg5CvImDlU/peoY5tDnPY9TOrqAlet1vPEqRrXpTDS2vuuFf/fALEbTyz+a2xySe4bGUwjl6sHhNjX/65bm0RYDqgJ/PUIYI7amcODtxLO0Cbv0dHbGxH10kIzWjdTir72N8UP0Sa+Eezd1EwwQNmOl1npwh12hwTNDR1BRIJgtIhuoP+OHkUNPCwKiZXwCYJvwN22KBW1VSJogbqx4QnznW3pTx+ppsB8tiYMhFfyKCpKnVK51C4JFG9rP",
+      "body": {
+        "bookId": 3,
+        "title": "Building Construction",
+        "author": "Nealan Sharma",
+        "edition": "",
+        "price": 3500,
+        "img": "3.jpg",
+        "availability": 1,
+        "pages": null,
+        "language": "English",
+        "subcategoryId": 2,
+        "createdAt": "2020-12-18T14:15:26.000Z",
+        "updatedAt": "2020-12-18T14:15:26.000Z"
+      },
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1742246491531",
+        "SenderId": "AIDAUSJEUXM7ZM6DGARCI",
+        "ApproximateFirstReceiveTimestamp": "1742246491536"
+      },
+      "messageAttributes": {},
+      "md5OfMessageAttributes": null,
+      "md5OfBody": "264c94072d741956ae5fb950a484047d",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:314146339647:DemoQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "1ac8b014-6967-475a-a1f7-c545e65d46a0",
+      "receiptHandle": "AQEB8yMAdWHbPQmURRCIkEh4x9B7O68+1wZYB22+Qp0BNU8lYDlEz6zETQyTXhwZBMEYfJrSO+D/yOROz9g38YcMnaO1XPP78TP4Vl4Hsm+XvsTGjyx2YYBU/q2E55VOXs3KPDkjskSepCFwgK7DqwH66c1OrqZmpVMh3FzHajRFRyoUvddm8OC8fTRYRK/HmCp7g+qOV47dyQkKyt9VwFRbM+O0akUPTVXs4/69mI+kmnhu/1PY9By6+UGrbC7OV/wc+Ej+oq07UN6VIHI7tx3IKdQpiu72EhgU1U6ORp/a46REvbbBdMnuraueToKdGV9Kv/n8Afb/L0U3d5MMoAG9P9ikPRrCY+SMs5ZpKD5NQS2cNNAl7PxdrOirIuGTJ+2p",
+      "body": {
+        "bookId": 2,
+        "title": "Automobile Engineering II",
+        "author": "P. S. Gill",
+        "edition": "",
+        "price": 4000,
+        "img": "2.jpg",
+        "availability": 1,
+        "pages": null,
+        "language": "English",
+        "subcategoryId": 1,
+        "createdAt": "2020-12-18T14:15:26.000Z",
+        "updatedAt": "2020-12-18T14:15:26.000Z"
+      },
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1742246491538",
+        "SenderId": "AIDAUSJEUXM7ZM6DGARCI",
+        "ApproximateFirstReceiveTimestamp": "1742246491539"
+      },
+      "messageAttributes": {},
+      "md5OfMessageAttributes": null,
+      "md5OfBody": "3218884742ad4cd91c1a28637b3a6ba6",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:314146339647:DemoQueue",
+      "awsRegion": "eu-west-2"
+    }
+  ]
+}

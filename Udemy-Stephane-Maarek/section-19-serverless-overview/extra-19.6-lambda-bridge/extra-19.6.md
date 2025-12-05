@@ -1,4 +1,4 @@
-# Lambda Bridge
+# Extra 19.6: Lambda Bridge
 
 ## Custom event from Lambda to Lambda
 

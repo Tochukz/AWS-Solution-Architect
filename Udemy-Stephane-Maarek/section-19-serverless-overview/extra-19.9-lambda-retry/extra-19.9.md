@@ -1,4 +1,4 @@
-# Lambda Retry
+# Extra 19.9: Lambda Retry
 
 ## Testing Lambda Retry by Event Bridge
 
