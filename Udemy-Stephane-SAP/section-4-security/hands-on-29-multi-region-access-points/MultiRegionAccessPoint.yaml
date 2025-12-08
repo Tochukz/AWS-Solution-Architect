@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  PrimaryBucketName:
+    Type: String
+    Description: Bucket name for first bucket
+  SecondaryBucketName:
+    Type: String
+    Description: Bucket name for second bucket
+  MultiRegionAccessPointName:
+    Type: String
+    Default: simple-mr-access-point
+
+Resources:
+  MultiRegionReplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReplicationPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersion
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionTagging
+                  - s3:GetObjectVersionAcl
+                Resource:
+                  - !Sub "arn:aws:s3:::${PrimaryBucketName}/*"
+                  - !Sub "arn:aws:s3:::${SecondaryBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateDelete
+                  - s3:ReplicateTags
+                Resource:
+                  - !Sub "arn:aws:s3:::${PrimaryBucketName}/*"
+                  - !Sub "arn:aws:s3:::${SecondaryBucketName}/*"
+
+  MultiRegionAccessPoint:
+    Type: AWS::S3::MultiRegionAccessPoint
+    Properties:
+      Name: !Ref MultiRegionAccessPointName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Regions:
+        - Bucket: !Ref PrimaryBucketName
+        - Bucket: !Ref SecondaryBucketName
+
+  MultiRegionAcessPointPolicy:
+    Type: AWS::S3::MultiRegionAccessPointPolicy
+    Properties:
+      Name: !GetAtt MultiRegionAccessPoint.Alias
+      Policy:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowAllThroughMRAP
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3::${MultiRegionAccessPointName}"
+              - !Sub "arn:aws:s3::${MultiRegionAccessPointName}/object/*"
+
+Outputs:
+  MultiRegionAcessPointAlias:
+    Description: Multi-Region Access Point DNS alias
+    Value: !GetAtt MultiRegionAccessPoint.Alias
+  MultiRegionAcessPointArn:
+    Description: Multi-Region Access Point ARN
+    Value: !Ref MultiRegionAccessPoint
+  PrimaryBucket:
+    Value: !Ref PrimaryBucketName
+  SecondaryBucket:
+    Value: !Ref SecondaryBucketName

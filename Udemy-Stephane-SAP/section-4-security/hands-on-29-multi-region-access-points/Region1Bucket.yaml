@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Bucket in one region
+
+Resources:
+  Region1Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: second-bucket-0212
+      VersioningConfiguration:
+        Status: Enabled

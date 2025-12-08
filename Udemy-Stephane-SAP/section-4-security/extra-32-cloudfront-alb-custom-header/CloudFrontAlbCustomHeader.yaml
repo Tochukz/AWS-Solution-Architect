@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFront -> ALB with custom origin header + ALB listener rule that rejects direct access.
+
+Parameters:
+  AlbDnsName:
+    Type: String
+    Description: DNS name of the ALB (e.g. my-alb-123456.elb.amazonaws.com)
+  AlbListenerArn:
+    Type: String
+    Description: ARN of the ALB HTTPS listener that will receive CloudFront requests
+  TargetGroupArn:
+    Type: String
+    Description: ARN of the target group to forward valid (header-present) requests to
+  SecretHeaderValue:
+    Type: String
+    NoEcho: true
+    Description: Secret header value CloudFront will add (use a long random string)
+  CloudFrontPriceClass:
+    Type: String
+    Default: PriceClass_All
+    AllowedValues:
+      - PriceClass_100
+      - PriceClass_200
+      - PriceClass_All
+
+Resources:
+
+  # ALB Listener Rule: If header matches, forward to TargetGroup; otherwise fixed 403
+  AlbAllowCloudFrontHeaderRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref AlbListenerArn
+      Priority: 10
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig:
+            HttpHeaderName: x-origin-secret
+            Values:
+              - !Ref SecretHeaderValue
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroupArn
+
+  AlbDenyByDefaultRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref AlbListenerArn
+      Priority: 1000
+      Conditions:
+        - Field: path-pattern
+          PathPatternConfig:
+            Values:
+              - '/*'
+      Actions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: '403'
+            ContentType: 'text/plain'
+            MessageBody: 'Forbidden'
+
+  CloudFrontOriginAccessIdentityNote:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: 'Placeholder - not used for ALB but kept for note'
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        PriceClass: !Ref CloudFrontPriceClass
+        Origins:
+          - Id: alb-origin
+            DomainName: !Ref AlbDnsName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+            OriginCustomHeaders:
+              - HeaderName: x-origin-secret
+                HeaderValue: !Ref SecretHeaderValue
+        DefaultCacheBehavior:
+          TargetOriginId: alb-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - PATCH
+            - DELETE
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: true
+            Headers:
+              - Authorization
+              - Origin
+            Cookies:
+              Forward: all
+          MinTTL: 0
+          DefaultTTL: 3600
+          MaxTTL: 86400
+        ViewerCertificate:
+          # Use default CloudFront certificate or provide ACM cert for custom domain
+          CloudFrontDefaultCertificate: true
+        HttpVersion: http2
+        IsIPV6Enabled: true

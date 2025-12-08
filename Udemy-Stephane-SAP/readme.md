@@ -41,4 +41,16 @@ Tested |  Demo
  No    | 32 Enhanced CloudFront Origin Security
  No    | Extra-32 - CloudFront ABL Custom Header
  No    | 40 EC2 Instance Connect
- No    | Handson 29 - Multi Region Access Point
+ No    | Hands-on 29 - Multi Region Access Point
+
+#### Section 5
+Tested | Demo  
+-------|--------------
+No     | 46 Auto Scaling Load Balancer
+No     | 49 ECS Batch Processing
+No     | 49 ECS with Fargate Spot
+No     | 49 ECS with Spot Instance  
+No     | 50 ECR Basic Scanning
+No     | 50 ECR Cross Region Replication  
+No     | 50 ECR Enhanced Scanning
+No     | 50 App Runner Multi Region 
