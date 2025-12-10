@@ -53,4 +53,9 @@ No     | 49 ECS with Spot Instance
 No     | 50 ECR Basic Scanning
 No     | 50 ECR Cross Region Replication  
 No     | 50 ECR Enhanced Scanning
-No     | 50 App Runner Multi Region 
+No     | 52 App Runner Multi Region
+No     | 58 API Gateway Authentication with Congnito
+No     | 58 API Gateway Authentication with IAM
+No     | 58 API Gateway to S3 Integration
+No     | 59 API Gateway Websocket
+No     | Private API Gateway

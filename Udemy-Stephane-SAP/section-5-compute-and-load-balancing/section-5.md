@@ -259,3 +259,135 @@ __Lambda & CodeDeploy__
   - Canary10Percent30Minutes
 * __AllAtOnce__: immediate
 * Can create Pre & Post Traffic hooks to check the health of the Lambda function
+
+## Elastic Load Balancer (ELB)
+__Types of load balancer on AWS__  
+* AWS has 4 kinds of managed Load Balancers
+* __Classic Load Balancer__ (v1 - old generation) – 2009 – CLB
+  - HTTP, HTTPS, TCP, SSL (secure TCP)
+* __Application Load Balancer__ (v2 - new generation) – 2016 – ALB
+  - HTTP, HTTPS, WebSocket
+* __Network Load Balancer__ (v2 - new generation) – 2017 – NLB
+  - TCP, TLS (secure TCP), UDP
+* __Gateway Load Balancer__ – 2020 – GWLB
+  - Operates at layer 3 (Network layer) – IP Protocol
+* Overall, it is recommended to use the newer generation load balancers as they provide more features
+* Some load balancers can be setup as internal (private) or external (public) ELBs
+
+__Classic Load Balancers (v1)__  
+* Health Checks can be HTTP (L7) or TCP (L4) based including with SSL
+* Supports only one SSL certificate
+  - The SSL certificate can have many SAN (Subject Alternate Name), but the SSL certificate must be changed anytime a SAN is added / edited / removed
+  - Better to use ALB with SNI (Server Name Indication) if possible
+  - Can use multiple CLB if you want distinct SSL certificates
+
+__Application Load Balancer (v2)__  
+* Application load balancers is Layer 7 (HTTP)
+* Load balancing to multiple HTTP applications across machines (target groups)
+* Load balancing to multiple applications on the same machine (ex: containers) – great fit with ECS, has dynamic port mapping
+* Support for HTTP/2 and WebSocket
+* Support redirects (from HTTP to HTTPS for example)
+* Routing Rules for path, headers, query string
+
+__Network Load Balancer (v2)__  
+* Network load balancers (Layer 4) allow to:
+  - Forward TCP & UDP traffic to your instances
+  - Handle millions of request per seconds
+  - Less latency ~100 ms (vs 400 ms for ALB)
+* _NLB has one static IP per AZ, and supports assigning Elastic IP_ (helpful for whitelisting specific IP)
+* NLB are used for extreme performance, TCP or UDP traffic
+* Not included in the AWS free tie
+
+__Network Load Balancer – Zonal DNS Name__  
+* Resolving __Regional NLB DNS__ name returns the IP addresses for all NLB nodes in all enabled AZs
+  - `my-nlb-1234567890abcdef.elb.us-east-1.amazon.aws.com`
+* __Zonal DNS Name__
+  - NLB has DNS names for each of its nodes
+  - Use to determine the IP address of each node
+  - `us-east-1a.my-nlb-1234567890abcdef.elb.us-east-1.amazon.aws.com`
+  - Used to minimize latency and data transfer costs
+  - You need to implement app specific logic
+
+__Gateway Load Balancer__   
+* Deploy, scale, and manage a fleet of 3rd party network virtual appliances in AWS
+* Example: Firewalls, Intrusion Detection and Prevention Systems, Deep Packet Inspection Systems, payload manipulation, …
+* Operates at Layer 3 (Network Layer) – IP Packets
+* Combines the following functions:
+  - __Transparent Network Gateway__ – single entry/exit for all traffic
+  - __Load Balancer__ – distributes traffic to your virtual appliances
+* Uses the GENEVE protocol on port 6081
+
+__Cross-Zone Load Balancing__  
+* __Classic Load Balancer__  
+  - Disabled by default
+  - No charges for inter AZ data if enabled
+* __Application Load Balancer__   
+  - Always on (can’t be disabled)
+  - No charges for inter AZ data
+* __Network Load Balancer__  
+  - Disabled by default
+  - You pay charges ($) for inter AZ data if enabled
+* __Gateway Load Balancer__   
+  - Disabled by default
+  - You pay charges ($) for inter AZ data if enabled
+
+__Sticky Sessions (Session Affinity)__  
+* This works for Classic Load Balancers & Application Load Balancers
+* The “cookie” used for stickiness has an expiration date you control
+
+#### Request Routing Algorithms
+1. __Least Outstanding Requests__  
+  - The next instance to receive the request is the instance that has the lowest number of pending/unfinished requests
+  - Works with _Application Load Balancer_ and _Classic Load Balancer_
+2. __Round Robin__  
+  - Equally choose the targets from the target group
+  - Works with _Application Load Balancer_ and _Classic Load Balancer (TCP)_
+3. __Flow Hash__  
+  - Selects a target based on the protocol, source/destination IP address, source/destination port, and TCP sequence number
+  - Each TCP/UDP connection is routed to a single target for the life of the connection
+  - Works with Network Load Balancer
+
+## API Gateway
+__API Gateway - Endpoint Types__   
+* __Edge-Optimized (default)__: For global clients
+  - Requests are routed through the CloudFront Edge locations (improves latency)
+  - The API Gateway still lives in only one region
+* __Regional__:
+  - For clients within the same region
+  - Could manually combine with CloudFront (more control over the caching strategies and the distribution)
+* __Private__:  
+  - Can only be accessed from your VPC using an interface VPC endpoint (ENI)
+  - Use a resource policy to define access
+
+
+__Caching API responses__  
+* Caching reduces the number of calls made to the backend
+* Default TTL (time to live) is 300 seconds (min: 0s, max: 3600s)
+* Caches are defined _per stage_
+* Possible to override cache settings _per method_
+* Clients can invalidate the cache with header: _Cache-Control: max-age=0_ (with proper IAM authorization)
+* Able to flush the entire cache (invalidate it) immediately
+* Cache encryption option
+* Cache capacity between 0.5GB to 237GB
+
+__API Gateway – Security__  
+* Load SSL certificates and use Route53 to define a CNAME
+* Resource Policy (~S3 Bucket Policy):
+  - control who can access the API
+  - Users from AWS accounts, IP or CIDR blocks, VPC or VPC Endpoints
+* IAM Execution Roles for API Gateway at the API level
+  - To invoke a Lambda Function, an AWS service…
+* CORS (Cross-origin resource sharing):
+  - Browser based security
+  - Control which domains can call your API
+
+__API Gateway – Authentication__  
+* __IAM based access (AWS_IAM)__
+  - Good for providing access within your infrastructure
+  - Pass IAM credentials in headers through Sig V4
+* __Lambda Authorizer (formerly Custom Authorizer)__  
+  - Use Lambda to verify a custom OAuth / SAML / 3rd party authentication
+* __Cognito User Pools__  
+  - Client authenticates with Cognito
+  - Client passes the token to API Gateway
+  - API Gateway knows out-of-the-box how to verify to token
