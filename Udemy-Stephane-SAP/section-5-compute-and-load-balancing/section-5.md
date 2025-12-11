@@ -391,3 +391,158 @@ __API Gateway – Authentication__
   - Client authenticates with Cognito
   - Client passes the token to API Gateway
   - API Gateway knows out-of-the-box how to verify to token
+
+## Route 53
+__Routing Policies – Geoproximity__   
+* Route traffic to your resources based on the geographic location of users and resources
+* Ability __to shift more traffic to resources based__ on the defined __bias__  
+* To change the size of the geographic region, specify bias values:
+  - To expand (1 to 99) – more traffic to the resource
+  - To shrink (-1 to -99) – less traffic to the resource
+* Resources can be:
+  - AWS resources (specify AWS region)
+  - Non-AWS resources (specify Latitude and Longitude)
+* You must use Route 53 __Traffic Flow__ to use this feature
+
+__Route 53 – Traffic flow__  
+* Simplify the process of creating and maintaining records in large and
+complex configurations
+* Visual editor to manage complex routing decision trees
+* Configurations can be saved as __Traffic Flow Policy__
+  - Can be applied to different Route 53 Hosted Zones (different domain names)
+  - Supports versioning
+
+__Routing Policies – IP-based Routing__   
+* _Routing is based on clients’ IP addresses_
+* _You provide a list of CIDRs for your clients_ and the corresponding endpoints/locations (user-IP-to-endpoint mappings)
+* Use cases: Optimize performance, reduce network costs…
+* Example: route end users from a particular ISP to a specific endpoint
+
+__Route 53 – Hosted Zones__  
+* A container for records that define how to route traffic to a domain and its subdomains
+* __Public Hosted Zones__ – contains records that specify how to route traffic on the Internet (public domain names) application1.mypublicdomain.com
+* __Private Hosted Zones__ – contain records that specify how you route
+traffic within one or more VPCs (private domain names)
+application1.company.internal
+
+__Route 53 – Health Checks__  
+* HTTP Health Checks are only for public resources
+* Health Check => Automated DNS Failover:
+  1. Health checks that monitor an endpoint (application, server, other AWS resource)
+  2. Health checks that monitor other health checks (Calculated Health Checks)
+  3. Health checks that monitor CloudWatch Alarms (full control !!) – e.g., throttles of DynamoDB, alarms on RDS, custom metrics, … (helpful for private resources)
+* Health Checks are integrated with CW metrics
+
+__Health Checks – Private Hosted Zones__  
+* Route 53 health checkers are outside the VPC
+* They can’t access __private__ endpoints (private VPC or on-premises resource)
+* You can create a __CloudWatch Metric__ and associate a __CloudWatch Alarm__, then create a Health Check that checks the alarm itself
+
+__Route 53 – Hybrid DNS__  
+* By default, Route 53 Resolver automatically answers DNS queries for:
+  - Local domain names for EC2 instances
+  - Records in Private Hosted Zones
+  - Records in public Name Servers
+* __Hybrid DNS__ – resolving DNS queries between VPC (Route 53 Resolver) and your networks (other DNS Resolvers)
+* Networks can be:
+  - VPC itself / Peered VPC
+  - On-premises Network (connected through Direct Connect or AWS VPN)
+
+__Route 53 – Resolver Endpoints__  
+* __Inbound Endpoint__
+  - DNS Resolvers on your network can forward DNS queries to Route 53 Resolver
+  - Allows your DNS Resolvers to resolve domain names for AWS resources (e.g., EC2 instances) and records in Route 53 Private Hosted Zones
+* __Outbound Endpoint__
+  - Route 53 Resolver conditionally forwards DNS queries to your DNS Resolvers
+  - Use _Resolver Rules_ to forward DNS queries to your DNS Resolvers
+* Associated with one or more VPCs in the same AWS Region
+* Create in two AZs for high availability
+* Each Endpoint supports 10,000 queries per second per IP address
+
+![](slides/route-53-resolver-inbound-endpoint.png)
+
+![](slides/route-53-resolver-outbound-endpoint.png)
+
+__Route 53 – Resolver Rules__  
+* Control which DNS queries are forwarded to DNS Resolvers on your network
+* __Conditional Forwarding Rules (Forwarding Rules)__
+  - Forward DNS queries for a specified domain and all its subdomains to target IP addresses
+* __System Rules__
+  - Selectively overriding the behavior defined in Forwarding Rules (e.g., don’t
+forward DNS queries for a subdomain acme.example.com)
+* __Auto-defined System Rules__
+  - Defines how DNS queries for selected domains are resolved (e.g., AWS internal domain names, Privated Hosted Zones)
+* If multiple rules matched, Route 53 Resolver chooses the most specific match
+* __Resolver Rules can be shared across accounts using AWS RAM__  
+  - Manage them centrally in one account
+  - Send DNS queries from multiple VPC to the target IP defined in the rule
+
+## AWS Global Accelerator
+__Introduction to AWS Global Accelerator__  
+* Leverage the AWS internal network to route to your application
+* _2 Anycast IP_ are created for your application
+* The Anycast IP send traffic directly to Edge Locations
+* The Edge locations send the traffic to your application
+* Works with Elastic IP, EC2 instances, ALB, NLB, public or private
+* Supports Client IP Address Preservation _except EIPs endpoints_
+* Consistent Performance
+  - Intelligent routing to lowest latency and fast regional failover
+  - No issue with client cache (because the IP doesn’t change)
+  - Internal AWS network
+* Health Checks
+  - Global Accelerator performs a health check of your applications
+  - Helps make your application global (failover less than 1 minute for unhealthy)
+  - Great for disaster recovery (thanks to the health checks)
+* Security
+  - only 2 external IP need to be whitelisted
+  - DDoS protection thanks to AWS Shield
+
+__AWS Global Accelerator vs CloudFront__   
+* They both use the AWS global network and its edge locations around the world
+* Both services integrate with AWS Shield for DDoS protection.
+* __CloudFront__  
+  - Improves performance for both cacheable content (such as images and videos)
+  - Dynamic content (such as API acceleration and dynamic site delivery)
+  - Content is served at the edge
+* __Global Accelerator__  
+  - Improves performance for a wide range of applications over TCP or UDP
+  - Proxying packets at the edge to applications running in one or more AWS Regions.
+  - Good fit for non-HTTP use cases, such as gaming (UDP), IoT (MQTT), or Voice over IP
+  - Good for HTTP use cases that require static IP addresses
+  - Good for HTTP use cases that required deterministic, fast regional failover
+
+## AWS Outposts
+__Introduction to AWS Outposts__  
+* __Hybrid Cloud__: businesses that keep an onpremises infrastructure alongside a cloud infrastructure
+* Therefore, two ways of dealing with IT systems:
+  - One for the AWS cloud (using the AWS console, CLI, and AWS APIs)
+  - One for their on-premises infrastructure
+* __AWS Outposts are “server racks”__ that offers the same AWS infrastructure, services, APIs & tools to build your own applications on-premises just as in the cloud
+* __AWS will setup and manage “Outposts Racks”__ within your on-premises infrastructure and you can start leveraging AWS services on-premises
+* _You are responsible for the Outposts Rack physical security_
+* Benefits:
+  - Low-latency access to on-premises systems
+  - Local data processing
+  - Data residency
+  - Easier migration from on-premises to the cloud
+  - Fully managed service
+  - Some services that work on Outposts:
+    * EC2, EBS, S3, EKS, ECS, RDS, EMR etc
+
+## AWS WaveLength
+* WaveLength Zones are infrastructure deployments embedded within the telecommunications providers’ datacenters at the edge of the 5G networks
+* Brings AWS services to the edge of the 5G networks
+* Example: EC2, EBS, VPC…
+* Ultra-low latency applications through 5G networks
+* Traffic doesn’t leave the Communication Service Provider’s (CSP) network
+* High-bandwidth and secure connection to the parent AWS Region
+* No additional charges or service agreements
+* Use cases: Smart Cities, ML-assisted diagnostics, Connected Vehicles, Interactive Live Video Streams, AR VR, Real-time Gaming, …
+
+## AWS Local Zones
+* Places AWS compute, storage, database, and other selected AWS services _closer to end users to run latency-sensitive applications_
+* Extend your VPC to more locations – _“Extension of an AWS Region”_
+* Compatible with EC2, RDS, ECS, EBS, ElastiCache, Direct Connect …
+* Example:
+  - _AWS Region_: N. Virginia (us-east-1)
+  - _AWS Local Zones_: Boston, Chicago, Dallas, Houston, Miami, …

@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Deploys an EC2 instance in a Local Zone - Nigeria(Lagos)
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC where the Local Zone subnet will be created
+  LocalZone:
+    Type: String
+    Description: The Local Zone to deploy the instance in (e.g., "us-west-2-lax-1a")
+    Default: af-south-1-los-1a # Nigeria (Lagos) Local Zone
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: EC2 AmiId
+    Default: ami-0167a897f57bcc042 # Amazon Linux 2023 (64-bit (x86), uefi-preferred) af-south-1
+
+Resources:
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone: !Ref LocalZone
+      MapPublicIpOnLaunch: true
+      CidrBlock: 172.31.48.0/20
+      Tags:
+        - Key: Name
+          Value: LocalZonePublicSubnet
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH and HTTP access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTP access
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: !Ref AmiId
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdh" #"/dev/xvda"
+          Ebs:
+            VolumeSize: 8
+            VolumeType: gp2 # gp3 is not supported in af-south-1
+            DeleteOnTermination: true
+      Tags:
+        - Key: Name
+          Value: SimpleInstance
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          sudo dnf update -y
+          ## Install Nginx
+          sudo dnf install nginx -y
+          sudo systemctl enable nginx
+          sudo systemctl start nginx
+          sudo systemctl status nginx
+
+          # Enable Nginx to start on boot
+          sudo systemctl enable nginx
+          # You can verify it was enabled with:
+          sudo systemctl is-enabled nginx
+
+Outputs:
+  PublicIp:
+    Description: Public IP address of the EC2 instance
+    Value: !GetAtt SimpleInstance.PublicIp
+  InstanceId:
+    Description: Instance ID of the EC2 instance
+    Value: !Ref SimpleInstance

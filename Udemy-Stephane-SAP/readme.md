@@ -11,6 +11,7 @@ Section | Pg  | Title
 3       | 9   | Identity & Federation
 4       | 80  | Security
 5       | 174 | Compute and Load Balancing
+6       | 320 | Storage
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-professional-m0v/)
@@ -58,4 +59,9 @@ No     | 58 API Gateway Authentication with Congnito
 No     | 58 API Gateway Authentication with IAM
 No     | 58 API Gateway to S3 Integration
 No     | 59 API Gateway Websocket
-No     | Private API Gateway
+No     | 59 Private API Gateway
+No     | 61 Health Check Private Hosted Zones
+No     | 61 Private Hosted Zone
+No     | 64 Global Accelerator
+No     | 65 API Gateway to SQS
+No     | 68 Local Zones 
