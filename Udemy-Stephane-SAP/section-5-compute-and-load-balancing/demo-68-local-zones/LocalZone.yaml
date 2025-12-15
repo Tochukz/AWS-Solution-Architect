@@ -53,7 +53,7 @@ Resources:
       SecurityGroupIds:
         - !Ref SecurityGroup
       BlockDeviceMappings:
-        - DeviceName: "/dev/sdh" #"/dev/xvda"
+        - DeviceName: "/dev/sda1" #"/dev/xvda"
           Ebs:
             VolumeSize: 8
             VolumeType: gp2 # gp3 is not supported in af-south-1
