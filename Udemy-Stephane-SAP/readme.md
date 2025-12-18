@@ -12,6 +12,8 @@ Section | Pg  | Title
 4       | 80  | Security
 5       | 174 | Compute and Load Balancing
 6       | 320 | Storage
+7       | 377 | Caching
+8       | 410 | Databases
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-professional-m0v/)
@@ -64,4 +66,11 @@ No     | 61 Health Check Private Hosted Zones
 No     | 61 Private Hosted Zone
 No     | 64 Global Accelerator
 No     | 65 API Gateway to SQS
-No     | 68 Local Zones 
+No     | 68 Local Zones
+
+#### Section 7
+Tested | Demo
+-------|--------------
+No     | CloudFront with VPC Origin
+No     | CloudFront Origin Group
+No     | Lambda@Edge Reduced Latency 
