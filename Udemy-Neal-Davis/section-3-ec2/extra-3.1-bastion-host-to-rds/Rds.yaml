@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create two RDS Instance, PostgreSQL and MySSQL in private subnets
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for the RDS instances  
+  DbUsername:
+    Type: String
+    Default: dbadmin
+    Description: Master DB username
+  DbName:
+    Type: String
+    Default: simple_database
+    Description: Initial database name  
+
+Resources:
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 172.31.48.0/20 
+      AvailabilityZone: !Select [ 0, !GetAZs "" ] 
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 172.31.64.0/20 
+      AvailabilityZone: !Select [ 1, !GetAZs "" ] 
+
+  # Optional third private subnet for multi-AZ deployments
+  # PrivateSubnet3:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref VpcId
+  #     CidrBlock: 172.31.80.0/20
+  #     AvailabilityZone: !Select [ 2, !GetAZs "" ]
+
+  RdsDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private DB subnet group for RDS instances
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        # - !Ref PrivateSubnet3
+
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for private RDS instances (no public ingress)
+      VpcId: !Ref VpcId
+
+  PostgresRds:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: SimplePostgresRds
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: "{{resolve:ssm-secure:/shared/db-password:1}}"
+      DBName: !Ref DbName
+      AllocatedStorage: 20
+      PubliclyAccessible: false
+      VPCSecurityGroups:
+        - !GetAtt RdsSecurityGroup.GroupId
+      DBSubnetGroupName: !Ref RdsDBSubnetGroup
+
+  MySQLRds:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: SimleMySQLRds
+      DBInstanceClass: db.t3.micro
+      Engine: mysql
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: "{{resolve:ssm-secure:/shared/db-password:1}}"
+      DBName: !Ref DbName
+      AllocatedStorage: 20
+      PubliclyAccessible: false
+      VPCSecurityGroups:
+        - !GetAtt RdsSecurityGroup.GroupId
+      DBSubnetGroupName: !Ref RdsDBSubnetGroup
+
+Outputs:
+  VpcId:
+    Description: VPC ID where RDS instances are deployed
+    Value: !Ref VpcId
+    Export:
+      Name: Rds-VpcId
+  PostgresRdsEndpoint:
+    Description: Endpoint address for RDS instance A
+    Value: !GetAtt PostgresRds.Endpoint.Address    
+  MySQLEndpoint:
+    Description: Endpoint address for RDS instance B
+    Value: !GetAtt MySQLRds.Endpoint.Address    
+  RdsSecurityGroupId:
+    Description: Security Group ID for RDS instances
+    Value: !GetAtt RdsSecurityGroup.GroupId
+    Export:
+      Name: Rds-RdsSecurityGroupId

@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "vpc-0bb1c79de3EXAMPLE"  
+    },
+    {
+        "ParameterKey": "ClientCidr",
+        "ParameterValue": "1.19.4.7/32"
+    },
+    {
+        "ParameterKey": "PublicSubnet",
+        "ParameterValue": "subnet-0bb1c79de3EXAMPLE"
+    }
+]
