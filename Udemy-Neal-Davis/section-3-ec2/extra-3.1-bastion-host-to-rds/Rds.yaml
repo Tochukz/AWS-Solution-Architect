@@ -91,7 +91,7 @@ Outputs:
   PostgresRdsEndpoint:
     Description: Endpoint address for RDS instance A
     Value: !GetAtt PostgresRds.Endpoint.Address    
-  MySQLEndpoint:
+  MySQLRdsEndpoint:
     Description: Endpoint address for RDS instance B
     Value: !GetAtt MySQLRds.Endpoint.Address    
   RdsSecurityGroupId:

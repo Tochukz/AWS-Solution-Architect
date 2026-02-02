@@ -7,7 +7,7 @@ Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: EC2 KeyPair to SSH to the bastion
-    Default: DevSimpleKey
+    Default: DevSimpleKey2
   ClientCidr:
     Type: String
     Description: CIDR allowed to SSH to bastion

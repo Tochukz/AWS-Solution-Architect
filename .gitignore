@@ -18,6 +18,7 @@ python
 *-func.json
 .env
 output*.json
+*-output.json
 *-logs.json
 aws-policies.json
 aws-roles.json
