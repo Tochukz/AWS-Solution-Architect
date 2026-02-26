@@ -1,4 +1,4 @@
-# # Lesson 85: Lambda@Edge Reduced Latency
+# Lesson 85: Lambda@Edge Reduced Latency
 
 ## Demo 85: Lambda@Edge Reduced Latency
 

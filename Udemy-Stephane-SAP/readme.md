@@ -14,6 +14,7 @@ Section | Pg  | Title
 6       | 320 | Storage
 7       | 377 | Caching
 8       | 410 | Databases
+9       | 447 | Service Communication 
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-professional-m0v/)
@@ -73,4 +74,4 @@ Tested | Demo
 -------|--------------
 No     | CloudFront with VPC Origin
 No     | CloudFront Origin Group
-No     | Lambda@Edge Reduced Latency 
+No     | Lambda@Edge Reduced Latency
