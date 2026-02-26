@@ -61,3 +61,58 @@ __Express Workflow - Sync vs Async__
 __Step Functions – Error Handling__  
 * You can enable error handling, retries, and add alerting to Step Function State Machine
 * Example: set up EventBridge to alert via email if a State Machine execution fails
+
+## Amazon SQS
+SQS could be used as a write buffer for DynamoDB
+
+__SQS DLQ – Redrive to Source__    
+To redrive the messages from the DLQ back into the source
+```
+$ aws sqs start-message-move-task --source-arn <dlq-arn>
+```
+
+__Lambda – Event Source Mapping SQS & SQS FIFO__  
+__Recommended__: Set the queue visibility timeout to _6x the timeout_ of your Lambda function
+
+## Amazon MQ
+__Introduction__  
+* SQS, SNS are “cloud-native” services: proprietary protocols from AWS
+* Traditional applications running from on-premises may use open protocols such as: _MQTT_, _AMQP_, _STOMP_, _Openwire_, _WSS_
+* When migrating to the cloud, instead of re-engineering the application to use SQS and SNS, we can use Amazon MQ
+* Amazon MQ is a managed message broker service for
+  - Rabbit MQ
+  - Active MQ
+* Amazon MQ doesn’t “scale” as much as SQS / SNS
+* Amazon MQ runs on servers, can run in Multi-AZ with failover
+* Amazon MQ has both queue feature (~SQS) and topic features (~SNS)
+
+__Amazon MQ – Re-platform__  
+* _IBM MQ_, _TIBCO EMS_, _Rabbit MQ_, and _Apache ActiveMQ_ can be migrated to Amazon MQ.
+
+[Step-by-Step Migration](https://aws.amazon.com/blogs/compute/migrating-from-ibm-mq-to-amazon-mq-using-a-phased-approach/)
+
+## Amazon SNS
+__Amazon SNS - How to publish__  
+* Topic Publish (using the SDK)
+  -  Create a topic
+  -  Create a subscription (or many)
+  - Publish to the topic
+* Direct Publish (for mobile apps SDK)
+  - Create a platform application
+  - Create a platform endpoint
+  -  Publish to the platform endpoint
+  -  Works with Google GCM, Apple APNS, Amazon ADM…
+
+__Application: S3 Events to multiple queues__   
+* For the same combination of: _event type_ (e.g. object create) and prefix (e.g. images/) you can only have one S3 Event rule
+* If you want to send the same S3 event to many SQS queues, use fan-out
+
+__Amazon SNS – FIFO Topic__  
+* FIFO = First In First Out (ordering of messages in the topic)
+  - __NB:__ Only SQS Fifo or SQS Standard Queue can subscribe to SNS Fifo Topic
+  - If you need other subscribers like Email or Lambda, you will to chain to the SQS. 
+* Similar features as SQS FIFO:
+  - Ordering by Message Group ID (all messages in the same group are ordered)
+  - Deduplication using a Deduplication ID or Content Based Deduplication
+* Can have SQS Standard and FIFO queues as subscribers
+* Limited throughput (same throughput as SQS FIFO)
