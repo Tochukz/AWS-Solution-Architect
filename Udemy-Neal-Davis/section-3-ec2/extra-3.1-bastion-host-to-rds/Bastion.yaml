@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  VPC with a bastion host in a public subnet and two RDS instances (MySQL & PostgreSQL)
+  deployed in private subnets. Bastion can SSH in and connect to RDS on 3306/5432.
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 KeyPair to SSH to the bastion
+    Default: DevSimpleKey2
+  ClientCidr:
+    Type: String
+    Description: CIDR allowed to SSH to bastion
+    Default: 1.19.4.7/32
+  PublicSubnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet for the bastion host
+
+Resources:
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BastionSG
+      GroupDescription: Allow SSH to bastion
+      VpcId: !ImportValue Rds-VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref ClientCidr
+      
+  MySQLIngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow MySQL connections from bastion
+      GroupId:  !ImportValue Rds-RdsSecurityGroupId
+      SourceSecurityGroupId: !GetAtt BastionSecurityGroup.GroupId      
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306    
+
+  PostgresIngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow Postgres connections from bastion
+      GroupId:  !ImportValue Rds-RdsSecurityGroupId
+      SourceSecurityGroupId: !GetAtt BastionSecurityGroup.GroupId      
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432  
+
+  BastionInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-04ba8620fc44e2264 # Amazon Linux 2023 AMI in eu-west-2
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      Tags:
+        - Key: Name
+          Value: BastionHost
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo dnf install mariadb105 -y
+          sudo dnf install postgresql15.x86_64 -y
+          sudo dnf install -y docker
+          sudo service docker start
+          sudo systemctl enable docker
+
+Outputs:
+  BastionPublicIP:
+    Description: Public IP of the bastion host
+    Value: !GetAtt BastionInstance.PublicIp
+  BastionHostId:
+    Description: Bastion EC2 instance id
+    Value: !Ref BastionInstance  
