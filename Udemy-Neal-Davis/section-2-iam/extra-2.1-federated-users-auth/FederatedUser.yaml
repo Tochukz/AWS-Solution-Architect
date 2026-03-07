@@ -1,0 +1,58 @@
+# CloudFormation template for Federated User Authentication using IAM and Google as Identity Provider
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Federated User Authentication with Google as IdP
+
+Parameters:
+  GoogleClientId:
+    Type: String
+    Description: The Client ID for your Google OAuth application
+  GoogleThumbprint:
+    Type: String
+    Description: The thumbprint of the Google Identity Provider certificate
+  S3BucketName:
+    Type: String
+    Description: The name of the S3 bucket to which the federated user will have access
+    Default: "chucks-workspace-storage"
+
+Resources:
+  GoogleIdentityProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://accounts.google.com
+      ClientIdList:
+        - YOUR_GOOGLE_CLIENT_ID
+      ThumbprintList:
+        - YOUR_GOOGLE_THUMBPRINT
+
+  FederatedUserRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: FederatedGoogleUserRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GoogleIdentityProvider
+            Action:
+              - sts:AssumeRoleWithWebIdentity
+      Policies:
+        - PolicyName: FederatedUserPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: List
+                Effect: Allow
+                Action:
+                  - s3:ListBucket                 
+                Resource: !Sub arn:aws:s3:::${S3BucketName}
+              - Effect: ReadWrite
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub arn:aws:s3:::${S3BucketName}/*
+
+Outputs:
+  FederatedUserRoleArn:
+    Description: ARN of the federated user role
+    Value: !GetAtt FederatedUserRole.Arn

@@ -110,9 +110,39 @@ __Application: S3 Events to multiple queues__
 __Amazon SNS – FIFO Topic__  
 * FIFO = First In First Out (ordering of messages in the topic)
   - __NB:__ Only SQS Fifo or SQS Standard Queue can subscribe to SNS Fifo Topic
-  - If you need other subscribers like Email or Lambda, you will to chain to the SQS. 
+  - If you need other subscribers like Email or Lambda, you will to chain to the SQS.
 * Similar features as SQS FIFO:
   - Ordering by Message Group ID (all messages in the same group are ordered)
   - Deduplication using a Deduplication ID or Content Based Deduplication
 * Can have SQS Standard and FIFO queues as subscribers
 * Limited throughput (same throughput as SQS FIFO)
+
+__SNS – Message Delivery Retries__   
+* When a message is delivered to an SNS subscriber, in case of server-side errors, a delivery policy is applied
+
+![](slides/sns-delivery-retries.png)
+
+__SNS – Custom Delivery Policies__   
+* Only HTTP/S supports custom policies
+```json
+{
+  "healthyRetryPolicy": {
+    "minDelayTarget": 1,
+    "maxDelayTarget": 60,
+    "numRetries": 50,
+    "numNoDelayRetries": 3,
+    "numMinDelayRetries": 2,
+    "numMaxDelayRetries": 35,
+    "backoffFunction": "exponential"
+  },
+  "sicklyRetryPolicy": null,
+  "throttlePolicy": {
+    "maxReceivesPerSecond": 10
+  }
+}
+```
+
+__SNS – Dead Letter Queues__  
+* After exhausting the delivery policy, messages that haven’t been delivered are discarded unless you set a DLQ (Dead Letter Queue)
+* DLQ are Amazon SQS queues or Amazon SQS FIFO queues (for SNS FIFO)
+* Dead Letter Queues are attached to a subscription (rather than a topic)

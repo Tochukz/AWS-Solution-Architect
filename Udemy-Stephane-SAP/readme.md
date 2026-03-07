@@ -14,7 +14,9 @@ Section | Pg  | Title
 6       | 320 | Storage
 7       | 377 | Caching
 8       | 410 | Databases
-9       | 447 | Service Communication 
+9       | 447 | Service Communication
+10      | 480 | Data Engineering
+
 
 ### Resources
 [Slide and Code Download](https://courses.datacumulus.com/downloads/certified-solutions-architect-professional-m0v/)
