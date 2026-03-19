@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Automate EC2 instance start and stop using EventBridge Scheduler (starts at 08:00 UTC, stops at 20:00 UTC)
+Description: Automate EC2 instance start and stop using EventBridge Scheduler (starts at 08:00 UTC, stops at 20:00 UTC on weekdays)
 
 Parameters:
   InstanceType:
@@ -14,7 +14,20 @@ Parameters:
     Type: AWS::EC2::Image::Id
     Default: ami-0d1b55a6d77a0c326 # Amazon Linux 2 AMI ID for eu-west-1 (Ireland)
     Description: Latest Amazon Linux 2 AMI ID
-
+  Timezone:
+    Type: String
+    Default: GMT # UTC
+    Description: Timezone for the schedule (e.g., UTC, America/New_York)
+    AllowedValues:
+      - UTC
+      - GMT
+      - US/Eastern
+      - America/New_York
+      - Europe/London
+      - Europe/Ireland
+      - Asia/Tokyo
+      - Australia/Sydney
+    
 Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
@@ -52,8 +65,9 @@ Resources:
     Type: AWS::Scheduler::Schedule
     Properties:
       Name: EC2StartInstanceSchedule
-      Description: Start EC2 instance daily at 08:00 UTC
-      ScheduleExpression: cron(0 8 * * ? *)  # 08:00 UTC every day
+      Description: Start EC2 instance at 08:00 UTC Monday-Friday
+      ScheduleExpression: cron(0 8 ? * MON-FRI *) # 08:00 UTC Monday-Friday
+      ScheduleExpressionTimezone: !Ref Timezone
       FlexibleTimeWindow:
         Mode: "OFF"
       State: ENABLED
@@ -71,8 +85,9 @@ Resources:
     Type: AWS::Scheduler::Schedule
     Properties:
       Name: EC2StopInstanceSchedule
-      Description: Stop EC2 instance daily at 20:00 UTC
-      ScheduleExpression: cron(36 11 * * ? *)  # cron(0 20 * * ? *)  # 20:00 UTC every day
+      Description: Stop EC2 instance at 20:00 UTC Monday-Friday
+      ScheduleExpression: cron(0 20 ? * MON-FRI *) # 20:00 UTC Monday-Friday
+      ScheduleExpressionTimezone: !Ref Timezone
       FlexibleTimeWindow:
         Mode: "OFF"
       State: ENABLED
@@ -90,9 +105,9 @@ Outputs:
   InstanceId:
     Description: EC2 Instance ID
     Value: !Ref EC2Instance
-  PublicIp:
-    Description: Public IP of EC2 Instance
-    Value: !GetAtt EC2Instance.PublicIp
+  # PublicIp:
+  #   Description: Public IP of EC2 Instance
+  #   Value: !GetAtt EC2Instance.PublicIp
   StartScheduleName:
     Description: Name of the start schedule
     Value: !Ref StartInstanceSchedule
