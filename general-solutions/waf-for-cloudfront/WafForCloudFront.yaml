@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create a CloudFront-scoped AWS WAF Web ACL for an existing CloudFront distribution
+
+Parameters: 
+  WebAclName:
+    Type: String
+    Default: SimpleWebAcl
+    Description: Name of the WAFv2 Web ACL
+  RateLimit:
+    Type: Number
+    Default: 2000
+    MinValue: 100
+    Description: Requests per 5 minutes from a single IP before blocking
+    
+Resources: 
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Ref WebAclName
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${WebAclName}Metric"
+      Rules:
+        - Name: RateLimitRule
+          Priority: 1
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref RateLimit
+              AggregateKeyType: IP
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${WebAclName}RateLimitRuleMetric"
