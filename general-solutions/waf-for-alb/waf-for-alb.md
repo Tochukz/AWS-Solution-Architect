@@ -36,7 +36,6 @@ $ aws cloudformation deploy --template-file ALB.yaml --stack-name ALB --capabili
 2. Deploy the WafForAlb stack 
 ```bash 
 $ aws cloudformation deploy --template-file WafForAlb.yaml --stack-name WafForAlb --capabilities CAPABILITY_NAMED_IAM --parameter-overrides "ProtectedPath=/auth/signin" 
-# "LoadBalancerArn=arn:aws:elasticloadbalancing:eu-west-1:341324050589:loadbalancer/app/ipt-dev-buddy-alb/03d527b1d60c5a6b"
 ```
 
 **After Deployment**
