@@ -1,0 +1,370 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  WAFv2 Web ACL for an Application Load Balancer with fine-grained per-IP rate
+  limiting (5 requests / 15 minutes) on /auth/login, enforced by a Lambda
+  function backed by DynamoDB. IPs that exceed the threshold are blocked via a
+  dynamically updated WAF IP set. Both IPv4 and IPv6 clients are handled.
+
+Parameters:
+  WebAclName:
+    Type: String
+    Default: SimpleWebAcl
+    Description: Name of the WAFv2 Web ACL
+  ProtectedPath:
+    Type: String
+    Default: /auth/login
+    Description: URI path to apply the 5 req / 15 min rate limit to
+  # LoadBalancerArn:
+  #   Type: String
+  #   Description: ARN of the Application Load Balancer to protect
+
+Resources:
+  # ── Blocked IP sets (populated dynamically by Lambda) ─────────────────────
+  BlockedIPv4Set:
+    Type: AWS::WAFv2::IPSet
+    Properties:
+      Name: !Sub "${WebAclName}-blocked-ipv4"
+      Scope: REGIONAL
+      IPAddressVersion: IPV4
+      Addresses: []
+
+  BlockedIPv6Set:
+    Type: AWS::WAFv2::IPSet
+    Properties:
+      Name: !Sub "${WebAclName}-blocked-ipv6"
+      Scope: REGIONAL
+      IPAddressVersion: IPV6
+      Addresses: []
+
+  # ── Web ACL ────────────────────────────────────────────────────────────────
+  MyWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Ref WebAclName
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${WebAclName}Metric"
+      CustomResponseBodies:
+        RateLimit429Body:
+          ContentType: APPLICATION_JSON
+          Content: '{"message":"Too Many Requests"}'
+      Rules:
+        - Name: BlockedIPv4Rule
+          Priority: 0
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: RateLimit429Body
+                ResponseHeaders:
+                  - Name: Retry-After
+                    Value: "900"
+          Statement:
+            AndStatement:
+              Statements:
+                - IPSetReferenceStatement:
+                    ARN: !GetAtt BlockedIPv4Set.Arn
+                - ByteMatchStatement:
+                    SearchString: !Ref ProtectedPath
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: EXACTLY
+                    TextTransformations:
+                      - Priority: 0
+                        Type: NONE
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${WebAclName}BlockedIPv4Metric"
+        - Name: BlockedIPv6Rule
+          Priority: 1
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: RateLimit429Body
+                ResponseHeaders:
+                  - Name: Retry-After
+                    Value: "900"
+          Statement:
+            AndStatement:
+              Statements:
+                - IPSetReferenceStatement:
+                    ARN: !GetAtt BlockedIPv6Set.Arn
+                - ByteMatchStatement:
+                    SearchString: !Ref ProtectedPath
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: EXACTLY
+                    TextTransformations:
+                      - Priority: 0
+                        Type: NONE
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${WebAclName}BlockedIPv6Metric"
+
+  # ── WAF logging → CloudWatch Logs ─────────────────────────────────────────
+  WafLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "aws-waf-logs-${WebAclName}"
+      RetentionInDays: 7
+
+  # Resource policy that lets the WAF delivery service write to the log group
+  WafLogGroupPolicy:
+    Type: AWS::Logs::ResourcePolicy
+    Properties:
+      PolicyName: !Sub "${WebAclName}-waf-log-policy"
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": "delivery.logs.amazonaws.com" },
+            "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+            "Resource": "${WafLogGroup.Arn}:*",
+            "Condition": {
+              "StringEquals": { "aws:SourceAccount": "${AWS::AccountId}" }
+            }
+          }]
+        }
+
+  WafLoggingConfig:
+    Type: AWS::WAFv2::LoggingConfiguration
+    DependsOn: WafLogGroupPolicy
+    Properties:
+      ResourceArn: !GetAtt MyWebACL.Arn
+      LogDestinationConfigs:
+        - !GetAtt WafLogGroup.Arn
+
+  # ── DynamoDB: per-IP request counter with fixed-window TTL ────────────────
+  RequestCountTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${WebAclName}-ip-request-counts"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: ip
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ip
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # ── IAM role for Lambda ────────────────────────────────────────────────────
+  RateLimiterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: RateLimiterPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetItem
+                Resource: !GetAtt RequestCountTable.Arn
+              - Effect: Allow
+                Action:
+                  - wafv2:GetIPSet
+                  - wafv2:UpdateIPSet
+                Resource:
+                  - !GetAtt BlockedIPv4Set.Arn
+                  - !GetAtt BlockedIPv6Set.Arn
+
+  # ── Lambda: reads WAF logs, blocks IPs that exceed 5 req / 15 min ─────────
+  RateLimiterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${WebAclName}-rate-limiter"
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: !GetAtt RateLimiterRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME:      !Ref RequestCountTable
+          IPV4_SET_ID:     !GetAtt BlockedIPv4Set.Id
+          IPV4_SET_NAME:   !Sub "${WebAclName}-blocked-ipv4"
+          IPV6_SET_ID:     !GetAtt BlockedIPv6Set.Id
+          IPV6_SET_NAME:   !Sub "${WebAclName}-blocked-ipv6"
+          MAX_REQUESTS:    "5"
+          WINDOW_SECONDS:  "900"
+          PROTECTED_PATH:  !Ref ProtectedPath
+      Code:
+        ZipFile: |
+          import boto3, os, json, base64, gzip, time, sys
+          
+          # Setup logging
+          import logging
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          TABLE_NAME      = os.environ['TABLE_NAME']
+          IPV4_SET_ID     = os.environ['IPV4_SET_ID']
+          IPV4_SET_NAME   = os.environ['IPV4_SET_NAME']
+          IPV6_SET_ID     = os.environ['IPV6_SET_ID']
+          IPV6_SET_NAME   = os.environ['IPV6_SET_NAME']
+          MAX_REQUESTS    = int(os.environ['MAX_REQUESTS'])
+          WINDOW_SECONDS  = int(os.environ['WINDOW_SECONDS'])
+          PROTECTED_PATH  = os.environ['PROTECTED_PATH']
+          REGION          = os.environ['AWS_REGION']
+
+          dynamodb = boto3.resource('dynamodb', region_name=REGION)
+          wafv2    = boto3.client('wafv2', region_name=REGION)
+          table    = dynamodb.Table(TABLE_NAME)
+
+          logger.info(f"Lambda initialized: PROTECTED_PATH={PROTECTED_PATH}, MAX_REQUESTS={MAX_REQUESTS}, WINDOW_SECONDS={WINDOW_SECONDS}")
+
+          def lambda_handler(event, context):
+              logger.info(f"Event received: {json.dumps(event)}")
+              
+              try:
+                  raw     = base64.b64decode(event['awslogs']['data'])
+                  records = json.loads(gzip.decompress(raw))
+                  logger.info(f"Decompressed {len(records.get('logEvents', []))} log events")
+              except Exception as e:
+                  logger.error(f"Error decompressing logs: {e}", exc_info=True)
+                  return {'statusCode': 400, 'body': f'Error decompressing logs: {e}'}
+
+              block_v4, block_v6 = set(), set()
+              matched_requests = 0
+
+              for rec in records.get('logEvents', []):
+                  try:
+                      msg = json.loads(rec['message'])
+                  except (KeyError, json.JSONDecodeError) as e:
+                      logger.debug(f"Skipping non-JSON log event: {e}")
+                      continue
+
+                  http_req = msg.get('httpRequest', {})
+                  uri = http_req.get('uri', '')
+                  logger.debug(f"Checking URI: {uri} against PROTECTED_PATH: {PROTECTED_PATH}")
+                  
+                  if uri != PROTECTED_PATH:
+                      logger.debug(f"URI {uri} does not match {PROTECTED_PATH}, skipping")
+                      continue
+
+                  matched_requests += 1
+                  ip = http_req.get('clientIp')
+                  if not ip:
+                      logger.warning(f"No clientIp found in request")
+                      continue
+
+                  logger.info(f"Processing request from {ip} to {uri}")
+                  
+                  try:
+                      ttl  = int(time.time()) + WINDOW_SECONDS
+                      resp = table.update_item(
+                          Key={'ip': ip},
+                          UpdateExpression=(
+                              'SET #cnt = if_not_exists(#cnt, :zero) + :one, '
+                              '#ttl = if_not_exists(#ttl, :ttl)'
+                          ),
+                          ExpressionAttributeNames={'#cnt': 'count', '#ttl': 'ttl'},
+                          ExpressionAttributeValues={':one': 1, ':zero': 0, ':ttl': ttl},
+                          ReturnValues='UPDATED_NEW'
+                      )
+                      
+                      count = int(resp['Attributes']['count'])
+                      logger.info(f"IP {ip}: count={count}, threshold={MAX_REQUESTS}")
+                      
+                      if count > MAX_REQUESTS:
+                          logger.warning(f"IP {ip} exceeded threshold! Adding to block list.")
+                          (block_v6 if ':' in ip else block_v4).add(ip)
+                  except Exception as e:
+                      logger.error(f"Error updating DynamoDB for IP {ip}: {e}", exc_info=True)
+                      continue
+
+              logger.info(f"Total matched requests: {matched_requests}, IPv4 to block: {len(block_v4)}, IPv6 to block: {len(block_v6)}")
+
+              if block_v4:
+                  try:
+                      _add_to_ip_set(IPV4_SET_NAME, IPV4_SET_ID, block_v4, '/32')
+                      logger.info(f"Updated IPv4 set with {len(block_v4)} addresses")
+                  except Exception as e:
+                      logger.error(f"Error updating IPv4 set: {e}", exc_info=True)
+              
+              if block_v6:
+                  try:
+                      _add_to_ip_set(IPV6_SET_NAME, IPV6_SET_ID, block_v6, '/128')
+                      logger.info(f"Updated IPv6 set with {len(block_v6)} addresses")
+                  except Exception as e:
+                      logger.error(f"Error updating IPv6 set: {e}", exc_info=True)
+
+              return {'statusCode': 200, 'body': f'Matched: {matched_requests}, Blocked IPv4: {len(block_v4)}, IPv6: {len(block_v6)}'}
+
+          def _add_to_ip_set(name, set_id, ips, suffix):
+              try:
+                  resp  = wafv2.get_ip_set(Name=name, Scope='REGIONAL', Id=set_id)
+                  token = resp['LockToken']
+                  addrs = set(resp['IPSet']['Addresses'])
+                  new   = addrs | {(ip if '/' in ip else ip + suffix) for ip in ips}
+                  logger.info(f"IP set '{name}': current={len(addrs)}, new={len(new)}")
+                  
+                  if new != addrs:
+                      wafv2.update_ip_set(
+                          Name=name, Scope='REGIONAL', Id=set_id,
+                          LockToken=token, Addresses=list(new)
+                      )
+                      logger.info(f"Successfully updated IP set '{name}'")
+                  else:
+                      logger.info(f"No changes needed for IP set '{name}'")
+              except Exception as e:
+                  logger.error(f"Error in _add_to_ip_set for {name}: {e}", exc_info=True)
+                  raise
+
+  # ── Allow CloudWatch Logs to invoke the Lambda ─────────────────────────────
+  LambdaLogPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt RateLimiterFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: logs.amazonaws.com
+      SourceArn: !GetAtt WafLogGroup.Arn
+      SourceAccount: !Ref AWS::AccountId
+
+  # ── Subscription: stream WAF log group into Lambda ─────────────────────────
+  WafLogSubscription:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: LambdaLogPermission
+    Properties:
+      LogGroupName: !Ref WafLogGroup
+      FilterPattern: ""
+      DestinationArn: !GetAtt RateLimiterFunction.Arn
+
+  # ── Associate the Web ACL with the ALB ────────────────────────────────────
+  WebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn:  !ImportValue ALB-LoadBalancerArn # !Ref LoadBalancerArn
+      WebACLArn: !GetAtt MyWebACL.Arn
+
+Outputs:
+  WebAclArn:
+    Description: ARN of the WAF Web ACL
+    Value: !GetAtt MyWebACL.Arn
+  RateLimiterFunctionArn:
+    Description: ARN of the rate limiter Lambda function
+    Value: !GetAtt RateLimiterFunction.Arn
+  RequestCountTableName:
+    Description: DynamoDB table tracking per-IP request counts
+    Value: !Ref RequestCountTable

@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template configures an Application Load Balancer that distributes traffic to a target group with two EC2 instances
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Vpc Id
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet Id in the Vpc provided
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet Id in the Vpc provided
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Default: t3.micro
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: Amazon Machine Image
+    Default: ami-0d1b55a6d77a0c326 # Amazon Linux 2023 64-bit (x86) for eu-west-1 (Ireland)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Keypair name
+    Default: DevSimpleKey
+
+Resources:
+  AlbSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: AlbSecGroup
+      GroupDescription: Application Load Balancer security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allows HTTP access
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  WebSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSecGroup
+      GroupDescription: Web server security group SSH and HTTP
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH access to all
+          IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+        - Description: Allow HTTP traffic originating from AlbSecGroup only
+          IpProtocol: TCP
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+          # SourceSecurityGroupId: !GetAtt AlbSecGroup.GroupId
+
+  SimpleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetId1
+      SecurityGroupIds:
+        - !Ref WebSecGroup
+      Tags:
+        - Key: Name
+          Value: SimpleInstance
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo dnf update -y
+          ## Install Nginx
+          sudo dnf install nginx -y
+          sudo systemctl enable nginx
+          sudo systemctl start nginx
+          sudo systemctl status nginx
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleTarget
+      Protocol: HTTP
+      Port: 80
+      VpcId: !Ref VpcId
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckPath: /
+      Targets:
+        - Id: !Ref SimpleInstance
+
+  AlbBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleBalancer
+      Scheme: internet-facing
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      SecurityGroups:
+        - !Ref AlbSecGroup
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AlbBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup
+
+Outputs:
+  LoadBalancerArn:
+    Description: ARN of the ALB
+    Value: !Ref AlbBalancer
+    Export:
+      Name: !Sub "ALB-LoadBalancerArn"
+  LoadBalancerDns:
+    Description: DNS name of the ALB
+    Value: !GetAtt AlbBalancer.DNSName
+  InstanceId:
+    Description: First EC2 instance ID
+    Value: !GetAtt SimpleInstance.InstanceId
+  PublicIp:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt SimpleInstance.PublicIp
