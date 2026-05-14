@@ -1,6 +1,6 @@
-# CloudFormation template for Federated User Authentication using IAM and Google as Identity Provider
-AWSTemplateFormatVersion: "2010-09-09"
-Description: Federated User Authentication with Google as IdP
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Federated User Authentication using IAM and Google as IdP
 
 Parameters:
   GoogleClientId:
@@ -44,7 +44,7 @@ Resources:
               - Sid: List
                 Effect: Allow
                 Action:
-                  - s3:ListBucket                 
+                  - s3:ListBucket
                 Resource: !Sub arn:aws:s3:::${S3BucketName}
               - Effect: ReadWrite
                 Action:
