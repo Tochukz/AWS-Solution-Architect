@@ -1,0 +1,38 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-xxxxxx"
+  },
+  {
+    "ParameterKey": "SubnetIds",
+    "ParameterValue": "subnet-xxxxxx,subnet-yyyyy"
+  },
+  {
+    "ParameterKey": "SecurityGroupIds",
+    "ParameterValue": "sg-xxxxxx,sg-yyyyy"
+  },
+  { 
+    "ParameterKey": "CodeS3Bucket",
+    "ParameterValue": "your-s3-bucket"
+  },
+  {
+    "ParameterKey": "CodeS3Key",
+    "ParameterValue": "lambda-function-code.zip"
+   },
+   {
+    "ParameterKey": "LayerS3Key",
+    "ParameterValue": "lambda-layer-code.zip"
+   },
+   {
+    "ParameterKey": "RedisHost",
+    "ParameterValue": "master.xxxx.xxxxx.xxxx.amazonaws.com"
+   },
+   {
+    "ParameterKey": "RedisUsername",
+    "ParameterValue": "xxxxxxxx"
+   },
+   {
+    "ParameterKey": "RedisPassword",
+    "ParameterValue": "xxxxxxxx"
+   }
+]

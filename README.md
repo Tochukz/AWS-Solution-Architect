@@ -37,6 +37,9 @@ $ pip install yt-dlp
 
 # Install ffmpeg for spliting large videos
 $ brew install ffmpeg
+
+# Or install bot with Home Brew
+$ brew install yt-dlp ffmpeg
 ```
 
 __Download the Youtube video__    
