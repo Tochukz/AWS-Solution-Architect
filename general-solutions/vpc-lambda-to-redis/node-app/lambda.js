@@ -8,6 +8,7 @@ const client = redis.createClient({
     host: REDIS_HOST ?? 'localhost',
     port: REDIS_PORT ? Number(REDIS_PORT) : 6379,
     connectTimeout: 5000,
+    tls: true,
   },
   username: REDIS_USERNAME,
   password: REDIS_PASSWORD,
@@ -35,7 +36,7 @@ exports.handler = async (event) => {
     // Write to Redis
     if (event.action === 'write') {
       const expiry = event.expiry || 3600; // default 1 hour
-      await client.setEx(event.key, expiry, event.value);
+      await client.set(event.key, event.value, { EX: expiry });
       return {
         statusCode: 200,
         body: JSON.stringify({
