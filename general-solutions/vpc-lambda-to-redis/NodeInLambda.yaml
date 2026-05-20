@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: 'CloudFormation template to configure a Lambda function in an existing VPC with Redis access'
+
+Parameters:
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of Subnet IDs for Lambda function
+  SecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: List of Security Group IDs for Lambda function
+  CodeS3Bucket:
+    Type: String
+    Description: S3 bucket where Lambda function code is stored
+  CodeS3Key:
+    Type: String
+    Description: S3 key for the Lambda function code zip file
+  LayerS3Key:
+    Type: String
+    Description: S3 key for the Lambda layer zip file containing Redis client libraries
+  RedisHost:
+    Type: String
+    Description: Redis endpoint (e.g., cache cluster endpoint)
+  RedisUsername:
+    Type: String
+    Description: Redis username (if using Redis with authentication)
+  RedisPassword:
+    Type: String
+    Description: Redis password (if using Redis with authentication)
+    
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LambdaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: RedisClientLayer
+      Description: Layer containing Redis client libraries
+      Content:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref LayerS3Key
+      CompatibleRuntimes:
+        - nodejs24.x
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: NodeInLambdaFunc
+      Runtime: nodejs24.x
+      Handler: lambda.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Layers:
+        - !Ref LambdaLayer
+      VpcConfig:
+        SecurityGroupIds: !Ref SecurityGroupIds
+        SubnetIds: !Ref SubnetIds
+      Code:
+        S3Bucket: !Ref CodeS3Bucket
+        S3Key: !Ref CodeS3Key
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          REDIS_HOST: !Ref RedisHost
+          REDIS_PORT: '6379'
+          REDIS_USERNAME: !Ref RedisUsername
+          REDIS_PASSWORD: !Ref RedisPassword
+
+Outputs:
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt LambdaFunction.Arn
+  LambdaFunctionName:
+    Description: Name of the Lambda function
+    Value: !Ref LambdaFunction
