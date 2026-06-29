@@ -1,0 +1,22 @@
+[
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "vpc-xxxxxxxx"
+    },
+    {
+        "ParameterKey": "SubnetId1",
+        "ParameterValue": "subnet-xxxxxxxx"
+    },
+    {
+        "ParameterKey": "SubnetId2",
+        "ParameterValue": "subnet-xxxxxxxx"
+    },
+    {
+        "ParameterKey": "DBPasswordSSMPath",
+        "ParameterValue": "/path/db/password"
+    },   
+    {
+        "ParameterKey": "DBSnapshotIdentifier",
+        "ParameterValue": "database-snapshot-identifier"
+    }
+]

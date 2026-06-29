@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create a public RDS PostgreSQL instance from a snapshot'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Id
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet Id 1
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet Id 2
+  DBSnapshotIdentifier:
+    Type: String
+    Description: The identifier or ARN of the RDS snapshot to restore from
+
+Resources:
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS PostgreSQL
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+          Description: Allow PostgreSQL access from anywhere
+
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: SimpleSubnetGroup
+      DBSubnetGroupDescription: "Subnet group for MySQL RDS"
+      SubnetIds:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+
+  PostgresDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: BackupPostgresRds
+      Engine: postgres
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp3
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !GetAtt DbSecurityGroup.GroupId
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      BackupRetentionPeriod: 7
+      MultiAZ: false
+      StorageEncrypted: true
+      DBSnapshotIdentifier: !Ref DBSnapshotIdentifier
+
+Outputs:
+  DBInstanceEndpoint:
+    Description: RDS instance endpoint
+    Value: !GetAtt PostgresDBInstance.Endpoint.Address
+  DBName:
+    Description: Database name
+    Value: simple-postgres-db
