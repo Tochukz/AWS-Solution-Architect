@@ -1,7 +1,7 @@
 #!/bin/bash
 # Deploy Code for Lambda Function and Layer to S3
 
-bucketName="simple-storage"
+bucketName="npi-local-storage"
 
 cd nest-app 
 npm install 

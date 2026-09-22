@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for a CloudWatch Alarm on failed console authentication attempts.'
+
+Parameters:
+  AlarmThreshold:
+    Type: Number
+    Description: The number of failed attempts to trigger the alarm.
+    Default: 3
+    MinValue: 1
+  AlarmEvaluationPeriods:
+    Type: Number
+    Description: The number of periods to evaluate before triggering the alarm.
+    Default: 1
+    MinValue: 1
+  AlarmPeriod:
+    Type: Number
+    Description: The period in seconds over which the metric is evaluated.
+    Default: 300 # 5 minutes
+  MetricNamespace:
+    Type: String
+    Description: A constant for the metric namespace parameter.
+    Default: 'CISBenchmark' 
+    AllowedValues:
+      - 'CISBenchmark' 
+  MetricName:
+    Type: String
+    Description: A constant for the metric name parameter.
+    Default: 'ConsoleSigninFailure'
+    AllowedValues:
+      - 'ConsoleSigninFailure'
+  LogPrefix:
+    Type: String
+    Description: A constant for the log prefix parameter.
+    Default: 'cloudtrail-logs/'
+    AllowedValues:
+      - 'cloudtrail-logs/'
+
+Resources:
+  TrailLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: "/aws/cloudtrail/MgtEventsTrail" 
+      RetentionInDays: 90 # Retain logs for 90 days
+
+  TrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "cloudtrail-logs-2206"
+      # VersioningConfiguration:
+      #   Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: "DeleteOldLogs"
+            Status: Enabled
+            ExpirationInDays: 90 # Retain logs for 90 days
+
+  TrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:GetBucketAcl'
+            Resource: !GetAtt TrailBucket.Arn
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: !Sub "${TrailBucket.Arn}/${LogPrefix}*"
+
+  CloudTrailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "CloudTrail_MgtEventsTrail_Role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: "CloudTrailMgtEventsTrailPolicy"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogStream'
+                Resource: !Sub "${TrailLogGroup.Arn}:log-group:/aws/cloudtrail/MgtEventsTrail:*"
+              - Effect: Allow
+                Action:
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketLocation'                 
+                Resource:
+                  - !GetAtt TrailBucket.Arn
+              - Effect: Allow
+                Action:            
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource:
+                  - !Sub "${TrailBucket.Arn}/${LogPrefix}*"
+
+  CloudTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn:
+      - TrailBucketPolicy
+    Properties:
+      TrailName: MgtEventsTrail
+      IsMultiRegionTrail: true
+      IsLogging: true
+      IncludeGlobalServiceEvents: true
+      EnableLogFileValidation: true
+      CloudWatchLogsLogGroupArn: !GetAtt TrailLogGroup.Arn
+      CloudWatchLogsRoleArn: !GetAtt CloudTrailRole.Arn
+      S3BucketName: !Ref TrailBucket
+      S3KeyPrefix: !Ref LogPrefix
+      InsightSelectors: 
+        - InsightType: ApiErrorRateInsight
+
+  FailedConsoleLoginMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref TrailLogGroup
+      FilterPattern: '{ ($.eventName = "ConsoleLogin") && ($.errorMessage = "Failed authentication") }'
+      MetricTransformations:
+        - MetricValue: '1'
+          MetricNamespace: !Ref MetricNamespace
+          MetricName: !Ref MetricName
+
+  SimpleTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: 'MonitoringAlarmTopic' 
+
+  FailedConsoleLoginAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: 'ConsoleAuthenticationFailure-Alarm'
+      AlarmDescription: 'Alarm if there is at least one failed AWS Management Console login in a 5-minute period.'
+      AlarmActions:
+        - !Ref SimpleTopic
+      Namespace: !Ref MetricNamespace
+      MetricName: !Ref MetricName
+      Statistic: 'Sum'
+      Period: !Ref AlarmPeriod
+      EvaluationPeriods: !Ref AlarmEvaluationPeriods
+      Threshold: !Ref AlarmThreshold
+      ComparisonOperator: 'GreaterThanOrEqualToThreshold'
+
+Outputs:
+  AlarmArn:
+    Description: The ARN of the created CloudWatch Alarm.
+    Value: !GetAtt FailedConsoleLoginAlarm.Arn
+  SnsTopicArn:
+    Description: The ARN of the SNS topic for alarm notifications.
+    Value: !Ref SimpleTopic

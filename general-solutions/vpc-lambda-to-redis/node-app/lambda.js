@@ -36,7 +36,8 @@ exports.handler = async (event) => {
     // Write to Redis
     if (event.action === 'write') {
       const expiry = event.expiry || 3600; // default 1 hour
-      await client.set(event.key, event.value, { EX: expiry });
+      await client.set(event.key, event.value);
+      await client.expire(event.key, expiry);
       return {
         statusCode: 200,
         body: JSON.stringify({

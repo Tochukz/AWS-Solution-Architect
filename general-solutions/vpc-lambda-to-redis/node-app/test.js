@@ -23,9 +23,14 @@ async function read() {
 write().then((result) => console.log(result)).catch(console.error);
 //read().then((result) => console.log(result)).catch(console.error);
 
-// {
-//     "action": "write",
-//     "key": "testKey1",
-//     "value": "testValue",
-//     "expiry": 3600
-// }
+{
+    "action": "write",
+    "key": "testKey1",
+    "value": "testValue",
+    "expiry": 3600
+}
+
+{
+    "action": "read",
+    "key": "testKey1"
+}

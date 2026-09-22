@@ -3,13 +3,14 @@
 
 ## Requirement
 
-We need to backup and existing RDS instance and then restore it to another RDS instance  
+We need to backup and existing RDS instance and then restore it to another RDS instance . 
+The original instance was encrypted using AWS managed KMS key and we want the restored instance to be encrypted using Cusomer managed KMS key.  
 
 ## Operation
 
 **Pre Deployment**  
 
-Create a snapshot of the existing database instance 
+1. Create a snapshot of the existing database instance 
 ```bash 
 $ aws rds create-db-snapshot --db-instance-identifier my-source-db --db-snapshot-identifier my-source-db-backup
 ```
