@@ -45,7 +45,7 @@ $ aws cloudformation deploy --template-file EcsService.yaml  --stack-name EcsSer
 ```
 
 **Testing**  
-Get the Application Load Balancer's DnsName from the ouputs
+Get the Application Load Balancer's DnsName from the outputs
 
 ```bash
 $ aws cloudformation describe-stacks --stack-name EcsService --query "Stacks[0].Outputs" --no-cli-pager
