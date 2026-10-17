@@ -167,29 +167,12 @@ Resources:
       SubnetId: !Ref PrivateSubnet2
       RouteTableId: !Ref PrivateRouteTable2
 
-  WebSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allows HTTP access
-      VpcId: !Ref CustomVpc
-      SecurityGroupIngress:
-        - Description: Allow HTTP access from anywhere
-          IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-
 Outputs:
   VpcId:
     Description: Custom VPC Id
     Value: !Ref CustomVpc
     Export:
       Name: !Sub ${AWS::StackName}-VpcId
-  WebSecurityGroupId:
-    Description: Security group ID
-    Value: !Ref WebSecurityGroup
-    Export:
-      Name: !Sub ${AWS::StackName}-WebSecurityGroupId
   PublicSubnetId1:
     Description: Subnet ID for Public Subnet 1
     Value: !Ref PublicSubnet1

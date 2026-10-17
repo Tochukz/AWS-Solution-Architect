@@ -2,15 +2,23 @@
 
 ## Requirement
 
-We want to configure a containerizes API that sits in an ECS container.  
-The containersized application should be scalable. 
-It must only be accessible through an API Gateway endpoint. 
+We want to configure a containerized application that sits in an ECS container.  
+The containerized application must only be accessible through an API Gateway endpoint.  
 
 ## Solution
 
-To achieve the required configuration, we configure an internal ALB the direct traffic the the ECS Task. 
-An API Gateway in then place in front of the ALB.  
-All traffic must go through the API Gateway to the to the API inside of the ECS container.  
+To achieve the required configuration, we configure an internal ALB that direct traffic to the ECS Task.  
+The ECS service that houses the tasks must sit in a private subnet and it's security group must only allow traffic coming from the ALB's security group.   
+An API Gateway is configured and integrated to the ALB using a VPC Link connection type. 
+The ALB's security group only allow trafic coming from the VPC Link's Security Group.    
+
+```
+API Gateway -> ALB -> ECS Service
+```
+
+## Out of scope  
+This solution does not focus on scalability to so the `DesiredCount` for the ECS task is set to 1 and there is no Auto Scaling resource includes. 
+
 
 ## Operation
 
@@ -20,6 +28,7 @@ Lint the templates
 ```bash
 $ cfn-lint Network.yaml
 $ cfn-lint EcsService.yaml
+$ cfn-lint ApiGateway.yaml
 ```
 
 1. Deploy the Network stack
@@ -33,22 +42,30 @@ $ aws cloudformation deploy --template-file Network.yaml --stack-name Network
 $ aws cloudformation deploy --template-file EcsService.yaml --stack-name EcsService --capabilities CAPABILITY_NAMED_IAM
 ```
 
+3. Deploy the ApiGateway stack
+```bash
+$ aws cloudformation deploy --template-file ApiGateway.yaml --stack-name ApiGateway
+```
+
 **After Deployment**  
 
-Get the output of the EcsService stack 
+Get the output of the ApiGateway stack 
 ```bash
-$ aws cloudformation describe-stacks --stack-name EcsService --query "Stacks[0].Outputs" --no-cli-pager
+$ aws cloudformation describe-stacks --stack-name ApiGateway --query "Stacks[0].Outputs" --no-cli-pager
 ```
 **Testing**  
 
-Use the `DnsName` stack output of the EcsService stack  to test the container application. 
+Use the `ApiEndpoint` stack output of the ApiGateway stack  to test the container application. 
 
 **Clean up**  
 
 Delete the stacks
 
 ```bash
+$ aws cloudformation delete-stack --stack-name ApiGateway
+$ aws cloudformation wait stack-delete-complete --stack-name ApiGateway
 $ aws cloudformation delete-stack --stack-name EcsService
+$ aws cloudformation wait stack-delete-complete --stack-name EcsService
 $ aws cloudformation delete-stack --stack-name Network
 ```
 

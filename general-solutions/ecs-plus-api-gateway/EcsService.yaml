@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: This template build on the hands-on-202 template by adding a Task Definition and ECS Service 
+Description: This template configures a ECS Cluster, ECS Service, Task Definition and ALB and related resources
 
 Parameters:
   DockerImage:
@@ -9,10 +9,6 @@ Parameters:
     Default: nginxdemos/hello # See the image at https://hub.docker.com/r/nginxdemos/hello/
     # For DockerHub repository it can be [provider/image]
     # For Other respository, format must be [repository-url/image:tag] or [repository-url/image@digest]
-  BucketArn:
-    Type: String
-    Description: Bucket ARN for an existing bucket for the application
-    Default: arn:aws:s3:::chucks-workspace-storage
   ContainerName:
     Type: String
     Description: Name for the container
@@ -64,12 +60,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - s3:GetObject
-                Resource: !Sub ${BucketArn}/*
-              - Sid: AllowObjectListing
-                Effect: Allow
-                Action:
-                  - s3:ListBucket
-                Resource: !Ref BucketArn
+                Resource: "*"              
 
   ContainerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -81,8 +72,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: DevAppFamily
-      Cpu: 512 #0.5 vCPU
-      Memory: 1024 # IGB RAM
+      Cpu: 256 # 0.25 vCPU
+      Memory: 512 # 1024 = 1GB RAM
       NetworkMode: awsvpc
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
@@ -91,8 +82,6 @@ Resources:
       RuntimePlatform:
         CpuArchitecture: X86_64
         OperatingSystemFamily: LINUX
-      EphemeralStorage:
-        SizeInGiB: 21
       ContainerDefinitions:
         - Name: !Ref ContainerName
           Image: !Ref DockerImage
@@ -109,19 +98,49 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: nginx-container
 
-  LoadBalancer:
+  EcsTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS tasks security group
+      VpcId: !ImportValue Network-VpcId
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Internal ALB security group
+      VpcId: !ImportValue Network-VpcId
+      SecurityGroupEgress:
+        - Description: Allow outbound access from ALB to ECS tasks
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          DestinationSecurityGroupId: !GetAtt EcsTaskSecurityGroup.GroupId
+                   
+
+  EcsTaskSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Accept ECS task traffic only from the ALB.
+      GroupId: !GetAtt EcsTaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !GetAtt AlbSecurityGroup.GroupId
+
+  InternalAlb:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: NginxServerBalancer
       Type: application
-      Scheme: internet-facing
+      Scheme: internal
+      IpAddressType: ipv4
       SecurityGroups:
-        - !ImportValue Network-WebSecurityGroupId # Imported from the Network Stack, see the Network.yaml template
+        - !GetAtt AlbSecurityGroup.GroupId
       Subnets:
-        - !ImportValue Network-PublicSubnetId1
-        - !ImportValue Network-PublicSubnetId2
+        - !ImportValue Network-PrivateSubnetId1
+        - !ImportValue Network-PrivateSubnetId2
 
-  TargetGroup:
+  EcsTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       VpcId: !ImportValue Network-VpcId
@@ -132,19 +151,19 @@ Resources:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
 
-  Listener:
+  AlbListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref LoadBalancer
+      LoadBalancerArn: !Ref InternalAlb
       Protocol: HTTP
       Port: 80
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref TargetGroup
+          TargetGroupArn: !Ref EcsTargetGroup
 
   EcsService:
     Type: AWS::ECS::Service
-    DependsOn: Listener
+    DependsOn: AlbListener
     Properties:
       Cluster: !Ref SimpleCluster
       ServiceName: NginxHelloServer
@@ -152,20 +171,33 @@ Resources:
       TaskDefinition: !Ref TaskDef
       SchedulingStrategy: REPLICA
       DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 60
       LoadBalancers:
-        - TargetGroupArn: !Ref TargetGroup
+        - TargetGroupArn: !Ref EcsTargetGroup
           ContainerName: !Ref ContainerName
           ContainerPort: 80
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           SecurityGroups:
-            - !ImportValue Network-WebSecurityGroupId # Imported from the Network Stack, see the Network.yaml template
+            - !GetAtt EcsTaskSecurityGroup.GroupId
           Subnets:
-            - !ImportValue Network-PublicSubnetId1
-            - !ImportValue Network-PublicSubnetId2
+            - !ImportValue Network-PrivateSubnetId1
+            - !ImportValue Network-PrivateSubnetId2
 
 Outputs:
   DnsName:
     Description: DNS name for the Application Load Balancer
-    Value: !GetAtt LoadBalancer.DNSName
+    Value: !GetAtt InternalAlb.DNSName
+  EcsServiceName:
+    Value: !GetAtt EcsService.Name
+  AlbSecurityGroupId:
+    Description: Security group ID for the Application Load Balancer
+    Value: !GetAtt AlbSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbSecurityGroupId
+  AlbListenArn:
+    Description: ARN for the Application Load Balancer listener
+    Value: !Ref AlbListener
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbListenArn

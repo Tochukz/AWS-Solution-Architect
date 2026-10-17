@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This configuration create the AWS API Gateway 
+
+Resources:
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: SimpleApi
+      Description: Simple API Gateway for ECS Service
+      ProtocolType: HTTP
+
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/apigateway/SimpleApi
+      RetentionInDays: 14
+
+  VpcLinkSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: API Gateway VPC Link security group
+      VpcId: !ImportValue Network-VpcId
+      SecurityGroupEgress:
+        - Description: Allow outbound access from API Gateway VPC Link to ALB
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          DestinationSecurityGroupId: !ImportValue EcsService-AlbSecurityGroupId
+
+  AlbFromVpcLinkIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow inbound access from API Gateway VPC Link to ALB
+      GroupId: !ImportValue EcsService-AlbSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !GetAtt VpcLinkSecurityGroup.GroupId
+
+  ApiVpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: ApiGatewayVpcLink
+      SubnetIds: 
+        - !ImportValue Network-PrivateSubnetId1
+        - !ImportValue Network-PrivateSubnetId2
+      SecurityGroupIds:
+        - !GetAtt VpcLinkSecurityGroup.GroupId
+      Tags:
+        Application: !Ref AWS::StackName
+          
+  GatewayIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      Description: Private HTTP proxy integration to the internal ALB.
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref ApiVpcLink
+      IntegrationUri: !ImportValue EcsService-AlbListenArn
+      PayloadFormatVersion: "1.0"
+      TimeoutInMillis: 30000
+
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: "$default"
+      AutoDeploy: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","path":"$context.path","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+
+  RootRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: "ANY /"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${GatewayIntegration}"
+
+  ProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: "ANY /{proxy+}"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${GatewayIntegration}"
+
+
+Outputs:
+  ApiEndpoint:
+    Description: Public API Gateway endpoint
+    Value: !GetAtt ApiGateway.ApiEndpoint
+  ApiVpcLinkId:
+    Description: API Gateway VPC Link V2 ID.
+    Value: !Ref ApiVpcLink
