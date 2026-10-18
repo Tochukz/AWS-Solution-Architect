@@ -196,8 +196,8 @@ Outputs:
     Value: !GetAtt AlbSecurityGroup.GroupId
     Export:
       Name: !Sub ${AWS::StackName}-AlbSecurityGroupId
-  AlbListenArn:
+  AlbListenerArn:
     Description: ARN for the Application Load Balancer listener
     Value: !Ref AlbListener
     Export:
-      Name: !Sub ${AWS::StackName}-AlbListenArn
+      Name: !Sub ${AWS::StackName}-AlbListenerArn

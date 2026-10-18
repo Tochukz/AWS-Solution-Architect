@@ -62,11 +62,7 @@ Use the `ApiEndpoint` stack output of the ApiGateway stack  to test the containe
 Delete the stacks
 
 ```bash
-$ aws cloudformation delete-stack --stack-name ApiGateway
-$ aws cloudformation wait stack-delete-complete --stack-name ApiGateway
-$ aws cloudformation delete-stack --stack-name EcsService
-$ aws cloudformation wait stack-delete-complete --stack-name EcsService
-$ aws cloudformation delete-stack --stack-name Network
+$ ./delete-stacks.sh
 ```
 
 __Learn More__  

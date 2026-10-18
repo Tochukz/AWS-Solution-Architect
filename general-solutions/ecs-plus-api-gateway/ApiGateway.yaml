@@ -59,7 +59,7 @@ Resources:
       IntegrationMethod: ANY
       ConnectionType: VPC_LINK
       ConnectionId: !Ref ApiVpcLink
-      IntegrationUri: !ImportValue EcsService-AlbListenArn
+      IntegrationUri: !ImportValue EcsService-AlbListenerArn
       PayloadFormatVersion: "1.0"
       TimeoutInMillis: 30000
 
