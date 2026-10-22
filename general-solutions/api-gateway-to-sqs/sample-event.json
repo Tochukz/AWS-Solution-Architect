@@ -1,0 +1,37 @@
+{
+    "Record": [
+        {
+            "messageId": "46d97f98-13ac-4635-89bc-e36e70a619d2",
+            "receiptHandle": "AQEBV/jUk0aZxyV3mYlPaLazIundt0BPHRwbV1EIRAstDz98tS6wjrryX36AiTxCe1Z9Q5N9SuYXYS0NKuPuQOlisfa440Qb6skDTW7zdbiiN5Qi7eBw0m/oNV98y+Q8vlGrzrtL6zkgTHju8AniGcAb1Jal4BHA/CxwRdlHcpCZOpqRRRPtKQp2mIIhMgy3qwK/u3KTPUkSInCWHoTP0zUFKroxxHkORjrGBPgctf/0+3Jm52utARKovJnGuVHkH+Gm3If3qHcM8Hu8TM/6ymLyyTae7zQd2NcLNi4KrpZgIGLWLXEPyAi54yCiHvy1tMJ25J5zCdZse695S7HimZAFjpkzyHtVZOqIFEWQbGj1uzQ9lPcrb04+JWfbcDvlQKWB",
+            "body": {
+                "orderId": "123412",
+                "status": "pending"
+            },
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1792704945250",
+                "SenderId": "AROAU66D7WCOYRH3WFJHO:1792704945217419768",
+                "ApproximateFirstReceiveTimestamp": "1792704945258"
+            },
+            "messageAttributes": {
+                "TenantId": {
+                    "stringValue": "tenant-123",
+                    "stringListValues": [],
+                    "binaryListValues": [],
+                    "dataType": "String"
+                },
+                "EventType": {
+                    "stringValue": "lab.result.created",
+                    "stringListValues": [],
+                    "binaryListValues": [],
+                    "dataType": "String"
+                }
+            },
+            "md5OfBody": "754e43cf9539ae68a4593875abc1d9b3",
+            "md5OfMessageAttributes": "ef6275cf1f974dec9dc3e88696f208ee",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:341324050589:simple-queue",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

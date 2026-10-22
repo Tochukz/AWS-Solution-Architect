@@ -57,15 +57,22 @@ Send a post request to the `ApiEndpoint` from the stack output.
 ```bash
 $ curl -X POST "YOUR_API_ENDPOINT" \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant-123" \
+  -H "X-Event-Type: lab.result.created" \
   -d '{ "orderId": "12345", "status": "pending" }'
 ```
-Check the Lambda function LogGroup to see the loggings of the received message. 
+Check the Lambda function LogGroup to see the loggings of the received message.  
+The POST request headers will become the SQS message attributes.  
+See `sample-events.json` for the object structure, see the `messageAttributes` for the mapped request headers.     
+
 
 2. Simulated failure
 Send a post request with a message that will be used to simulate failure in the Lambda code
 ```bash 
 $ curl -X POST "YOUR_API_ENDPOINT" \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant-123" \
+  -H "X-Event-Type: lab.result.created" \
   -d '{ "orderId": "12345", "status": "failed" }'
 ``` 
 The Lambda function LogGroup will should the logging for the error raised.  

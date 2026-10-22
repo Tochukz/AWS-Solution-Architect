@@ -69,10 +69,13 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationSubtype: SQS-SendMessage
       CredentialsArn: !GetAtt ApiGatewayRole.Arn
-      PayloadFormatVersion: '1.0'
+      PayloadFormatVersion: '1.0'      
       RequestParameters:
         QueueUrl: !Ref MessageQueue
         MessageBody: $request.body
+        MessageAttributes: >-
+          {"TenantId": {"DataType": "String", "StringValue": "${request.header.X-Tenant-Id}"},
+          "EventType": {"DataType": "String", "StringValue": "${request.header.X-Event-Type}"}}
 
   MessagesRoute:
     Type: AWS::ApiGatewayV2::Route
