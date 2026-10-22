@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The configuration inntegrate API Gateway to SQS Queue use the Queue as event source for a Lambda function. 
+
+Parameters:
+  SourceBucketName:
+    Type: String 
+    Description: The name of the S3 bucket containing the Lambda code 
+    Default: cloud-works
+  SourceCodePath:
+    Type: String 
+    Description: The path of the source code for the Lambda function 
+    Default: v1.0.0/lambda-code-22-10.zip
+
+Resources:  
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: simple-dl-queue
+      MessageRetentionPeriod: 1209600 # 14 Days
+
+  MessageQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: simple-queue
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 345600 # 4 Days
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  ApiGatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SendMessageToSqs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt MessageQueue.Arn
+
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: SimpleApi
+      Description: Simple API Gateway for SQS Integration
+      ProtocolType: HTTP
+
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${ApiGateway}"
+      RetentionInDays: 3
+
+  SqsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationType: AWS_PROXY
+      IntegrationSubtype: SQS-SendMessage
+      CredentialsArn: !GetAtt ApiGatewayRole.Arn
+      PayloadFormatVersion: '1.0'
+      RequestParameters:
+        QueueUrl: !Ref MessageQueue
+        MessageBody: $request.body
+
+  MessagesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: "POST /messages"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${SqsIntegration}"
+
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: "$default"
+      AutoDeploy: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","path":"$context.path","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: ConsumeMessagesFromSqs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt MessageQueue.Arn
+
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: "/aws/lambda/MessageProcessorFunc"
+      RetentionInDays: 3
+
+  MessageProcessorFunc:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: MessageProcessorFunc
+      Runtime: python3.12
+      Handler: lambda.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30      
+      Code:
+        S3Bucket: !Ref SourceBucketName
+        S3Key: !Ref SourceCodePath
+      LoggingConfig: 
+        LogGroup: !Ref LambdaLogGroup
+
+  LambdaSqsEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt MessageQueue.Arn
+      FunctionName: !GetAtt MessageProcessorFunc.Arn
+      Enabled: true
+      BatchSize: 2
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API Gateway endpoint
+    Value: !Sub '${ApiGateway.ApiEndpoint}/messages'
